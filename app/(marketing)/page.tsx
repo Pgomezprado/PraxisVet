@@ -99,36 +99,6 @@ const steps = [
   },
 ];
 
-const testimonials = [
-  {
-    quote:
-      "PraxisVet transformo la forma en que manejamos nuestra clinica. Antes perdiamos tiempo con planillas Excel, ahora todo esta en un solo lugar. Lo recomiendo sin dudar.",
-    name: "Dra. Maria Gonzalez",
-    role: "Veterinaria",
-    clinic: "Vet. El Roble",
-    city: "Santiago, Chile",
-    initials: "MG",
-  },
-  {
-    quote:
-      "Como administrador, necesitaba visibilidad sobre ingresos e inventario en tiempo real. PraxisVet me lo da sin complicaciones. El soporte en español es un gran plus.",
-    name: "Carlos Ramirez",
-    role: "Administrador",
-    clinic: "PetClinic",
-    city: "CDMX, Mexico",
-    initials: "CR",
-  },
-  {
-    quote:
-      "La agenda de citas me ahorra al menos 2 horas al dia. Los recordatorios automaticos redujeron nuestras inasistencias un 40%. Es exactamente lo que necesitabamos.",
-    name: "Camila Vargas",
-    role: "Recepcionista",
-    clinic: "VetCare",
-    city: "Bogota, Colombia",
-    initials: "CV",
-  },
-];
-
 const plans = [
   {
     name: "Gratis",
@@ -377,19 +347,19 @@ export default function LandingPage() {
               </p>
 
               <div className="animate-fade-in-up animation-delay-800 mt-8 flex flex-wrap items-center gap-6 border-t border-border/40 pt-6">
-                <div>
-                  <p className="text-2xl font-bold text-foreground">200+</p>
-                  <p className="text-xs text-muted-foreground">Clinicas</p>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-4 text-primary" />
+                  <span className="text-sm text-muted-foreground">Datos protegidos</span>
                 </div>
-                <div className="h-8 w-px bg-border/60" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">10,000+</p>
-                  <p className="text-xs text-muted-foreground">Pacientes</p>
+                <div className="h-4 w-px bg-border/60" />
+                <div className="flex items-center gap-2">
+                  <Clock className="size-4 text-primary" />
+                  <span className="text-sm text-muted-foreground">Listo en 5 minutos</span>
                 </div>
-                <div className="h-8 w-px bg-border/60" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">99.9%</p>
-                  <p className="text-xs text-muted-foreground">Uptime</p>
+                <div className="h-4 w-px bg-border/60" />
+                <div className="flex items-center gap-2">
+                  <PawPrint className="size-4 text-primary" />
+                  <span className="text-sm text-muted-foreground">Hecho para veterinarios</span>
                 </div>
               </div>
             </div>
@@ -408,36 +378,6 @@ export default function LandingPage() {
                 <DashboardMockup />
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================ */}
-      {/*  SOCIAL PROOF                                                */}
-      {/* ============================================================ */}
-      <section className="border-y border-border/40 bg-muted/30 py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <p className="mb-8 text-center text-sm font-medium text-muted-foreground">
-            Clinicas en Chile, Mexico y Colombia ya confian en PraxisVet
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
-            {[
-              { initials: "ER", name: "El Roble" },
-              { initials: "PC", name: "PetClinic" },
-              { initials: "VC", name: "VetCare" },
-              { initials: "AP", name: "AnimalPro" },
-              { initials: "VH", name: "VetHosp" },
-            ].map((clinic) => (
-              <div
-                key={clinic.initials}
-                className="flex items-center gap-2.5 text-muted-foreground/60"
-              >
-                <div className="flex size-10 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
-                  {clinic.initials}
-                </div>
-                <span className="text-sm font-medium">{clinic.name}</span>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -609,56 +549,6 @@ export default function LandingPage() {
       </section>
 
       {/* ============================================================ */}
-      {/*  TESTIMONIALS                                                */}
-      {/* ============================================================ */}
-      <section
-        id="testimonios"
-        className="border-t border-border/40 bg-muted/20 py-20 sm:py-28"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <Badge variant="secondary" className="mb-4">
-              Testimonios
-            </Badge>
-            <h2 className="text-pretty text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Lo que dicen nuestras clinicas
-            </h2>
-          </div>
-
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {testimonials.map((t) => (
-              <Card
-                key={t.name}
-                className="relative border-border/50 bg-card/80 backdrop-blur-sm"
-              >
-                <CardContent className="pt-8">
-                  <span className="absolute left-6 top-4 text-5xl font-serif leading-none text-primary/10">
-                    &ldquo;
-                  </span>
-                  <p className="relative text-sm leading-relaxed text-muted-foreground">
-                    {t.quote}
-                  </p>
-                  <div className="mt-6 flex items-center gap-3 border-t border-border/40 pt-4">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                      {t.initials}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {t.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t.role}, {t.clinic} &middot; {t.city}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================ */}
       {/*  PRICING                                                     */}
       {/* ============================================================ */}
       <section
@@ -782,7 +672,7 @@ export default function LandingPage() {
                 Empieza hoy, sin compromiso
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/80">
-                Mas de 200 clinicas ya gestionan su dia a dia con PraxisVet.
+                Tu clinica merece una gestion moderna. Pruebalo gratis.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link

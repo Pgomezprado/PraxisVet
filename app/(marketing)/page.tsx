@@ -19,7 +19,6 @@ import {
   UserPlus,
   Settings,
   Rocket,
-  Check,
   PawPrint,
   ArrowRight,
   Star,
@@ -99,59 +98,6 @@ const steps = [
   },
 ];
 
-const plans = [
-  {
-    name: "Gratis",
-    price: "$0",
-    period: "por siempre",
-    description: "Ideal para clinicas pequenas que estan empezando.",
-    features: [
-      "Hasta 1 veterinario",
-      "50 pacientes",
-      "Agenda de citas basica",
-      "Historial clinico",
-    ],
-    cta: "Comenzar gratis",
-    href: "/auth/register",
-    popular: false,
-  },
-  {
-    name: "Pro",
-    price: "$29",
-    period: "USD / mes",
-    description: "Para clinicas en crecimiento que necesitan mas poder.",
-    features: [
-      "Hasta 5 veterinarios",
-      "Pacientes ilimitados",
-      "Facturacion y cobros",
-      "Inventario completo",
-      "Recordatorios por email",
-      "Exportacion PDF",
-      "Soporte prioritario",
-    ],
-    cta: "Comenzar prueba gratis",
-    href: "/auth/register",
-    popular: true,
-  },
-  {
-    name: "Enterprise",
-    price: "$79",
-    period: "USD / mes",
-    description: "Para redes de clinicas y hospitales veterinarios.",
-    features: [
-      "Veterinarios ilimitados",
-      "Multi-clinica",
-      "API personalizada",
-      "Integraciones avanzadas",
-      "Soporte dedicado 24/7",
-      "SLA garantizado",
-      "Onboarding personalizado",
-    ],
-    cta: "Contactar ventas",
-    href: "mailto:ventas@praxisvet.cl",
-    popular: false,
-  },
-];
 
 function DashboardMockup() {
   return (
@@ -545,106 +491,6 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ============================================================ */}
-      {/*  PRICING                                                     */}
-      {/* ============================================================ */}
-      <section
-        id="precios"
-        className="bg-gradient-to-b from-background to-secondary/40 py-20 sm:py-28"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <Badge variant="secondary" className="mb-4">
-              Precios
-            </Badge>
-            <h2 className="text-pretty text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Planes para cada clinica
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Empieza gratis y escala cuando lo necesites. Sin sorpresas.
-            </p>
-          </div>
-
-          <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">
-            {plans.map((plan) => (
-              <Card
-                key={plan.name}
-                className={cn(
-                  "relative flex flex-col border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300",
-                  plan.popular &&
-                    "scale-105 ring-2 ring-primary shadow-xl z-10"
-                )}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-accent px-3 py-0.5 text-xs text-accent-foreground hover:bg-accent/90">
-                      Mas popular
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader
-                  className={cn(
-                    "text-center",
-                    plan.popular &&
-                      "bg-gradient-to-b from-primary/5 to-transparent"
-                  )}
-                >
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="mt-2">
-                    <span className="text-4xl font-bold text-foreground">
-                      {plan.price}
-                    </span>
-                    <span className="ml-1 text-sm text-muted-foreground">
-                      {plan.period}
-                    </span>
-                  </div>
-                  <CardDescription className="mt-2">
-                    {plan.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-1 flex-col">
-                  <ul className="flex-1 space-y-3">
-                    {plan.features.map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-start gap-2 text-sm text-muted-foreground"
-                      >
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href={plan.href}
-                    className={cn(
-                      buttonVariants({
-                        variant: plan.popular ? "default" : "outline",
-                      }),
-                      "mt-8 w-full",
-                      plan.popular && "shadow-lg shadow-primary/20"
-                    )}
-                  >
-                    {plan.cta}
-                    {plan.popular && <ArrowRight className="ml-2 size-4" />}
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Necesitas algo diferente?{" "}
-            <a
-              href="mailto:ventas@praxisvet.cl"
-              className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
-            >
-              Conversemos
-              <ArrowRight className="ml-1 inline size-3" />
-            </a>
-          </p>
         </div>
       </section>
 

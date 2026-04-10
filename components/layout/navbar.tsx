@@ -8,9 +8,7 @@ import { Menu, X, PawPrint, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
-  { href: "#como-funciona", label: "Como funciona" },
-  { href: "#testimonios", label: "Testimonios" },
-  { href: "#precios", label: "Precios" },
+  { href: "#como-funciona", label: "Cómo funciona" },
 ];
 
 export function Navbar() {

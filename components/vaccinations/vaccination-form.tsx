@@ -102,7 +102,7 @@ export function VaccinationForm({
         </CardTitle>
         <CardDescription>
           {isEditing
-            ? "Modifica los datos del registro de vacunacion."
+            ? "Modifica los datos del registro de vacunaci\u00f3n."
             : "Registra una nueva vacuna aplicada."}
         </CardDescription>
       </CardHeader>
@@ -177,7 +177,7 @@ export function VaccinationForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="date_administered">Fecha de aplicacion</Label>
+              <Label htmlFor="date_administered">Fecha de aplicaci\u00f3n</Label>
               <Input
                 id="date_administered"
                 type="date"
@@ -191,7 +191,7 @@ export function VaccinationForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="next_due_date">
-                Proxima dosis (opcional)
+                Pr\u00f3xima dosis (opcional)
               </Label>
               <Input
                 id="next_due_date"
@@ -203,7 +203,7 @@ export function VaccinationForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="lot_number">Numero de lote (opcional)</Label>
+              <Label htmlFor="lot_number">N\u00famero de lote (opcional)</Label>
               <Input
                 id="lot_number"
                 placeholder="ej: AB1234"
@@ -245,7 +245,7 @@ export function VaccinationForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => router.push(returnPath)}
             >
               Cancelar
             </Button>

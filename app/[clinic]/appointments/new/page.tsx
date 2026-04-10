@@ -4,10 +4,13 @@ import { getVets, getClientsWithPets, getServices } from "../actions";
 
 export default async function NewAppointmentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clinic: string }>;
+  searchParams: Promise<{ date?: string }>;
 }) {
   const { clinic } = await params;
+  const { date: dateParam } = await searchParams;
   const supabase = await createClient();
 
   const { data: org } = await supabase
@@ -41,6 +44,7 @@ export default async function NewAppointmentPage({
         clients={clientsResult.data ?? []}
         vets={vetsResult.data ?? []}
         services={servicesResult.data ?? []}
+        defaultValues={dateParam ? { date: dateParam } : undefined}
       />
     </div>
   );

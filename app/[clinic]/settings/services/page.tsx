@@ -41,7 +41,7 @@ export default async function ServicesPage({
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Servicios</h1>
           <p className="text-muted-foreground">
-            Gestiona el catalogo de servicios de tu clinica.
+            Gestiona el cat\u00e1logo de servicios de tu cl\u00ednica.
           </p>
         </div>
       </div>

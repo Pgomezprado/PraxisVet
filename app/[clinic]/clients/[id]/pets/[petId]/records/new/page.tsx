@@ -93,7 +93,7 @@ export default async function NewRecordPage({
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Nuevo registro clinico
+            Nuevo registro cl\u00ednico
           </h1>
           <p className="text-sm text-muted-foreground">
             {petResult.data.name} - {petResult.data.client.first_name}{" "}

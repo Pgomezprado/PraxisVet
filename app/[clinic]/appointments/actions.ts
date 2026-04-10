@@ -220,6 +220,104 @@ export async function deleteAppointment(appointmentId: string) {
   return { error: null };
 }
 
+export async function getWeekAppointments(orgId: string, weekStartDate: string) {
+  const supabase = await createClient();
+
+  const startDate = new Date(weekStartDate + "T12:00:00");
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 6);
+  const endDateStr = endDate.toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(
+      `
+      *,
+      client:clients!client_id (id, first_name, last_name, phone),
+      pet:pets!pet_id (id, name, species, breed),
+      vet:organization_members!vet_id (id, first_name, last_name, specialty),
+      service:services!service_id (id, name, duration_minutes, price)
+    `
+    )
+    .eq("org_id", orgId)
+    .gte("date", weekStartDate)
+    .lte("date", endDateStr)
+    .order("start_time", { ascending: true });
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  return { data: data as unknown as AppointmentWithRelations[], error: null };
+}
+
+export async function checkConflicts(
+  orgId: string,
+  data: {
+    vet_id: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    exclude_id?: string;
+  }
+) {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("appointments")
+    .select(
+      `
+      *,
+      client:clients!client_id (id, first_name, last_name, phone),
+      pet:pets!pet_id (id, name, species, breed),
+      vet:organization_members!vet_id (id, first_name, last_name, specialty),
+      service:services!service_id (id, name, duration_minutes, price)
+    `
+    )
+    .eq("org_id", orgId)
+    .eq("vet_id", data.vet_id)
+    .eq("date", data.date)
+    .lt("start_time", data.end_time)
+    .gt("end_time", data.start_time)
+    .not("status", "in", '("cancelled","no_show")');
+
+  if (data.exclude_id) {
+    query = query.neq("id", data.exclude_id);
+  }
+
+  const { data: conflicts, error } = await query;
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  return { data: conflicts as unknown as AppointmentWithRelations[], error: null };
+}
+
+export async function getVetDayAppointments(orgId: string, vetId: string, date: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(
+      `
+      id, start_time, end_time, status,
+      pet:pets!pet_id (id, name)
+    `
+    )
+    .eq("org_id", orgId)
+    .eq("vet_id", vetId)
+    .eq("date", date)
+    .not("status", "in", '("cancelled","no_show")')
+    .order("start_time", { ascending: true });
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  return { data, error: null };
+}
+
 export async function getVets(orgId: string) {
   const supabase = await createClient();
 

@@ -45,7 +45,7 @@ export default async function VaccinationsPage({
         >
           <ArrowLeft className="size-4" />
         </Button>
-        <h1 className="text-lg font-semibold">Carnet de vacunacion</h1>
+        <h1 className="text-lg font-semibold">Carnet de vacunaci\u00f3n</h1>
       </div>
 
       <div className="flex items-center gap-4 rounded-lg border p-4">
@@ -68,7 +68,7 @@ export default async function VaccinationsPage({
         <div>
           <h2 className="font-medium">Vacunas registradas</h2>
           <p className="text-sm text-muted-foreground">
-            Historial completo de vacunacion
+            Historial completo de vacunaci\u00f3n
           </p>
         </div>
         <Button render={<Link href={`${basePath}/new`} />}>

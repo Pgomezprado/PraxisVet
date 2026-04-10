@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PawPrint, Pencil, Syringe, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ function calculateAge(birthdate: string | null): string | null {
   if (totalMonths < 1) return "Menos de 1 mes";
   if (totalMonths < 12) return `${totalMonths} ${totalMonths === 1 ? "mes" : "meses"}`;
   const y = Math.floor(totalMonths / 12);
-  return `${y} ${y === 1 ? "anio" : "anios"}`;
+  return `${y} ${y === 1 ? "a\u00f1o" : "a\u00f1os"}`;
 }
 
 export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
@@ -81,9 +82,7 @@ export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
         <Button
           variant="outline"
           size="xs"
-          onClick={() => {
-            window.location.href = `/${clinicSlug}/clients/${clientId}/pets/${pet.id}/records`;
-          }}
+          render={<Link href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/records`} />}
         >
           <ClipboardList className="size-3" data-icon="inline-start" />
           Historial
@@ -91,9 +90,7 @@ export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
         <Button
           variant="outline"
           size="xs"
-          onClick={() => {
-            window.location.href = `/${clinicSlug}/clients/${clientId}/pets/${pet.id}/vaccinations`;
-          }}
+          render={<Link href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/vaccinations`} />}
         >
           <Syringe className="size-3" data-icon="inline-start" />
           Vacunas
@@ -101,16 +98,14 @@ export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
         <Button
           variant="outline"
           size="xs"
-          onClick={() => {
-            window.location.href = `/${clinicSlug}/clients/${clientId}/pets/${pet.id}/edit`;
-          }}
+          render={<Link href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/edit`} />}
         >
           <Pencil className="size-3" data-icon="inline-start" />
           Editar
         </Button>
         <DeleteButton
           label="Eliminar mascota"
-          description={`Se eliminara a ${pet.name} y todos sus registros asociados. Esta accion no se puede deshacer.`}
+          description={`Se eliminar\u00e1 a ${pet.name} y todos sus registros asociados. Esta acci\u00f3n no se puede deshacer.`}
           onDelete={() => deletePet(pet.id, clientId, clinicSlug)}
         />
       </div>

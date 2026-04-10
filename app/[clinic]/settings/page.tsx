@@ -6,11 +6,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const sections = [
   {
     title: "Servicios",
-    description: "Gestiona el catalogo de servicios que ofrece tu clinica.",
+    description: "Gestiona el cat\u00e1logo de servicios que ofrece tu cl\u00ednica.",
     href: "services",
     icon: Stethoscope,
   },
@@ -22,8 +23,8 @@ const sections = [
     disabled: true,
   },
   {
-    title: "Clinica",
-    description: "Informacion general, horarios y datos de contacto.",
+    title: "Cl\u00ednica",
+    description: "Informaci\u00f3n general, horarios y datos de contacto.",
     href: "clinic",
     icon: Building2,
   },
@@ -39,9 +40,9 @@ export default async function SettingsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuracion</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Configuraci\u00f3n</h1>
         <p className="text-muted-foreground">
-          Administra la configuracion de tu clinica.
+          Administra la configuraci\u00f3n de tu cl\u00ednica.
         </p>
       </div>
 
@@ -62,7 +63,14 @@ export default async function SettingsPage({
                     <section.icon className="size-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">{section.title}</CardTitle>
+                    <CardTitle className="text-base">
+                      {section.title}
+                      {section.disabled && (
+                        <Badge variant="secondary" className="ml-2 text-[10px]">
+                          Pr\u00f3ximamente
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <CardDescription className="text-sm">
                       {section.description}
                     </CardDescription>

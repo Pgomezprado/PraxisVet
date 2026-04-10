@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PraxisVet — Gestion de Clinicas Veterinarias",
+  title: "PraxisVet \u2014 Gesti\u00f3n de Cl\u00ednicas Veterinarias",
   description:
-    "Plataforma SaaS para gestionar tu clinica veterinaria: citas, historial clinico, facturacion e inventario en un solo lugar.",
+    "Plataforma SaaS para gestionar tu cl\u00ednica veterinaria: citas, historial cl\u00ednico, facturaci\u00f3n e inventario en un solo lugar.",
 };
 
 export default function RootLayout({

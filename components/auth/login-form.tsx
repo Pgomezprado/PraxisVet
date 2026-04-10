@@ -42,20 +42,32 @@ export function LoginForm() {
     });
 
     if (error) {
-      setError("Email o contrasena incorrectos");
+      setError("Email o contrase\u00f1a incorrectos");
       setLoading(false);
       return;
     }
 
-    router.push("/onboarding");
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organizations ( slug )")
+      .limit(1)
+      .single();
+
+    const org = membership?.organizations as unknown as { slug: string } | null;
+
+    if (org?.slug) {
+      router.push(`/${org.slug}/dashboard`);
+    } else {
+      router.push("/onboarding");
+    }
   }
 
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Iniciar sesion</CardTitle>
+        <CardTitle className="text-2xl">Iniciar sesi\u00f3n</CardTitle>
         <CardDescription>
-          Ingresa tus credenciales para acceder a tu clinica
+          Ingresa tus credenciales para acceder a tu cl\u00ednica
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -81,12 +93,12 @@ export function LoginForm() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Contrasena</Label>
+              <Label htmlFor="password">Contrase\u00f1a</Label>
               <Link
                 href="/auth/forgot-password"
                 className="text-sm text-muted-foreground hover:text-foreground hover:underline"
               >
-                ¿Olvidaste tu contrasena?
+                \u00bfOlvidaste tu contrase\u00f1a?
               </Link>
             </div>
             <Input
@@ -103,7 +115,7 @@ export function LoginForm() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Ingresando..." : "Iniciar sesion"}
+            {loading ? "Ingresando..." : "Iniciar sesi\u00f3n"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

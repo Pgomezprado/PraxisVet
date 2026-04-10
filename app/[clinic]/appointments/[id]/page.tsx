@@ -96,11 +96,11 @@ export default async function AppointmentDetailPage({
             <div className="flex items-center gap-3">
               <ClipboardList className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Registro clinico</p>
+                <p className="text-sm font-medium">Registro cl\u00ednico</p>
                 <p className="text-xs text-muted-foreground">
                   {linkedRecord
-                    ? "Este registro esta vinculado a esta cita."
-                    : "Registra los hallazgos clinicos de esta consulta."}
+                    ? "Este registro est\u00e1 vinculado a esta cita."
+                    : "Registra los hallazgos cl\u00ednicos de esta consulta."}
                 </p>
               </div>
             </div>
@@ -133,7 +133,7 @@ export default async function AppointmentDetailPage({
             <div className="flex items-center gap-3">
               <Receipt className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Facturacion</p>
+                <p className="text-sm font-medium">Facturaci\u00f3n</p>
                 <p className="text-xs text-muted-foreground">
                   Genera una factura a partir de esta cita.
                 </p>

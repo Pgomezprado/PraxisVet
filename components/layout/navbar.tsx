@@ -9,7 +9,7 @@ import { Menu, X, PawPrint } from "lucide-react";
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
   { href: "#precios", label: "Precios" },
-  { href: "#como-funciona", label: "Como funciona" },
+  { href: "#como-funciona", label: "C\u00f3mo funciona" },
 ];
 
 export function Navbar() {
@@ -45,7 +45,7 @@ export function Navbar() {
             href="/auth/login"
             className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
           >
-            Iniciar sesion
+            Iniciar sesi\u00f3n
           </Link>
           <Link
             href="/auth/register"
@@ -87,7 +87,7 @@ export function Navbar() {
                 "justify-center"
               )}
             >
-              Iniciar sesion
+              Iniciar sesi\u00f3n
             </Link>
             <Link
               href="/auth/register"

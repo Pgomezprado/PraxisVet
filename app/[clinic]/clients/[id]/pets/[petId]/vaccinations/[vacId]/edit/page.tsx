@@ -23,7 +23,7 @@ export default async function EditVaccinationPage({
   if (error || !vaccination) {
     return (
       <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-        Registro de vacunacion no encontrado.
+        Registro de vacunaci\u00f3n no encontrado.
       </div>
     );
   }

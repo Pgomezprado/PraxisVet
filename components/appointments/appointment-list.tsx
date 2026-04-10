@@ -14,7 +14,7 @@ const statusOptions: { value: string; label: string }[] = [
   { value: "in_progress", label: "En curso" },
   { value: "completed", label: "Completada" },
   { value: "cancelled", label: "Cancelada" },
-  { value: "no_show", label: "No asistio" },
+  { value: "no_show", label: "No asisti\u00f3" },
 ];
 
 export function AppointmentList({

@@ -30,10 +30,10 @@ function timeAgo(dateStr: string): string {
   if (diffMins < 1) return "justo ahora";
   if (diffMins < 60) return `hace ${diffMins} min`;
   if (diffHours < 24) return `hace ${diffHours}h`;
-  if (diffDays === 1) return "hace 1 dia";
-  if (diffDays < 30) return `hace ${diffDays} dias`;
+  if (diffDays === 1) return "hace 1 d\u00eda";
+  if (diffDays < 30) return `hace ${diffDays} d\u00edas`;
   if (diffDays < 365) return `hace ${Math.floor(diffDays / 30)} meses`;
-  return `hace ${Math.floor(diffDays / 365)} anos`;
+  return `hace ${Math.floor(diffDays / 365)} a\u00f1os`;
 }
 
 function formatTime(time: string): string {
@@ -53,7 +53,7 @@ const statusConfig: Record<
   in_progress: { label: "En curso", variant: "secondary" },
   completed: { label: "Completada", variant: "default" },
   cancelled: { label: "Cancelada", variant: "destructive" },
-  no_show: { label: "No asistio", variant: "destructive" },
+  no_show: { label: "No asisti\u00f3", variant: "destructive" },
 };
 
 export default async function DashboardPage({
@@ -73,7 +73,7 @@ export default async function DashboardPage({
   if (!org) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">No se encontro la organizacion.</p>
+        <p className="text-muted-foreground">No se encontr\u00f3 la organizaci\u00f3n.</p>
       </div>
     );
   }
@@ -88,6 +88,7 @@ export default async function DashboardPage({
     { count: petsCount },
     { data: todayAppointments },
     { data: recentClients },
+    { count: servicesCount },
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -133,6 +134,10 @@ export default async function DashboardPage({
       .eq("org_id", org.id)
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("services")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", org.id),
   ]);
 
   const monthlyRevenue =
@@ -175,7 +180,7 @@ export default async function DashboardPage({
           Bienvenido a {org.name}
         </h1>
         <p className="text-muted-foreground">
-          Aqui tienes un resumen de tu clinica.
+          Aqu\u00ed tienes un resumen de tu cl\u00ednica.
         </p>
       </div>
 
@@ -284,14 +289,14 @@ export default async function DashboardPage({
               <UserPlus className="size-4 text-muted-foreground" />
               <CardTitle>Actividad reciente</CardTitle>
             </div>
-            <CardDescription>Ultimos clientes registrados</CardDescription>
+            <CardDescription>\u00daltimos clientes registrados</CardDescription>
           </CardHeader>
           <CardContent>
             {!recentClients || recentClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Users className="mb-3 size-10 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">
-                  Aun no hay clientes registrados.
+                  A\u00fan no hay clientes registrados.
                 </p>
                 <Link
                   href={`/${clinic}/clients`}
@@ -323,55 +328,56 @@ export default async function DashboardPage({
         </Card>
       </div>
 
-      {/* Proximos pasos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Proximos pasos</CardTitle>
-          <CardDescription>
-            Configura tu clinica para aprovechar todas las funcionalidades.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-3">
-            <li>
-              <Link
-                href={`/${clinic}/settings/services`}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowRight className="size-3.5" />
-                Configura los servicios que ofrece tu clinica
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${clinic}/settings/staff`}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowRight className="size-3.5" />
-                Invita a tu equipo (veterinarios y recepcionistas)
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${clinic}/clients`}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowRight className="size-3.5" />
-                Registra a tu primer cliente y su mascota
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${clinic}/appointments`}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowRight className="size-3.5" />
-                Agenda tu primera cita
-              </Link>
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
+      {((servicesCount ?? 0) === 0 || (clientsCount ?? 0) === 0 || (appointmentsToday ?? 0) === 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pr\u00f3ximos pasos</CardTitle>
+            <CardDescription>
+              Configura tu cl\u00ednica para aprovechar todas las funcionalidades.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  href={`/${clinic}/settings/services`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowRight className="size-3.5" />
+                  Configura los servicios que ofrece tu cl\u00ednica
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={`/${clinic}/settings`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowRight className="size-3.5" />
+                  Configura tu equipo y ajustes generales
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={`/${clinic}/clients`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowRight className="size-3.5" />
+                  Registra a tu primer cliente y su mascota
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={`/${clinic}/appointments`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowRight className="size-3.5" />
+                  Agenda tu primera cita
+                </Link>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

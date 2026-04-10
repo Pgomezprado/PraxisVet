@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { AutoTextarea } from "@/components/ui/auto-textarea";
+import { CollapsibleSection } from "@/components/ui/collapsible";
 import {
   Card,
   CardContent,
@@ -26,6 +26,16 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { RECORD_TEMPLATES, type RecordTemplate } from "./record-templates";
 
 interface Vet {
   id: string;
@@ -69,12 +79,18 @@ export function RecordForm({
   const { organization, clinicSlug } = useClinic();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<RecordTemplate | null>(
+    null
+  );
 
   const isEditing = !!record;
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<ClinicalRecordInput>({
     resolver: zodResolver(clinicalRecordSchema),
@@ -94,6 +110,58 @@ export function RecordForm({
       heart_rate: record?.heart_rate ?? ("" as unknown as undefined),
     },
   });
+
+  const watchedValues = watch([
+    "reason",
+    "anamnesis",
+    "symptoms",
+    "diagnosis",
+    "treatment",
+    "observations",
+    "weight",
+    "temperature",
+    "heart_rate",
+  ]);
+
+  const [
+    reason,
+    anamnesis,
+    symptoms,
+    diagnosis,
+    treatment,
+    observations,
+    weight,
+    temperature,
+    heartRate,
+  ] = watchedValues;
+
+  const hasVitals = !!(weight || temperature || heartRate);
+  const hasExam = !!(anamnesis || symptoms);
+  const hasDiagTreatment = !!(diagnosis || treatment);
+  const hasObservations = !!observations;
+
+  const vitalsPreview = [
+    weight ? `${weight} kg` : null,
+    temperature ? `${temperature} °C` : null,
+    heartRate ? `${heartRate} bpm` : null,
+  ]
+    .filter(Boolean)
+    .join(" / ");
+
+  const applyTemplate = useCallback(
+    (template: RecordTemplate) => {
+      const current = getValues();
+      if (!current.reason) setValue("reason", template.reason);
+      if (!current.symptoms) setValue("symptoms", template.symptoms);
+      if (!current.diagnosis) setValue("diagnosis", template.diagnosis);
+      if (!current.treatment) setValue("treatment", template.treatment);
+      if (template.observations && !current.observations) {
+        setValue("observations", template.observations);
+      }
+      setPendingTemplate(null);
+    },
+    [getValues, setValue]
+  );
 
   async function onSubmit(data: ClinicalRecordInput) {
     setLoading(true);
@@ -115,205 +183,292 @@ export function RecordForm({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          {isEditing ? "Editar registro clinico" : "Nuevo registro clinico"}
-        </CardTitle>
-        <CardDescription>
-          {isEditing
-            ? "Modifica la informacion del registro clinico."
-            : "Registra una nueva consulta clinica para esta mascota."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {isEditing ? "Editar registro cl\u00ednico" : "Nuevo registro cl\u00ednico"}
+          </CardTitle>
+          <CardDescription>
+            {isEditing
+              ? "Modifica la informaci\u00f3n del registro cl\u00ednico."
+              : "Registra una nueva consulta cl\u00ednica para esta mascota."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
 
-          <input type="hidden" {...register("pet_id")} />
-          <input type="hidden" {...register("appointment_id")} />
+            <input type="hidden" {...register("pet_id")} />
+            <input type="hidden" {...register("appointment_id")} />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Plantillas rapidas */}
             <div className="space-y-2">
-              <Label htmlFor="date">Fecha</Label>
-              <Input id="date" type="date" {...register("date")} />
-              {errors.date && (
-                <p className="text-sm text-destructive">
-                  {errors.date.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="vet_id">Veterinario</Label>
-              <Select id="vet_id" {...register("vet_id")}>
-                <option value="">Seleccionar veterinario</option>
-                {vets.map((vet) => (
-                  <option key={vet.id} value={vet.id}>
-                    {[vet.first_name, vet.last_name].filter(Boolean).join(" ")}
-                    {vet.specialty ? ` - ${vet.specialty}` : ""}
-                  </option>
+              <Label className="text-xs text-muted-foreground">
+                Plantilla r\u00e1pida
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {RECORD_TEMPLATES.map((template) => (
+                  <button
+                    key={template.name}
+                    type="button"
+                    onClick={() => setPendingTemplate(template)}
+                    className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                  >
+                    {template.name}
+                  </button>
                 ))}
-              </Select>
-              {errors.vet_id && (
-                <p className="text-sm text-destructive">
-                  {errors.vet_id.message}
-                </p>
-              )}
+              </div>
             </div>
-          </div>
 
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Motivo de consulta</h3>
-            <div className="space-y-2">
-              <Label htmlFor="reason">Motivo</Label>
-              <Input
-                id="reason"
-                placeholder="ej: Control general, vacunacion, malestar digestivo..."
-                {...register("reason")}
-              />
-              {errors.reason && (
-                <p className="text-sm text-destructive">
-                  {errors.reason.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="anamnesis">Anamnesis (opcional)</Label>
-              <Textarea
-                id="anamnesis"
-                placeholder="Historia referida por el propietario..."
-                rows={3}
-                {...register("anamnesis")}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Examen clinico</h3>
-            <div className="space-y-2">
-              <Label htmlFor="symptoms">Sintomas (opcional)</Label>
-              <Textarea
-                id="symptoms"
-                placeholder="Hallazgos del examen fisico..."
-                rows={3}
-                {...register("symptoms")}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            {/* Fecha y veterinario */}
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="weight">Peso (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="ej: 12.5"
-                  {...register("weight")}
-                />
-                {errors.weight && (
+                <Label htmlFor="date">Fecha</Label>
+                <Input id="date" type="date" {...register("date")} />
+                {errors.date && (
                   <p className="text-sm text-destructive">
-                    {errors.weight.message}
+                    {errors.date.message}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="temperature">Temperatura (°C)</Label>
-                <Input
-                  id="temperature"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  placeholder="ej: 38.5"
-                  {...register("temperature")}
-                />
-                {errors.temperature && (
+                <Label htmlFor="vet_id">Veterinario</Label>
+                <Select id="vet_id" {...register("vet_id")}>
+                  <option value="">Seleccionar veterinario</option>
+                  {vets.map((vet) => (
+                    <option key={vet.id} value={vet.id}>
+                      {[vet.first_name, vet.last_name]
+                        .filter(Boolean)
+                        .join(" ")}
+                      {vet.specialty ? ` - ${vet.specialty}` : ""}
+                    </option>
+                  ))}
+                </Select>
+                {errors.vet_id && (
                   <p className="text-sm text-destructive">
-                    {errors.temperature.message}
+                    {errors.vet_id.message}
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Seccion 1: Motivo de consulta - siempre abierta */}
+            <CollapsibleSection title="Motivo de consulta" alwaysOpen hasContent={!!reason} preview={reason || ""}>
               <div className="space-y-2">
-                <Label htmlFor="heart_rate">Frec. cardiaca (bpm)</Label>
-                <Input
-                  id="heart_rate"
-                  type="number"
-                  min="0"
-                  placeholder="ej: 120"
-                  {...register("heart_rate")}
+                <Label htmlFor="reason">Motivo</Label>
+                <AutoTextarea
+                  id="reason"
+                  placeholder="ej: Control general, vacunaci\u00f3n, malestar digestivo..."
+                  {...register("reason")}
                 />
-                {errors.heart_rate && (
+                {errors.reason && (
                   <p className="text-sm text-destructive">
-                    {errors.heart_rate.message}
+                    {errors.reason.message}
                   </p>
                 )}
               </div>
-            </div>
-          </div>
+            </CollapsibleSection>
 
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Diagnostico y tratamiento</h3>
-            <div className="space-y-2">
-              <Label htmlFor="diagnosis">Diagnostico (opcional)</Label>
-              <Textarea
-                id="diagnosis"
-                placeholder="Diagnostico presuntivo o definitivo..."
-                rows={3}
-                {...register("diagnosis")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="treatment">Tratamiento (opcional)</Label>
-              <Textarea
-                id="treatment"
-                placeholder="Medicamentos, procedimientos, indicaciones..."
-                rows={3}
-                {...register("treatment")}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <Label htmlFor="observations">Observaciones (opcional)</Label>
-            <Textarea
-              id="observations"
-              placeholder="Notas adicionales, seguimiento recomendado..."
-              rows={3}
-              {...register("observations")}
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <Button type="submit" disabled={loading}>
-              {loading
-                ? isEditing
-                  ? "Guardando..."
-                  : "Creando..."
-                : isEditing
-                  ? "Guardar cambios"
-                  : "Crear registro"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
+            {/* Secci\u00f3n 2: Signos vitales - expandida por default */}
+            <CollapsibleSection
+              title="Signos vitales"
+              defaultOpen
+              hasContent={hasVitals}
+              preview={vitalsPreview}
             >
-              Cancelar
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Peso (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="ej: 12.5"
+                    {...register("weight")}
+                  />
+                  {errors.weight && (
+                    <p className="text-sm text-destructive">
+                      {errors.weight.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="temperature">Temperatura (°C)</Label>
+                  <Input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder="ej: 38.5"
+                    {...register("temperature")}
+                  />
+                  {errors.temperature && (
+                    <p className="text-sm text-destructive">
+                      {errors.temperature.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="heart_rate">Frec. cardiaca (bpm)</Label>
+                  <Input
+                    id="heart_rate"
+                    type="number"
+                    min="0"
+                    placeholder="ej: 120"
+                    {...register("heart_rate")}
+                  />
+                  {errors.heart_rate && (
+                    <p className="text-sm text-destructive">
+                      {errors.heart_rate.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            {/* Secci\u00f3n 3: Examen cl\u00ednico - colapsada por default */}
+            <CollapsibleSection
+              title="Examen cl\u00ednico"
+              hasContent={hasExam}
+              preview={
+                anamnesis
+                  ? anamnesis.slice(0, 60)
+                  : symptoms
+                    ? symptoms.slice(0, 60)
+                    : ""
+              }
+            >
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="anamnesis">Anamnesis</Label>
+                  <AutoTextarea
+                    id="anamnesis"
+                    placeholder="Historia referida por el propietario..."
+                    {...register("anamnesis")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="symptoms">S\u00edntomas / Hallazgos</Label>
+                  <AutoTextarea
+                    id="symptoms"
+                    placeholder="Hallazgos del examen f\u00edsico..."
+                    {...register("symptoms")}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            {/* Secci\u00f3n 4: Diagn\u00f3stico y tratamiento - expandida por default */}
+            <CollapsibleSection
+              title="Diagn\u00f3stico y tratamiento"
+              defaultOpen
+              hasContent={hasDiagTreatment}
+              preview={
+                diagnosis
+                  ? diagnosis.slice(0, 60)
+                  : treatment
+                    ? treatment.slice(0, 60)
+                    : ""
+              }
+            >
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="diagnosis">Diagn\u00f3stico</Label>
+                  <AutoTextarea
+                    id="diagnosis"
+                    placeholder="Diagn\u00f3stico presuntivo o definitivo..."
+                    {...register("diagnosis")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="treatment">Tratamiento</Label>
+                  <AutoTextarea
+                    id="treatment"
+                    placeholder="Medicamentos, procedimientos, indicaciones..."
+                    {...register("treatment")}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            {/* Seccion 5: Observaciones - colapsada por default */}
+            <CollapsibleSection
+              title="Observaciones"
+              hasContent={hasObservations}
+              preview={observations ? observations.slice(0, 60) : ""}
+            >
+              <div className="space-y-2">
+                <Label htmlFor="observations">Observaciones</Label>
+                <AutoTextarea
+                  id="observations"
+                  placeholder="Notas adicionales, seguimiento recomendado..."
+                  {...register("observations")}
+                />
+              </div>
+            </CollapsibleSection>
+
+            <div className="flex gap-3 pt-2">
+              <Button type="submit" disabled={loading}>
+                {loading
+                  ? isEditing
+                    ? "Guardando..."
+                    : "Creando..."
+                  : isEditing
+                    ? "Guardar cambios"
+                    : "Crear registro"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                router.push(
+                  `/${clinicSlug}/clients/${clientId}/pets/${petId}/records`
+                )
+              }
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Dialog de confirmaci\u00f3n de plantilla */}
+      <Dialog
+        open={!!pendingTemplate}
+        onOpenChange={(open) => {
+          if (!open) setPendingTemplate(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aplicar plantilla</DialogTitle>
+            <DialogDescription>
+              Se aplicar\u00e1 la plantilla &quot;{pendingTemplate?.name}&quot;. Solo
+              se rellenar\u00e1n los campos que est\u00e9n vac\u00edos, no se sobreescribir\u00e1 lo
+              que ya hayas escrito.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose
+              render={
+                <Button variant="outline">
+                  Cancelar
+                </Button>
+              }
+            />
+            <Button onClick={() => pendingTemplate && applyTemplate(pendingTemplate)}>
+              Aplicar
             </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -191,7 +191,9 @@ export function PetForm({ clientId, pet }: PetFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() =>
+                router.push(`/${clinicSlug}/clients/${clientId}`)
+              }
             >
               Cancelar
             </Button>

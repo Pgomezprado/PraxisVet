@@ -1,18 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { appointmentSchema, type AppointmentInput } from "@/lib/validations/appointments";
-import { createAppointment, updateAppointment } from "@/app/[clinic]/appointments/actions";
+import {
+  createAppointment,
+  updateAppointment,
+  checkConflicts,
+  getVetDayAppointments,
+} from "@/app/[clinic]/appointments/actions";
+import type { AppointmentWithRelations } from "@/app/[clinic]/appointments/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Clock, Loader2 } from "lucide-react";
 
 type ClientWithPets = {
   id: string;
@@ -37,6 +43,14 @@ type ServiceOption = {
   category: string | null;
 };
 
+type VetDayAppointment = {
+  id: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  pet: { id: string; name: string };
+};
+
 interface AppointmentFormProps {
   orgId: string;
   clinicSlug: string;
@@ -52,6 +66,10 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-destructive mt-1">{message}</p>;
 }
 
+function formatTime(time: string): string {
+  return time.slice(0, 5);
+}
+
 export function AppointmentForm({
   orgId,
   clinicSlug,
@@ -63,6 +81,11 @@ export function AppointmentForm({
 }: AppointmentFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [conflicts, setConflicts] = useState<AppointmentWithRelations[]>([]);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
+  const [vetDayAppointments, setVetDayAppointments] = useState<VetDayAppointment[]>([]);
+  const [loadingVetDay, setLoadingVetDay] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEditing = !!appointmentId;
 
   const {
@@ -90,6 +113,84 @@ export function AppointmentForm({
   const selectedClientId = watch("client_id");
   const selectedClient = clients.find((c) => c.id === selectedClientId);
   const availablePets = selectedClient?.pets ?? [];
+
+  const watchedVetId = watch("vet_id");
+  const watchedDate = watch("date");
+  const watchedStartTime = watch("start_time");
+  const watchedEndTime = watch("end_time");
+
+  const selectedVet = vets.find((v) => v.id === watchedVetId);
+  const vetDisplayName = selectedVet
+    ? [selectedVet.first_name, selectedVet.last_name].filter(Boolean).join(" ")
+    : "";
+
+  const doCheckConflicts = useCallback(async () => {
+    if (!watchedVetId || !watchedDate || !watchedStartTime || !watchedEndTime) {
+      setConflicts([]);
+      return;
+    }
+    if (watchedEndTime <= watchedStartTime) {
+      setConflicts([]);
+      return;
+    }
+
+    setCheckingConflicts(true);
+    const result = await checkConflicts(orgId, {
+      vet_id: watchedVetId,
+      date: watchedDate,
+      start_time: watchedStartTime,
+      end_time: watchedEndTime,
+      exclude_id: appointmentId,
+    });
+    setCheckingConflicts(false);
+
+    if (!result.error && result.data) {
+      setConflicts(result.data);
+    } else {
+      setConflicts([]);
+    }
+  }, [watchedVetId, watchedDate, watchedStartTime, watchedEndTime, orgId, appointmentId]);
+
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      doCheckConflicts();
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [doCheckConflicts]);
+
+  useEffect(() => {
+    if (!watchedVetId || !watchedDate) {
+      setVetDayAppointments([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingVetDay(true);
+
+    getVetDayAppointments(orgId, watchedVetId, watchedDate).then((result) => {
+      if (cancelled) return;
+      setLoadingVetDay(false);
+      if (!result.error && result.data) {
+        const mapped: VetDayAppointment[] = (result.data as unknown as VetDayAppointment[])
+          .filter((a) => !appointmentId || a.id !== appointmentId);
+        setVetDayAppointments(mapped);
+      } else {
+        setVetDayAppointments([]);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [watchedVetId, watchedDate, orgId, appointmentId]);
 
   async function onSubmit(data: AppointmentInput) {
     setServerError(null);
@@ -258,6 +359,61 @@ export function AppointmentForm({
             </div>
           </div>
 
+          {conflicts.length > 0 && (
+            <div className="rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 dark:border-yellow-700 dark:bg-yellow-950/30">
+              <div className="flex items-center gap-2 text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                <AlertTriangle className="size-4" />
+                Conflicto de horario detectado
+              </div>
+              <ul className="mt-2 space-y-1">
+                {conflicts.map((c) => (
+                  <li key={c.id} className="text-sm text-yellow-700 dark:text-yellow-400">
+                    {vetDisplayName} ya tiene una cita de {formatTime(c.start_time)} a{" "}
+                    {formatTime(c.end_time)} con {c.pet.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {checkingConflicts && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" />
+              Verificando disponibilidad...
+            </div>
+          )}
+
+          {watchedVetId && watchedDate && (
+            <div className="rounded-lg border px-4 py-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Clock className="size-4" />
+                Agenda de {vetDisplayName} el{" "}
+                {watchedDate}
+              </div>
+              {loadingVetDay ? (
+                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="size-3 animate-spin" />
+                  Cargando...
+                </div>
+              ) : vetDayAppointments.length === 0 ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Sin citas agendadas para este dia.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1">
+                  {vetDayAppointments.map((a) => (
+                    <li
+                      key={a.id}
+                      className="text-xs text-muted-foreground"
+                    >
+                      {formatTime(a.start_time)} - {formatTime(a.end_time)}: {a.pet.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="reason">Motivo de consulta</Label>
             <Textarea
@@ -286,7 +442,7 @@ export function AppointmentForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => router.push(`/${clinicSlug}/appointments`)}
               disabled={isSubmitting}
             >
               Cancelar

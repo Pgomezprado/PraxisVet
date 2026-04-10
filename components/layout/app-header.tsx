@@ -66,7 +66,7 @@ export function AppHeader() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 size-4" />
-            Cerrar sesion
+            Cerrar sesi\u00f3n
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

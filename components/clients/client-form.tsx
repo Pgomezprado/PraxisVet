@@ -75,7 +75,7 @@ export function ClientForm({ client }: ClientFormProps) {
         <CardDescription>
           {isEditing
             ? "Modifica los datos del cliente."
-            : "Registra un nuevo cliente en tu clinica."}
+            : "Registra un nuevo cliente en tu cl\u00ednica."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -131,7 +131,7 @@ export function ClientForm({ client }: ClientFormProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefono (opcional)</Label>
+              <Label htmlFor="phone">Tel\u00e9fono (opcional)</Label>
               <Input
                 id="phone"
                 placeholder="ej: +52 55 1234 5678"
@@ -141,7 +141,7 @@ export function ClientForm({ client }: ClientFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address">Direccion (opcional)</Label>
+            <Label htmlFor="address">Direcci\u00f3n (opcional)</Label>
             <Input
               id="address"
               placeholder="ej: Av. Principal 123, Col. Centro"
@@ -153,7 +153,7 @@ export function ClientForm({ client }: ClientFormProps) {
             <Label htmlFor="notes">Notas (opcional)</Label>
             <Textarea
               id="notes"
-              placeholder="Informacion adicional del cliente..."
+              placeholder="Informaci\u00f3n adicional del cliente..."
               {...register("notes")}
             />
           </div>
@@ -171,7 +171,7 @@ export function ClientForm({ client }: ClientFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => router.push(`/${clinicSlug}/clients`)}
             >
               Cancelar
             </Button>

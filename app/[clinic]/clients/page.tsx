@@ -2,12 +2,19 @@ import { createClient } from "@/lib/supabase/server";
 import { getClients } from "./actions";
 import { ClientsTable } from "@/components/clients/clients-table";
 
+const PAGE_SIZE = 25;
+
 export default async function ClientsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clinic: string }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
   const { clinic } = await params;
+  const { page: pageParam, search } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+
   const supabase = await createClient();
 
   const { data: org } = await supabase
@@ -22,7 +29,30 @@ export default async function ClientsPage({
     );
   }
 
-  const result = await getClients(org.id);
+  const result = await getClients(org.id, {
+    page,
+    pageSize: PAGE_SIZE,
+    search,
+  });
+
+  if (!result.success) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
+          <p className="text-muted-foreground">
+            Gestiona los clientes y sus mascotas.
+          </p>
+        </div>
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          Error al cargar clientes: {result.error}
+        </div>
+      </div>
+    );
+  }
+
+  const { data: clients, total } = result.data;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
@@ -33,13 +63,15 @@ export default async function ClientsPage({
         </p>
       </div>
 
-      {result.success ? (
-        <ClientsTable clients={result.data} clinicSlug={clinic} />
-      ) : (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          Error al cargar clientes: {result.error}
-        </div>
-      )}
+      <ClientsTable
+        clients={clients}
+        clinicSlug={clinic}
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={total}
+        pageSize={PAGE_SIZE}
+        search={search}
+      />
     </div>
   );
 }

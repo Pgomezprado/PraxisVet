@@ -118,7 +118,7 @@ export function ProductForm({ product }: ProductFormProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria (opcional)</Label>
+              <Label htmlFor="category">Categor\u00eda (opcional)</Label>
               <Select id="category" {...register("category")}>
                 <option value="">Seleccionar...</option>
                 {CATEGORY_OPTIONS.map((opt) => (
@@ -141,10 +141,10 @@ export function ProductForm({ product }: ProductFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descripcion (opcional)</Label>
+            <Label htmlFor="description">Descripci\u00f3n (opcional)</Label>
             <Textarea
               id="description"
-              placeholder="Descripcion del producto..."
+              placeholder="Descripci\u00f3n del producto..."
               {...register("description")}
             />
           </div>
@@ -183,7 +183,7 @@ export function ProductForm({ product }: ProductFormProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="min_stock">Stock minimo</Label>
+              <Label htmlFor="min_stock">Stock m\u00ednimo</Label>
               <Input
                 id="min_stock"
                 type="number"
@@ -212,7 +212,7 @@ export function ProductForm({ product }: ProductFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => router.push(`/${clinicSlug}/inventory`)}
             >
               Cancelar
             </Button>

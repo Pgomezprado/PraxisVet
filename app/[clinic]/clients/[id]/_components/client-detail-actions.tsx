@@ -15,7 +15,7 @@ export function ClientDetailActions({
   return (
     <DeleteButton
       label="Eliminar cliente"
-      description="Esta accion eliminara al cliente y todos sus datos asociados. Esta accion no se puede deshacer."
+      description="Esta acci\u00f3n eliminar\u00e1 al cliente y todos sus datos asociados. Esta acci\u00f3n no se puede deshacer."
       onDelete={() => deleteClient(clientId, clinicSlug)}
       redirectTo={`/${clinicSlug}/clients`}
     />

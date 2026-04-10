@@ -54,7 +54,7 @@ const navItems: NavItem[] = [
     roles: ["admin", "vet", "receptionist"],
   },
   {
-    title: "Facturacion",
+    title: "Facturaci\u00f3n",
     href: "/billing",
     icon: Receipt,
     roles: ["admin", "receptionist"],
@@ -66,7 +66,7 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "Configuracion",
+    title: "Configuraci\u00f3n",
     href: "/settings",
     icon: Settings,
     roles: ["admin"],
@@ -101,7 +101,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Men\u00fa</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredItems.map((item) => {

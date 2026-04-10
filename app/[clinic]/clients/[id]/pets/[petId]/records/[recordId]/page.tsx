@@ -53,8 +53,8 @@ export default async function RecordDetailPage({
   const sections = [
     { title: "Motivo de consulta", content: record.reason },
     { title: "Anamnesis", content: record.anamnesis },
-    { title: "Sintomas / Examen fisico", content: record.symptoms },
-    { title: "Diagnostico", content: record.diagnosis },
+    { title: "S\u00edntomas / Examen f\u00edsico", content: record.symptoms },
+    { title: "Diagn\u00f3stico", content: record.diagnosis },
     { title: "Tratamiento", content: record.treatment },
     { title: "Observaciones", content: record.observations },
   ].filter((s) => s.content);
@@ -69,7 +69,7 @@ export default async function RecordDetailPage({
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            Registro clinico
+            Registro cl\u00ednico
           </h1>
           <p className="text-sm text-muted-foreground capitalize">{dateLabel}</p>
         </div>

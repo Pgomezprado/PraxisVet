@@ -33,17 +33,17 @@ const features = [
     icon: CalendarDays,
     title: "Agenda de Citas",
     description:
-      "Calendario inteligente con vista semanal y diaria. Asigna veterinarios, servicios y envia recordatorios automaticos.",
+      "Calendario inteligente con vista semanal y diaria. Asigna veterinarios, servicios y env\u00eda recordatorios autom\u00e1ticos.",
   },
   {
     icon: ClipboardList,
-    title: "Historial Clinico",
+    title: "Historial Cl\u00ednico",
     description:
-      "Expedientes digitales completos: signos vitales, diagnosticos, vacunas, recetas y adjuntos en un solo lugar.",
+      "Expedientes digitales completos: signos vitales, diagn\u00f3sticos, vacunas, recetas y adjuntos en un solo lugar.",
   },
   {
     icon: Receipt,
-    title: "Facturacion",
+    title: "Facturaci\u00f3n",
     description:
       "Genera facturas, registra pagos parciales o totales y exporta todo a PDF. Dashboard de ingresos en tiempo real.",
   },
@@ -51,19 +51,19 @@ const features = [
     icon: Package,
     title: "Inventario",
     description:
-      "Control de stock con alertas automaticas. Registra entradas, salidas y vincula productos a recetas clinicas.",
+      "Control de stock con alertas autom\u00e1ticas. Registra entradas, salidas y vincula productos a recetas cl\u00ednicas.",
   },
   {
     icon: Building2,
-    title: "Multi-Clinica",
+    title: "Multi-Cl\u00ednica",
     description:
-      "Gestion centralizada de varias sucursales. Cada clinica opera de forma aislada con sus propios datos y equipo.",
+      "Gesti\u00f3n centralizada de varias sucursales. Cada cl\u00ednica opera de forma aislada con sus propios datos y equipo.",
   },
   {
     icon: ShieldCheck,
     title: "Seguridad Total",
     description:
-      "Datos protegidos con Row Level Security. Cada clinica accede unicamente a su informacion, garantizado a nivel de base de datos.",
+      "Datos protegidos con Row Level Security. Cada cl\u00ednica accede \u00fanicamente a su informaci\u00f3n, garantizado a nivel de base de datos.",
   },
 ];
 
@@ -75,14 +75,14 @@ const steps = [
   {
     icon: UserPlus,
     step: "01",
-    title: "Registrate",
+    title: "Reg\u00edstrate",
     description:
-      "Crea tu cuenta en segundos. Sin tarjeta de credito, sin compromisos.",
+      "Crea tu cuenta en segundos. Sin tarjeta de cr\u00e9dito, sin compromisos.",
   },
   {
     icon: Settings,
     step: "02",
-    title: "Configura tu clinica",
+    title: "Configura tu cl\u00ednica",
     description:
       "Agrega tu equipo, servicios, horarios y personaliza tu espacio de trabajo.",
   },
@@ -91,7 +91,7 @@ const steps = [
     step: "03",
     title: "Empieza a gestionar",
     description:
-      "Agenda citas, atiende pacientes y lleva el control de tu clinica desde el primer dia.",
+      "Agenda citas, atiende pacientes y lleva el control de tu cl\u00ednica desde el primer d\u00eda.",
   },
 ];
 
@@ -104,12 +104,12 @@ const plans = [
     name: "Gratis",
     price: "$0",
     period: "por siempre",
-    description: "Ideal para clinicas pequenas que estan empezando.",
+    description: "Ideal para cl\u00ednicas peque\u00f1as que est\u00e1n empezando.",
     features: [
       "Hasta 1 veterinario",
       "50 pacientes",
-      "Agenda de citas basica",
-      "Historial clinico",
+      "Agenda de citas b\u00e1sica",
+      "Historial cl\u00ednico",
     ],
     cta: "Comenzar gratis",
     popular: false,
@@ -118,14 +118,14 @@ const plans = [
     name: "Pro",
     price: "$29",
     period: "USD / mes",
-    description: "Para clinicas en crecimiento que necesitan mas poder.",
+    description: "Para cl\u00ednicas en crecimiento que necesitan m\u00e1s poder.",
     features: [
       "Hasta 5 veterinarios",
       "Pacientes ilimitados",
-      "Facturacion y cobros",
+      "Facturaci\u00f3n y cobros",
       "Inventario completo",
       "Recordatorios por email",
-      "Exportacion PDF",
+      "Exportaci\u00f3n PDF",
       "Soporte prioritario",
     ],
     cta: "Comenzar prueba gratis",
@@ -135,10 +135,10 @@ const plans = [
     name: "Enterprise",
     price: "$79",
     period: "USD / mes",
-    description: "Para redes de clinicas y hospitales veterinarios.",
+    description: "Para redes de cl\u00ednicas y hospitales veterinarios.",
     features: [
       "Veterinarios ilimitados",
-      "Multi-clinica",
+      "Multi-cl\u00ednica",
       "API personalizada",
       "Integraciones avanzadas",
       "Soporte dedicado 24/7",
@@ -178,12 +178,12 @@ export default function LandingPage() {
             </Badge>
 
             <h1 className="text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Gestiona tu clinica veterinaria{" "}
+              Gestiona tu cl\u00ednica veterinaria{" "}
               <span className="text-primary">sin complicaciones</span>
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Citas, historial clinico, facturacion e inventario en una sola
+              Citas, historial cl\u00ednico, facturaci\u00f3n e inventario en una sola
               plataforma. Diseñada para veterinarios que quieren enfocarse en lo
               que importa: el cuidado de sus pacientes.
             </p>
@@ -211,7 +211,7 @@ export default function LandingPage() {
             </div>
 
             <p className="mt-4 text-sm text-muted-foreground">
-              Sin tarjeta de credito &middot; Configuracion en 5 minutos
+              Sin tarjeta de cr\u00e9dito &middot; Configuraci\u00f3n en 5 minutos
             </p>
           </div>
 
@@ -239,11 +239,11 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Todo lo que necesitas para tu clinica
+              Todo lo que necesitas para tu cl\u00ednica
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Herramientas integradas que simplifican tu dia a dia y mejoran la
-              atencion de tus pacientes.
+              Herramientas integradas que simplifican tu d\u00eda a d\u00eda y mejoran la
+              atenci\u00f3n de tus pacientes.
             </p>
           </div>
 
@@ -280,7 +280,7 @@ export default function LandingPage() {
               Empieza en 3 simples pasos
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Desde el registro hasta tu primera cita en minutos, no en dias.
+              Desde el registro hasta tu primera cita en minutos, no en d\u00edas.
             </p>
           </div>
 
@@ -315,7 +315,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Planes para cada clinica
+              Planes para cada cl\u00ednica
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Empieza gratis y escala cuando lo necesites. Sin sorpresas.
@@ -333,7 +333,7 @@ export default function LandingPage() {
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="px-3 py-0.5 text-xs">Mas popular</Badge>
+                    <Badge className="px-3 py-0.5 text-xs">M\u00e1s popular</Badge>
                   </div>
                 )}
                 <CardHeader className="text-center">
@@ -392,11 +392,11 @@ export default function LandingPage() {
             </div>
 
             <h2 className="text-3xl font-bold tracking-tight text-primary-foreground sm:text-4xl">
-              Lleva tu clinica al siguiente nivel
+              Lleva tu cl\u00ednica al siguiente nivel
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/80">
-              Unete a las clinicas que ya confian en PraxisVet para gestionar su
-              dia a dia. Empieza gratis hoy.
+              \u00danete a las cl\u00ednicas que ya conf\u00edan en PraxisVet para gestionar su
+              d\u00eda a d\u00eda. Empieza gratis hoy.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link

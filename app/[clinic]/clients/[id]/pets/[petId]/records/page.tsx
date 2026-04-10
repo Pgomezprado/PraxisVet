@@ -76,7 +76,7 @@ export default async function PetRecordsPage({
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <ClipboardList className="size-10 text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground">
-            No hay registros clinicos para esta mascota.
+            No hay registros cl\u00ednicos para esta mascota.
           </p>
           <Button
             variant="outline"

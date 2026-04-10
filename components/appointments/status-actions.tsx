@@ -36,7 +36,7 @@ const transitions: Record<
   confirmed: [
     { label: "Iniciar consulta", to: "in_progress", icon: Play, variant: "default" },
     { label: "Cancelar", to: "cancelled", icon: XCircle, variant: "destructive" },
-    { label: "No asistio", to: "no_show", icon: Ban, variant: "outline" },
+    { label: "No asisti\u00f3", to: "no_show", icon: Ban, variant: "outline" },
   ],
   in_progress: [
     { label: "Completar", to: "completed", icon: CheckCircle, variant: "default" },
@@ -133,7 +133,7 @@ export function StatusActions({
             <DialogHeader>
               <DialogTitle>Eliminar cita</DialogTitle>
               <DialogDescription>
-                Esta accion no se puede deshacer. La cita sera eliminada permanentemente.
+                Esta acci\u00f3n no se puede deshacer. La cita ser\u00e1 eliminada permanentemente.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

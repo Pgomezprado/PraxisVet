@@ -24,7 +24,7 @@ export default async function ClinicSettingsPage({
     return (
       <div className="space-y-6">
         <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-          Error al cargar la configuracion: {result.error}
+          Error al cargar la configuraci\u00f3n: {result.error}
         </div>
       </div>
     );
@@ -49,10 +49,10 @@ export default async function ClinicSettingsPage({
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Configuracion de la clinica
+            Configuraci\u00f3n de la cl\u00ednica
           </h1>
           <p className="text-muted-foreground">
-            Administra la informacion general de tu clinica.
+            Administra la informaci\u00f3n general de tu cl\u00ednica.
           </p>
         </div>
       </div>
@@ -64,7 +64,7 @@ export default async function ClinicSettingsPage({
 
         <div className="space-y-4">
           <div className="rounded-lg border p-4 space-y-3">
-            <h3 className="text-sm font-medium">Informacion del sistema</h3>
+            <h3 className="text-sm font-medium">Informaci\u00f3n del sistema</h3>
             <Separator />
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -87,7 +87,7 @@ export default async function ClinicSettingsPage({
             <Separator />
             <p className="text-xs text-muted-foreground">
               El identificador (slug) no se puede modificar. Se usa en la URL de
-              tu clinica.
+              tu cl\u00ednica.
             </p>
           </div>
         </div>

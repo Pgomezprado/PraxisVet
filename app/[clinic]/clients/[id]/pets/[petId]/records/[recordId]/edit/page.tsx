@@ -40,7 +40,7 @@ export default async function EditRecordPage({
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Editar registro clinico
+            Editar registro cl\u00ednico
           </h1>
           <p className="text-sm text-muted-foreground">
             {record.pet.name} -{" "}

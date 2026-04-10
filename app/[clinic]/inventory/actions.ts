@@ -29,15 +29,42 @@ export interface ProductWithStock extends Product {
 }
 
 export async function getProducts(
-  orgId: string
-): Promise<ActionResult<ProductWithStock[]>> {
+  orgId: string,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    category?: string;
+  }
+): Promise<ActionResult<{ data: ProductWithStock[]; total: number }>> {
   const { supabase } = await getAuthUser();
 
-  const { data, error } = await supabase
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 25;
+  const search = options?.search?.trim() ?? "";
+  const category = options?.category ?? "";
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
     .from("products")
-    .select("*, stock(quantity)")
+    .select("*, stock(quantity)", { count: "exact", head: false })
     .eq("org_id", orgId)
     .order("name", { ascending: true });
+
+  if (search) {
+    query = query.or(
+      `name.ilike.%${search}%,sku.ilike.%${search}%`
+    );
+  }
+
+  if (category) {
+    query = query.eq("category", category);
+  }
+
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
 
   if (error) {
     return { success: false, error: error.message };
@@ -54,7 +81,7 @@ export async function getProducts(
     } as ProductWithStock;
   });
 
-  return { success: true, data: products };
+  return { success: true, data: { data: products, total: count ?? 0 } };
 }
 
 export interface ProductDetail extends Product {

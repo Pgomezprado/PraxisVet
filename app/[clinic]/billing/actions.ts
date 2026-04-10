@@ -74,10 +74,23 @@ export type InvoiceDetail = InvoiceWithClient & {
 
 export async function getInvoices(
   orgId: string,
-  filters?: { status?: InvoiceStatus; from?: string; to?: string }
-): Promise<ActionResult<InvoiceWithClient[]>> {
+  filters?: {
+    status?: InvoiceStatus;
+    from?: string;
+    to?: string;
+    page?: number;
+    pageSize?: number;
+    search?: string;
+  }
+): Promise<ActionResult<{ data: InvoiceWithClient[]; total: number }>> {
   try {
     const { supabase } = await getAuthUser();
+
+    const page = filters?.page ?? 1;
+    const pageSize = filters?.pageSize ?? 25;
+    const search = filters?.search?.trim() ?? "";
+    const rangeFrom = (page - 1) * pageSize;
+    const rangeTo = rangeFrom + pageSize - 1;
 
     let query = supabase
       .from("invoices")
@@ -85,7 +98,8 @@ export async function getInvoices(
         `
         *,
         client:clients!client_id (id, first_name, last_name, phone)
-      `
+      `,
+        { count: "exact", head: false }
       )
       .eq("org_id", orgId)
       .order("created_at", { ascending: false });
@@ -99,11 +113,38 @@ export async function getInvoices(
     if (filters?.to) {
       query = query.lte("created_at", filters.to + "T23:59:59");
     }
+    if (search) {
+      const { data: matchingClients } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("org_id", orgId)
+        .or(
+          `first_name.ilike.%${search}%,last_name.ilike.%${search}%`
+        );
 
-    const { data, error } = await query;
+      const clientIds = (matchingClients ?? []).map((c) => c.id);
+
+      if (clientIds.length > 0) {
+        query = query.or(
+          `invoice_number.ilike.%${search}%,client_id.in.(${clientIds.join(",")})`
+        );
+      } else {
+        query = query.ilike("invoice_number", `%${search}%`);
+      }
+    }
+
+    query = query.range(rangeFrom, rangeTo);
+
+    const { data, error, count } = await query;
 
     if (error) return { success: false, error: error.message };
-    return { success: true, data: data as unknown as InvoiceWithClient[] };
+    return {
+      success: true,
+      data: {
+        data: data as unknown as InvoiceWithClient[],
+        total: count ?? 0,
+      },
+    };
   } catch {
     return { success: false, error: "No autenticado" };
   }

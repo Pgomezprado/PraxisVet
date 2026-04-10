@@ -24,15 +24,34 @@ async function getAuthUser() {
 }
 
 export async function getClients(
-  orgId: string
-): Promise<ActionResult<(Client & { pet_count: number })[]>> {
+  orgId: string,
+  options?: { page?: number; pageSize?: number; search?: string }
+): Promise<
+  ActionResult<{ data: (Client & { pet_count: number })[]; total: number }>
+> {
   const { supabase } = await getAuthUser();
 
-  const { data, error } = await supabase
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 25;
+  const search = options?.search?.trim() ?? "";
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
     .from("clients")
-    .select("*, pets(count)")
+    .select("*, pets(count)", { count: "exact", head: false })
     .eq("org_id", orgId)
     .order("last_name", { ascending: true });
+
+  if (search) {
+    query = query.or(
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+    );
+  }
+
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
 
   if (error) {
     return { success: false, error: error.message };
@@ -47,7 +66,7 @@ export async function getClients(
     return { ...rest, pet_count } as Client & { pet_count: number };
   });
 
-  return { success: true, data: clients };
+  return { success: true, data: { data: clients, total: count ?? 0 } };
 }
 
 export async function getClient(

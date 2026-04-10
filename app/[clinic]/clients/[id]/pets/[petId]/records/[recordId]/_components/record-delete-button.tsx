@@ -18,8 +18,8 @@ export function RecordDeleteButton({
 }: RecordDeleteButtonProps) {
   return (
     <DeleteButton
-      label="Eliminar registro clinico"
-      description="Se eliminara este registro clinico permanentemente. Esta accion no se puede deshacer."
+      label="Eliminar registro cl\u00ednico"
+      description="Se eliminar\u00e1 este registro cl\u00ednico permanentemente. Esta acci\u00f3n no se puede deshacer."
       onDelete={() => deleteRecord(recordId, clinicSlug, clientId, petId)}
       redirectTo={`/${clinicSlug}/clients/${clientId}/pets/${petId}/records`}
     />

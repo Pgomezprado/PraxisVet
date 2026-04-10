@@ -80,7 +80,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
         <CardDescription>
           {isEditing
             ? "Modifica los datos del servicio."
-            : "Agrega un nuevo servicio a tu catalogo."}
+            : "Agrega un nuevo servicio a tu cat\u00e1logo."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -106,7 +106,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descripcion (opcional)</Label>
+            <Label htmlFor="description">Descripci\u00f3n (opcional)</Label>
             <Textarea
               id="description"
               placeholder="Describe brevemente el servicio..."
@@ -116,13 +116,13 @@ export function ServiceForm({ service }: ServiceFormProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria (opcional)</Label>
+              <Label htmlFor="category">Categor\u00eda (opcional)</Label>
               <Select
                 id="category"
                 defaultValue={service?.category ?? ""}
                 {...register("category")}
               >
-                <option value="">Seleccionar categoria</option>
+                <option value="">Seleccionar categor\u00eda</option>
                 {categoryOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
@@ -137,7 +137,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration_minutes">Duracion (minutos)</Label>
+              <Label htmlFor="duration_minutes">Duraci\u00f3n (minutos)</Label>
               <Input
                 id="duration_minutes"
                 type="number"
@@ -191,7 +191,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => router.push(`/${clinicSlug}/settings/services`)}
             >
               Cancelar
             </Button>

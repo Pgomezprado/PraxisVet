@@ -137,7 +137,7 @@ export function MovementForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason">Razon (opcional)</Label>
+            <Label htmlFor="reason">Raz\u00f3n (opcional)</Label>
             <Select id="reason" {...register("reason")}>
               <option value="">Seleccionar...</option>
               {MOVEMENT_REASON_OPTIONS.map((opt) => (
@@ -164,7 +164,9 @@ export function MovementForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() =>
+                router.push(`/${clinicSlug}/inventory/${productId}`)
+              }
             >
               Cancelar
             </Button>

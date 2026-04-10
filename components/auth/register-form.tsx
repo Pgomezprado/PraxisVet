@@ -44,7 +44,18 @@ export function RegisterForm() {
     });
 
     if (error) {
-      setError(error.message);
+      const errorMessages: Record<string, string> = {
+        "User already registered": "Este email ya est\u00e1 registrado",
+        "Password should be at least 6 characters":
+          "La contrase\u00f1a debe tener al menos 6 caracteres",
+        "Invalid email": "Email inv\u00e1lido",
+        "Signup requires a valid password":
+          "Debes ingresar una contrase\u00f1a v\u00e1lida",
+      };
+      setError(
+        errorMessages[error.message] ??
+          "Error al crear la cuenta. Intenta de nuevo."
+      );
       setLoading(false);
       return;
     }
@@ -59,7 +70,7 @@ export function RegisterForm() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Revisa tu email</CardTitle>
           <CardDescription>
-            Te enviamos un enlace de confirmacion. Revisa tu bandeja de entrada
+            Te enviamos un enlace de confirmaci\u00f3n. Revisa tu bandeja de entrada
             para activar tu cuenta.
           </CardDescription>
         </CardHeader>
@@ -72,7 +83,7 @@ export function RegisterForm() {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Crear cuenta</CardTitle>
         <CardDescription>
-          Registrate para empezar a gestionar tu clinica
+          Reg\u00edstrate para empezar a gestionar tu cl\u00ednica
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -97,11 +108,11 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Contrasena</Label>
+            <Label htmlFor="password">Contrase\u00f1a</Label>
             <Input
               id="password"
               type="password"
-              placeholder="Minimo 8 caracteres"
+              placeholder="M\u00ednimo 8 caracteres"
               {...register("password")}
             />
             {errors.password && (
@@ -112,11 +123,11 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar contrasena</Label>
+            <Label htmlFor="confirmPassword">Confirmar contrase\u00f1a</Label>
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="Repite tu contrasena"
+              placeholder="Repite tu contrase\u00f1a"
               {...register("confirmPassword")}
             />
             {errors.confirmPassword && (
@@ -136,7 +147,7 @@ export function RegisterForm() {
               href="/auth/login"
               className="font-medium text-primary hover:underline"
             >
-              Iniciar sesion
+              Iniciar sesi\u00f3n
             </Link>
           </p>
         </form>

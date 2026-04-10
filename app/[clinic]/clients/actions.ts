@@ -1,0 +1,260 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient as createSupabaseClient } from "@/lib/supabase/server";
+import {
+  clientSchema,
+  petSchema,
+  type ClientInput,
+  type PetInput,
+} from "@/lib/validations/clients";
+import type { Client, Pet } from "@/types";
+
+type ActionResult<T = void> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+async function getAuthUser() {
+  const supabase = await createSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("No autenticado");
+  return { supabase, user };
+}
+
+export async function getClients(
+  orgId: string
+): Promise<ActionResult<(Client & { pet_count: number })[]>> {
+  const { supabase } = await getAuthUser();
+
+  const { data, error } = await supabase
+    .from("clients")
+    .select("*, pets(count)")
+    .eq("org_id", orgId)
+    .order("last_name", { ascending: true });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  const clients = (data ?? []).map((client) => {
+    const { pets, ...rest } = client;
+    const pet_count =
+      Array.isArray(pets) && pets.length > 0
+        ? (pets[0] as { count: number }).count
+        : 0;
+    return { ...rest, pet_count } as Client & { pet_count: number };
+  });
+
+  return { success: true, data: clients };
+}
+
+export async function getClient(
+  clientId: string
+): Promise<ActionResult<Client & { pets: Pet[] }>> {
+  const { supabase } = await getAuthUser();
+
+  const { data: client, error } = await supabase
+    .from("clients")
+    .select("*")
+    .eq("id", clientId)
+    .single();
+
+  if (error || !client) {
+    return { success: false, error: "Cliente no encontrado" };
+  }
+
+  const { data: pets } = await supabase
+    .from("pets")
+    .select("*")
+    .eq("client_id", clientId)
+    .order("name", { ascending: true });
+
+  return {
+    success: true,
+    data: { ...client, pets: pets ?? [] } as Client & { pets: Pet[] },
+  };
+}
+
+export async function createClient(
+  orgId: string,
+  clinicSlug: string,
+  input: ClientInput
+): Promise<ActionResult<Client>> {
+  const parsed = clientSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Datos invalidos" };
+  }
+
+  const { supabase } = await getAuthUser();
+
+  const { data, error } = await supabase
+    .from("clients")
+    .insert({
+      org_id: orgId,
+      first_name: parsed.data.first_name,
+      last_name: parsed.data.last_name,
+      email: parsed.data.email || null,
+      phone: parsed.data.phone || null,
+      address: parsed.data.address || null,
+      notes: parsed.data.notes || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/${clinicSlug}/clients`);
+  return { success: true, data: data as Client };
+}
+
+export async function updateClient(
+  clientId: string,
+  clinicSlug: string,
+  input: ClientInput
+): Promise<ActionResult<Client>> {
+  const parsed = clientSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Datos invalidos" };
+  }
+
+  const { supabase } = await getAuthUser();
+
+  const { data, error } = await supabase
+    .from("clients")
+    .update({
+      first_name: parsed.data.first_name,
+      last_name: parsed.data.last_name,
+      email: parsed.data.email || null,
+      phone: parsed.data.phone || null,
+      address: parsed.data.address || null,
+      notes: parsed.data.notes || null,
+    })
+    .eq("id", clientId)
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/${clinicSlug}/clients`);
+  revalidatePath(`/${clinicSlug}/clients/${clientId}`);
+  return { success: true, data: data as Client };
+}
+
+export async function deleteClient(
+  clientId: string,
+  clinicSlug: string
+): Promise<ActionResult> {
+  const { supabase } = await getAuthUser();
+
+  const { error } = await supabase
+    .from("clients")
+    .delete()
+    .eq("id", clientId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/${clinicSlug}/clients`);
+  return { success: true, data: undefined };
+}
+
+export async function createPet(
+  orgId: string,
+  clientId: string,
+  clinicSlug: string,
+  input: PetInput
+): Promise<ActionResult<Pet>> {
+  const parsed = petSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Datos invalidos" };
+  }
+
+  const { supabase } = await getAuthUser();
+
+  const { data, error } = await supabase
+    .from("pets")
+    .insert({
+      org_id: orgId,
+      client_id: clientId,
+      name: parsed.data.name,
+      species: parsed.data.species || null,
+      breed: parsed.data.breed || null,
+      color: parsed.data.color || null,
+      sex: parsed.data.sex || null,
+      birthdate: parsed.data.birthdate || null,
+      microchip: parsed.data.microchip || null,
+      notes: parsed.data.notes || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/${clinicSlug}/clients/${clientId}`);
+  revalidatePath(`/${clinicSlug}/clients`);
+  return { success: true, data: data as Pet };
+}
+
+export async function updatePet(
+  petId: string,
+  clientId: string,
+  clinicSlug: string,
+  input: PetInput
+): Promise<ActionResult<Pet>> {
+  const parsed = petSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Datos invalidos" };
+  }
+
+  const { supabase } = await getAuthUser();
+
+  const { data, error } = await supabase
+    .from("pets")
+    .update({
+      name: parsed.data.name,
+      species: parsed.data.species || null,
+      breed: parsed.data.breed || null,
+      color: parsed.data.color || null,
+      sex: parsed.data.sex || null,
+      birthdate: parsed.data.birthdate || null,
+      microchip: parsed.data.microchip || null,
+      notes: parsed.data.notes || null,
+    })
+    .eq("id", petId)
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/${clinicSlug}/clients/${clientId}`);
+  return { success: true, data: data as Pet };
+}
+
+export async function deletePet(
+  petId: string,
+  clientId: string,
+  clinicSlug: string
+): Promise<ActionResult> {
+  const { supabase } = await getAuthUser();
+
+  const { error } = await supabase.from("pets").delete().eq("id", petId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/${clinicSlug}/clients/${clientId}`);
+  revalidatePath(`/${clinicSlug}/clients`);
+  return { success: true, data: undefined };
+}

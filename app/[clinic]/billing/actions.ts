@@ -1,0 +1,566 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import {
+  invoiceSchema,
+  invoiceUpdateSchema,
+  invoiceItemSchema,
+  paymentSchema,
+  type InvoiceInput,
+  type InvoiceUpdateInput,
+  type InvoiceItemInput,
+  type PaymentInput,
+} from "@/lib/validations/billing";
+import type { InvoiceStatus } from "@/types";
+
+type ActionResult<T = void> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+async function getAuthUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("No autenticado");
+  return { supabase, user };
+}
+
+export type InvoiceWithClient = {
+  id: string;
+  org_id: string;
+  client_id: string;
+  appointment_id: string | null;
+  invoice_number: string;
+  status: InvoiceStatus;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  due_date: string | null;
+  paid_at: string | null;
+  notes: string | null;
+  created_at: string;
+  client: { id: string; first_name: string; last_name: string; phone: string | null };
+};
+
+export type InvoiceDetail = InvoiceWithClient & {
+  items: {
+    id: string;
+    invoice_id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total: number;
+    item_type: "service" | "product" | null;
+    created_at: string;
+  }[];
+  payments: {
+    id: string;
+    amount: number;
+    method: string | null;
+    reference: string | null;
+    notes: string | null;
+    created_at: string;
+  }[];
+  appointment: {
+    id: string;
+    date: string;
+    start_time: string;
+    service: { id: string; name: string; price: number | null } | null;
+  } | null;
+};
+
+export async function getInvoices(
+  orgId: string,
+  filters?: { status?: InvoiceStatus; from?: string; to?: string }
+): Promise<ActionResult<InvoiceWithClient[]>> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    let query = supabase
+      .from("invoices")
+      .select(
+        `
+        *,
+        client:clients!client_id (id, first_name, last_name, phone)
+      `
+      )
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: false });
+
+    if (filters?.status) {
+      query = query.eq("status", filters.status);
+    }
+    if (filters?.from) {
+      query = query.gte("created_at", filters.from);
+    }
+    if (filters?.to) {
+      query = query.lte("created_at", filters.to + "T23:59:59");
+    }
+
+    const { data, error } = await query;
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data as unknown as InvoiceWithClient[] };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function getInvoice(
+  invoiceId: string
+): Promise<ActionResult<InvoiceDetail>> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const { data, error } = await supabase
+      .from("invoices")
+      .select(
+        `
+        *,
+        client:clients!client_id (id, first_name, last_name, phone),
+        items:invoice_items (*),
+        payments:payments (*),
+        appointment:appointments!appointment_id (
+          id, date, start_time,
+          service:services!service_id (id, name, price)
+        )
+      `
+      )
+      .eq("id", invoiceId)
+      .single();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data as unknown as InvoiceDetail };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function getNextInvoiceNumber(
+  orgId: string
+): Promise<ActionResult<string>> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const { data } = await supabase
+      .from("invoices")
+      .select("invoice_number")
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (data?.invoice_number) {
+      const match = data.invoice_number.match(/INV-(\d+)/);
+      if (match) {
+        const next = parseInt(match[1], 10) + 1;
+        return {
+          success: true,
+          data: `INV-${next.toString().padStart(4, "0")}`,
+        };
+      }
+    }
+
+    return { success: true, data: "INV-0001" };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function createInvoice(
+  orgId: string,
+  formData: InvoiceInput
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const parsed = invoiceSchema.safeParse(formData);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const { supabase } = await getAuthUser();
+    const { data: items } = parsed;
+
+    const subtotal = items.items.reduce(
+      (sum, item) => sum + item.quantity * item.unit_price,
+      0
+    );
+    const taxRate = items.tax_rate;
+    const taxAmount = Math.round(subtotal * taxRate) / 100;
+    const total = subtotal + taxAmount;
+
+    const numberResult = await getNextInvoiceNumber(orgId);
+    if (!numberResult.success) {
+      return { success: false, error: numberResult.error };
+    }
+
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("invoices")
+      .insert({
+        org_id: orgId,
+        client_id: items.client_id,
+        appointment_id: items.appointment_id || null,
+        invoice_number: numberResult.data,
+        status: "draft",
+        subtotal,
+        tax_rate: taxRate,
+        tax_amount: taxAmount,
+        total,
+        due_date: items.due_date || null,
+        notes: items.notes || null,
+      })
+      .select("id")
+      .single();
+
+    if (invoiceError) return { success: false, error: invoiceError.message };
+
+    const invoiceItems = items.items.map((item) => ({
+      invoice_id: invoice.id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total: item.quantity * item.unit_price,
+      item_type: item.item_type || null,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("invoice_items")
+      .insert(invoiceItems);
+
+    if (itemsError) return { success: false, error: itemsError.message };
+
+    revalidatePath("/[clinic]/billing", "page");
+    return { success: true, data: { id: invoice.id } };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function updateInvoice(
+  invoiceId: string,
+  formData: InvoiceUpdateInput
+): Promise<ActionResult> {
+  try {
+    const parsed = invoiceUpdateSchema.safeParse(formData);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const { supabase } = await getAuthUser();
+
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("status")
+      .eq("id", invoiceId)
+      .single();
+
+    if (!invoice || invoice.status !== "draft") {
+      return {
+        success: false,
+        error: "Solo se pueden editar facturas en borrador",
+      };
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (parsed.data.tax_rate !== undefined) {
+      updateData.tax_rate = parsed.data.tax_rate;
+
+      const { data: items } = await supabase
+        .from("invoice_items")
+        .select("total")
+        .eq("invoice_id", invoiceId);
+
+      const subtotal = (items ?? []).reduce(
+        (sum, item) => sum + Number(item.total),
+        0
+      );
+      const taxAmount = Math.round(subtotal * parsed.data.tax_rate) / 100;
+      updateData.subtotal = subtotal;
+      updateData.tax_amount = taxAmount;
+      updateData.total = subtotal + taxAmount;
+    }
+    if (parsed.data.due_date !== undefined)
+      updateData.due_date = parsed.data.due_date;
+    if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
+
+    const { error } = await supabase
+      .from("invoices")
+      .update(updateData)
+      .eq("id", invoiceId);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/[clinic]/billing", "page");
+    revalidatePath(`/[clinic]/billing/${invoiceId}`, "page");
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+async function recalculateInvoiceTotals(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invoiceId: string
+) {
+  const { data: items } = await supabase
+    .from("invoice_items")
+    .select("total")
+    .eq("invoice_id", invoiceId);
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("tax_rate")
+    .eq("id", invoiceId)
+    .single();
+
+  const subtotal = (items ?? []).reduce(
+    (sum, item) => sum + Number(item.total),
+    0
+  );
+  const taxRate = Number(invoice?.tax_rate ?? 0);
+  const taxAmount = Math.round(subtotal * taxRate) / 100;
+  const total = subtotal + taxAmount;
+
+  await supabase
+    .from("invoices")
+    .update({ subtotal, tax_amount: taxAmount, total })
+    .eq("id", invoiceId);
+}
+
+export async function addInvoiceItem(
+  invoiceId: string,
+  item: InvoiceItemInput
+): Promise<ActionResult> {
+  try {
+    const parsed = invoiceItemSchema.safeParse(item);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const { supabase } = await getAuthUser();
+
+    const { error } = await supabase.from("invoice_items").insert({
+      invoice_id: invoiceId,
+      description: parsed.data.description,
+      quantity: parsed.data.quantity,
+      unit_price: parsed.data.unit_price,
+      total: parsed.data.quantity * parsed.data.unit_price,
+      item_type: parsed.data.item_type || null,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    await recalculateInvoiceTotals(supabase, invoiceId);
+
+    revalidatePath(`/[clinic]/billing/${invoiceId}`, "page");
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function removeInvoiceItem(
+  itemId: string,
+  invoiceId: string
+): Promise<ActionResult> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const { error } = await supabase
+      .from("invoice_items")
+      .delete()
+      .eq("id", itemId);
+
+    if (error) return { success: false, error: error.message };
+
+    await recalculateInvoiceTotals(supabase, invoiceId);
+
+    revalidatePath(`/[clinic]/billing/${invoiceId}`, "page");
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function updateInvoiceStatus(
+  invoiceId: string,
+  status: InvoiceStatus
+): Promise<ActionResult> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const updateData: Record<string, unknown> = { status };
+    if (status === "paid") {
+      updateData.paid_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from("invoices")
+      .update(updateData)
+      .eq("id", invoiceId);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/[clinic]/billing", "page");
+    revalidatePath(`/[clinic]/billing/${invoiceId}`, "page");
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function registerPayment(
+  orgId: string,
+  invoiceId: string,
+  formData: PaymentInput
+): Promise<ActionResult> {
+  try {
+    const parsed = paymentSchema.safeParse(formData);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const { supabase } = await getAuthUser();
+
+    const { error: paymentError } = await supabase.from("payments").insert({
+      org_id: orgId,
+      invoice_id: invoiceId,
+      amount: parsed.data.amount,
+      method: parsed.data.method,
+      reference: parsed.data.reference || null,
+      notes: parsed.data.notes || null,
+    });
+
+    if (paymentError) return { success: false, error: paymentError.message };
+
+    const { data: payments } = await supabase
+      .from("payments")
+      .select("amount")
+      .eq("invoice_id", invoiceId);
+
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("total")
+      .eq("id", invoiceId)
+      .single();
+
+    const totalPaid = (payments ?? []).reduce(
+      (sum, p) => sum + Number(p.amount),
+      0
+    );
+
+    if (invoice && totalPaid >= Number(invoice.total)) {
+      await supabase
+        .from("invoices")
+        .update({ status: "paid", paid_at: new Date().toISOString() })
+        .eq("id", invoiceId);
+    }
+
+    revalidatePath("/[clinic]/billing", "page");
+    revalidatePath(`/[clinic]/billing/${invoiceId}`, "page");
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function deleteInvoice(
+  invoiceId: string
+): Promise<ActionResult> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("status")
+      .eq("id", invoiceId)
+      .single();
+
+    if (!invoice || invoice.status !== "draft") {
+      return {
+        success: false,
+        error: "Solo se pueden eliminar facturas en borrador",
+      };
+    }
+
+    const { error } = await supabase
+      .from("invoices")
+      .delete()
+      .eq("id", invoiceId);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/[clinic]/billing", "page");
+    return { success: true, data: undefined };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function getClients(
+  orgId: string
+): Promise<ActionResult<{ id: string; first_name: string; last_name: string }[]>> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id, first_name, last_name")
+      .eq("org_id", orgId)
+      .order("first_name");
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data ?? [] };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export async function getMonthSummary(
+  orgId: string
+): Promise<
+  ActionResult<{ invoiced: number; collected: number; pending: number }>
+> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+
+    const { data: invoices } = await supabase
+      .from("invoices")
+      .select("total, status")
+      .eq("org_id", orgId)
+      .gte("created_at", firstDay)
+      .lte("created_at", lastDay + "T23:59:59")
+      .neq("status", "cancelled");
+
+    const { data: payments } = await supabase
+      .from("payments")
+      .select("amount, invoice_id")
+      .eq("org_id", orgId)
+      .gte("created_at", firstDay)
+      .lte("created_at", lastDay + "T23:59:59");
+
+    const invoiced = (invoices ?? []).reduce(
+      (sum, inv) => sum + Number(inv.total),
+      0
+    );
+    const collected = (payments ?? []).reduce(
+      (sum, p) => sum + Number(p.amount),
+      0
+    );
+    const pending = invoiced - collected;
+
+    return { success: true, data: { invoiced, collected, pending } };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}

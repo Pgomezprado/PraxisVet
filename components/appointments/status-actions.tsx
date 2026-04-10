@@ -1,0 +1,162 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { updateAppointmentStatus, deleteAppointment } from "@/app/[clinic]/appointments/actions";
+import type { AppointmentStatus } from "@/types";
+import {
+  CheckCircle,
+  XCircle,
+  Play,
+  Clock,
+  Ban,
+  Trash2,
+  Loader2,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+
+const transitions: Record<
+  AppointmentStatus,
+  { label: string; to: AppointmentStatus; icon: typeof CheckCircle; variant: "default" | "outline" | "destructive" }[]
+> = {
+  pending: [
+    { label: "Confirmar", to: "confirmed", icon: CheckCircle, variant: "default" },
+    { label: "Cancelar", to: "cancelled", icon: XCircle, variant: "destructive" },
+  ],
+  confirmed: [
+    { label: "Iniciar consulta", to: "in_progress", icon: Play, variant: "default" },
+    { label: "Cancelar", to: "cancelled", icon: XCircle, variant: "destructive" },
+    { label: "No asistio", to: "no_show", icon: Ban, variant: "outline" },
+  ],
+  in_progress: [
+    { label: "Completar", to: "completed", icon: CheckCircle, variant: "default" },
+  ],
+  completed: [],
+  cancelled: [
+    { label: "Reabrir", to: "pending", icon: Clock, variant: "outline" },
+  ],
+  no_show: [
+    { label: "Reabrir", to: "pending", icon: Clock, variant: "outline" },
+  ],
+};
+
+export function StatusActions({
+  appointmentId,
+  currentStatus,
+  clinicSlug,
+}: {
+  appointmentId: string;
+  currentStatus: AppointmentStatus;
+  clinicSlug: string;
+}) {
+  const router = useRouter();
+  const [loading, setLoading] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const available = transitions[currentStatus] ?? [];
+
+  async function handleStatusChange(newStatus: AppointmentStatus) {
+    setLoading(newStatus);
+    const result = await updateAppointmentStatus(appointmentId, newStatus);
+    setLoading(null);
+
+    if (result.error) {
+      alert(result.error);
+      return;
+    }
+
+    router.refresh();
+  }
+
+  async function handleDelete() {
+    setLoading("delete");
+    const result = await deleteAppointment(appointmentId);
+    setLoading(null);
+
+    if (result.error) {
+      alert(result.error);
+      return;
+    }
+
+    router.push(`/${clinicSlug}/appointments`);
+  }
+
+  if (available.length === 0 && currentStatus === "completed") {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {available.map((action) => {
+        const Icon = action.icon;
+        const isLoading = loading === action.to;
+
+        return (
+          <Button
+            key={action.to}
+            variant={action.variant}
+            size="sm"
+            disabled={loading !== null}
+            onClick={() => handleStatusChange(action.to)}
+          >
+            {isLoading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Icon className="size-3.5" />
+            )}
+            {action.label}
+          </Button>
+        );
+      })}
+
+      {currentStatus !== "completed" && (
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogTrigger
+            render={
+              <Button variant="destructive" size="sm" disabled={loading !== null}>
+                <Trash2 className="size-3.5" />
+                Eliminar
+              </Button>
+            }
+          />
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Eliminar cita</DialogTitle>
+              <DialogDescription>
+                Esta accion no se puede deshacer. La cita sera eliminada permanentemente.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose
+                render={
+                  <Button variant="outline" size="sm">
+                    Cancelar
+                  </Button>
+                }
+              />
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={loading === "delete"}
+                onClick={handleDelete}
+              >
+                {loading === "delete" && <Loader2 className="size-3.5 animate-spin" />}
+                Eliminar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}

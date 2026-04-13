@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Clock, Loader2 } from "lucide-react";
@@ -386,20 +387,30 @@ export function AppointmentForm({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="start_time">Hora inicio *</Label>
-                <Input
+                <TimePicker
                   id="start_time"
-                  type="time"
-                  {...register("start_time")}
+                  value={watch("start_time")}
+                  onChange={(v) =>
+                    setValue("start_time", v, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
                   aria-invalid={!!errors.start_time}
                 />
                 <FieldError message={errors.start_time?.message} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="end_time">Hora fin *</Label>
-                <Input
+                <TimePicker
                   id="end_time"
-                  type="time"
-                  {...register("end_time")}
+                  value={watch("end_time")}
+                  onChange={(v) =>
+                    setValue("end_time", v, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
                   aria-invalid={!!errors.end_time}
                 />
                 <FieldError message={errors.end_time?.message} />

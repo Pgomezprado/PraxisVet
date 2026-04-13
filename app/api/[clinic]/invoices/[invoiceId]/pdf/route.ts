@@ -234,7 +234,7 @@ export async function GET(
   doc.text(formatCurrency(invoice.subtotal), totalsValX, y, { align: "right" });
   y += 5;
 
-  doc.text(`Impuesto (${(invoice.tax_rate * 100).toFixed(0)}%):`, totalsX, y);
+  doc.text(`Impuesto (${invoice.tax_rate}%):`, totalsX, y);
   doc.text(formatCurrency(invoice.tax_amount), totalsValX, y, { align: "right" });
   y += 2;
 

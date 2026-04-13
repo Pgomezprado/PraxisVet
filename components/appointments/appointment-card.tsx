@@ -35,6 +35,11 @@ const statusTransitions: Record<
     { label: "Cancelar", to: "cancelled" },
   ],
   in_progress: [
+    { label: "Listo para retiro", to: "ready_for_pickup" },
+    { label: "Completar", to: "completed" },
+    { label: "Cancelar", to: "cancelled" },
+  ],
+  ready_for_pickup: [
     { label: "Completar", to: "completed" },
     { label: "Cancelar", to: "cancelled" },
   ],
@@ -53,9 +58,10 @@ export function AppointmentCard({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const vetName = [appointment.vet.first_name, appointment.vet.last_name]
-    .filter(Boolean)
-    .join(" ") || "Sin asignar";
+  const professionalName =
+    [appointment.professional.first_name, appointment.professional.last_name]
+      .filter(Boolean)
+      .join(" ") || "Sin asignar";
 
   const clientName = `${appointment.client.first_name} ${appointment.client.last_name}`;
 
@@ -107,7 +113,7 @@ export function AppointmentCard({
             </span>
             <span className="flex items-center gap-1">
               <Stethoscope className="size-3" />
-              {vetName}
+              {professionalName}
             </span>
             {appointment.service && (
               <span className="flex items-center gap-1">

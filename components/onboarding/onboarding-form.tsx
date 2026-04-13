@@ -210,7 +210,7 @@ export function OnboardingForm() {
             className="w-full"
             disabled={loading || slugStatus === "taken"}
           >
-            {loading ? "Creando cl\u00ednica..." : "Crear cl\u00ednica"}
+            {loading ? "Creando clínica..." : "Crear clínica"}
           </Button>
         </form>
       </CardContent>

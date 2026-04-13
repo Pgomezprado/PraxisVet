@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,9 +9,10 @@ import {
   createAppointment,
   updateAppointment,
   checkConflicts,
-  getVetDayAppointments,
+  getProfessionalDayAppointments,
 } from "@/app/[clinic]/appointments/actions";
 import type { AppointmentWithRelations } from "@/app/[clinic]/appointments/actions";
+import type { MemberRole } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +29,12 @@ type ClientWithPets = {
   pets: { id: string; name: string; species: string | null; breed: string | null; active: boolean }[];
 };
 
-type Vet = {
+type Professional = {
   id: string;
   first_name: string | null;
   last_name: string | null;
   specialty: string | null;
+  role: MemberRole;
 };
 
 type ServiceOption = {
@@ -43,11 +45,12 @@ type ServiceOption = {
   category: string | null;
 };
 
-type VetDayAppointment = {
+type ProfessionalDayAppointment = {
   id: string;
   start_time: string;
   end_time: string;
   status: string;
+  type: string;
   pet: { id: string; name: string };
 };
 
@@ -55,7 +58,7 @@ interface AppointmentFormProps {
   orgId: string;
   clinicSlug: string;
   clients: ClientWithPets[];
-  vets: Vet[];
+  professionals: Professional[];
   services: ServiceOption[];
   defaultValues?: Partial<AppointmentInput>;
   appointmentId?: string;
@@ -74,7 +77,7 @@ export function AppointmentForm({
   orgId,
   clinicSlug,
   clients,
-  vets,
+  professionals,
   services,
   defaultValues,
   appointmentId,
@@ -83,8 +86,8 @@ export function AppointmentForm({
   const [serverError, setServerError] = useState<string | null>(null);
   const [conflicts, setConflicts] = useState<AppointmentWithRelations[]>([]);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
-  const [vetDayAppointments, setVetDayAppointments] = useState<VetDayAppointment[]>([]);
-  const [loadingVetDay, setLoadingVetDay] = useState(false);
+  const [dayAppointments, setDayAppointments] = useState<ProfessionalDayAppointment[]>([]);
+  const [loadingDay, setLoadingDay] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEditing = !!appointmentId;
 
@@ -99,7 +102,8 @@ export function AppointmentForm({
     defaultValues: {
       client_id: "",
       pet_id: "",
-      vet_id: "",
+      assigned_to: "",
+      type: "medical",
       service_id: "",
       date: new Date().toISOString().split("T")[0],
       start_time: "",
@@ -114,18 +118,50 @@ export function AppointmentForm({
   const selectedClient = clients.find((c) => c.id === selectedClientId);
   const availablePets = selectedClient?.pets ?? [];
 
-  const watchedVetId = watch("vet_id");
+  const watchedType = watch("type");
+  const watchedAssignedTo = watch("assigned_to");
   const watchedDate = watch("date");
   const watchedStartTime = watch("start_time");
   const watchedEndTime = watch("end_time");
 
-  const selectedVet = vets.find((v) => v.id === watchedVetId);
-  const vetDisplayName = selectedVet
-    ? [selectedVet.first_name, selectedVet.last_name].filter(Boolean).join(" ")
+  const filteredProfessionals = useMemo(() => {
+    if (watchedType === "grooming") {
+      return professionals.filter((p) => p.role === "groomer" || p.role === "admin");
+    }
+    return professionals.filter((p) => p.role === "vet" || p.role === "admin");
+  }, [professionals, watchedType]);
+
+  const filteredServices = useMemo(() => {
+    if (watchedType === "grooming") {
+      return services.filter((s) => s.category === "grooming");
+    }
+    return services.filter((s) => s.category !== "grooming");
+  }, [services, watchedType]);
+
+  useEffect(() => {
+    if (!watchedAssignedTo) return;
+    const stillValid = filteredProfessionals.some((p) => p.id === watchedAssignedTo);
+    if (!stillValid) {
+      setValue("assigned_to", "");
+    }
+  }, [filteredProfessionals, watchedAssignedTo, setValue]);
+
+  useEffect(() => {
+    const currentService = watch("service_id");
+    if (!currentService) return;
+    const stillValid = filteredServices.some((s) => s.id === currentService);
+    if (!stillValid) {
+      setValue("service_id", "");
+    }
+  }, [filteredServices, setValue, watch]);
+
+  const selectedProfessional = filteredProfessionals.find((p) => p.id === watchedAssignedTo);
+  const professionalDisplayName = selectedProfessional
+    ? [selectedProfessional.first_name, selectedProfessional.last_name].filter(Boolean).join(" ")
     : "";
 
   const doCheckConflicts = useCallback(async () => {
-    if (!watchedVetId || !watchedDate || !watchedStartTime || !watchedEndTime) {
+    if (!watchedAssignedTo || !watchedDate || !watchedStartTime || !watchedEndTime) {
       setConflicts([]);
       return;
     }
@@ -136,7 +172,7 @@ export function AppointmentForm({
 
     setCheckingConflicts(true);
     const result = await checkConflicts(orgId, {
-      vet_id: watchedVetId,
+      assigned_to: watchedAssignedTo,
       date: watchedDate,
       start_time: watchedStartTime,
       end_time: watchedEndTime,
@@ -149,7 +185,7 @@ export function AppointmentForm({
     } else {
       setConflicts([]);
     }
-  }, [watchedVetId, watchedDate, watchedStartTime, watchedEndTime, orgId, appointmentId]);
+  }, [watchedAssignedTo, watchedDate, watchedStartTime, watchedEndTime, orgId, appointmentId]);
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -167,30 +203,31 @@ export function AppointmentForm({
   }, [doCheckConflicts]);
 
   useEffect(() => {
-    if (!watchedVetId || !watchedDate) {
-      setVetDayAppointments([]);
+    if (!watchedAssignedTo || !watchedDate) {
+      setDayAppointments([]);
       return;
     }
 
     let cancelled = false;
-    setLoadingVetDay(true);
+    setLoadingDay(true);
 
-    getVetDayAppointments(orgId, watchedVetId, watchedDate).then((result) => {
+    getProfessionalDayAppointments(orgId, watchedAssignedTo, watchedDate).then((result) => {
       if (cancelled) return;
-      setLoadingVetDay(false);
+      setLoadingDay(false);
       if (!result.error && result.data) {
-        const mapped: VetDayAppointment[] = (result.data as unknown as VetDayAppointment[])
-          .filter((a) => !appointmentId || a.id !== appointmentId);
-        setVetDayAppointments(mapped);
+        const mapped: ProfessionalDayAppointment[] = (
+          result.data as unknown as ProfessionalDayAppointment[]
+        ).filter((a) => !appointmentId || a.id !== appointmentId);
+        setDayAppointments(mapped);
       } else {
-        setVetDayAppointments([]);
+        setDayAppointments([]);
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [watchedVetId, watchedDate, orgId, appointmentId]);
+  }, [watchedAssignedTo, watchedDate, orgId, appointmentId]);
 
   async function onSubmit(data: AppointmentInput) {
     setServerError(null);
@@ -216,7 +253,7 @@ export function AppointmentForm({
 
     if (!serviceId) return;
 
-    const service = services.find((s) => s.id === serviceId);
+    const service = filteredServices.find((s) => s.id === serviceId);
     if (service && watch("start_time")) {
       const [hours, minutes] = watch("start_time").split(":").map(Number);
       const endDate = new Date(2000, 0, 1, hours, minutes + service.duration_minutes);
@@ -230,6 +267,8 @@ export function AppointmentForm({
     setValue("pet_id", "");
   }
 
+  const professionalLabel = watchedType === "grooming" ? "Peluquero" : "Veterinario";
+
   return (
     <Card>
       <CardHeader>
@@ -242,6 +281,15 @@ export function AppointmentForm({
               {serverError}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="type">Tipo de cita *</Label>
+            <Select id="type" {...register("type")} aria-invalid={!!errors.type}>
+              <option value="medical">Consulta médica</option>
+              <option value="grooming">Peluquería</option>
+            </Select>
+            <FieldError message={errors.type?.message} />
+          </div>
 
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
@@ -289,21 +337,21 @@ export function AppointmentForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="vet_id">Veterinario *</Label>
+              <Label htmlFor="assigned_to">{professionalLabel} *</Label>
               <Select
-                id="vet_id"
-                {...register("vet_id")}
-                aria-invalid={!!errors.vet_id}
+                id="assigned_to"
+                {...register("assigned_to")}
+                aria-invalid={!!errors.assigned_to}
               >
-                <option value="">Seleccionar veterinario</option>
-                {vets.map((vet) => (
-                  <option key={vet.id} value={vet.id}>
-                    {[vet.first_name, vet.last_name].filter(Boolean).join(" ")}
-                    {vet.specialty ? ` - ${vet.specialty}` : ""}
+                <option value="">Seleccionar {professionalLabel.toLowerCase()}</option>
+                {filteredProfessionals.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {[p.first_name, p.last_name].filter(Boolean).join(" ")}
+                    {p.specialty ? ` - ${p.specialty}` : ""}
                   </option>
                 ))}
               </Select>
-              <FieldError message={errors.vet_id?.message} />
+              <FieldError message={errors.assigned_to?.message} />
             </div>
 
             <div className="space-y-2">
@@ -314,7 +362,7 @@ export function AppointmentForm({
                 onChange={(e) => handleServiceChange(e.target.value)}
               >
                 <option value="">Sin servicio</option>
-                {services.map((service) => (
+                {filteredServices.map((service) => (
                   <option key={service.id} value={service.id}>
                     {service.name}
                     {service.price != null ? ` - $${service.price}` : ""}
@@ -368,7 +416,7 @@ export function AppointmentForm({
               <ul className="mt-2 space-y-1">
                 {conflicts.map((c) => (
                   <li key={c.id} className="text-sm text-yellow-700 dark:text-yellow-400">
-                    {vetDisplayName} ya tiene una cita de {formatTime(c.start_time)} a{" "}
+                    {professionalDisplayName} ya tiene una cita de {formatTime(c.start_time)} a{" "}
                     {formatTime(c.end_time)} con {c.pet.name}
                   </li>
                 ))}
@@ -383,29 +431,25 @@ export function AppointmentForm({
             </div>
           )}
 
-          {watchedVetId && watchedDate && (
+          {watchedAssignedTo && watchedDate && (
             <div className="rounded-lg border px-4 py-3">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <Clock className="size-4" />
-                Agenda de {vetDisplayName} el{" "}
-                {watchedDate}
+                Agenda de {professionalDisplayName} el {watchedDate}
               </div>
-              {loadingVetDay ? (
+              {loadingDay ? (
                 <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="size-3 animate-spin" />
                   Cargando...
                 </div>
-              ) : vetDayAppointments.length === 0 ? (
+              ) : dayAppointments.length === 0 ? (
                 <p className="mt-2 text-xs text-muted-foreground">
                   Sin citas agendadas para este dia.
                 </p>
               ) : (
                 <ul className="mt-2 space-y-1">
-                  {vetDayAppointments.map((a) => (
-                    <li
-                      key={a.id}
-                      className="text-xs text-muted-foreground"
-                    >
+                  {dayAppointments.map((a) => (
+                    <li key={a.id} className="text-xs text-muted-foreground">
                       {formatTime(a.start_time)} - {formatTime(a.end_time)}: {a.pet.name}
                     </li>
                   ))}

@@ -58,14 +58,14 @@ export function ForgotPasswordForm() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Revisa tu email</CardTitle>
           <CardDescription>
-            Te enviamos un enlace para restablecer tu contrase\u00f1a. Revisa tu
+            Te enviamos un enlace para restablecer tu contraseña. Revisa tu
             bandeja de entrada.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Link href="/auth/login">
             <Button variant="outline" className="w-full">
-              Volver a iniciar sesi\u00f3n
+              Volver a iniciar sesión
             </Button>
           </Link>
         </CardContent>
@@ -76,7 +76,7 @@ export function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Recuperar contrase\u00f1a</CardTitle>
+        <CardTitle className="text-2xl">Recuperar contraseña</CardTitle>
         <CardDescription>
           Ingresa tu email y te enviaremos un enlace para restablecerla
         </CardDescription>
@@ -111,7 +111,7 @@ export function ForgotPasswordForm() {
               href="/auth/login"
               className="font-medium text-primary hover:underline"
             >
-              Volver a iniciar sesi\u00f3n
+              Volver a iniciar sesión
             </Link>
           </p>
         </form>

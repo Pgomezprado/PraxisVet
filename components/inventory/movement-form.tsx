@@ -137,7 +137,7 @@ export function MovementForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason">Raz\u00f3n (opcional)</Label>
+            <Label htmlFor="reason">Razón (opcional)</Label>
             <Select id="reason" {...register("reason")}>
               <option value="">Seleccionar...</option>
               {MOVEMENT_REASON_OPTIONS.map((opt) => (

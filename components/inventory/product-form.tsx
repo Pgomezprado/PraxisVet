@@ -118,7 +118,7 @@ export function ProductForm({ product }: ProductFormProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="category">Categor\u00eda (opcional)</Label>
+              <Label htmlFor="category">Categoría (opcional)</Label>
               <Select id="category" {...register("category")}>
                 <option value="">Seleccionar...</option>
                 {CATEGORY_OPTIONS.map((opt) => (
@@ -141,10 +141,10 @@ export function ProductForm({ product }: ProductFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descripci\u00f3n (opcional)</Label>
+            <Label htmlFor="description">Descripción (opcional)</Label>
             <Textarea
               id="description"
-              placeholder="Descripci\u00f3n del producto..."
+              placeholder="Descripción del producto..."
               {...register("description")}
             />
           </div>
@@ -183,7 +183,7 @@ export function ProductForm({ product }: ProductFormProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="min_stock">Stock m\u00ednimo</Label>
+              <Label htmlFor="min_stock">Stock mínimo</Label>
               <Input
                 id="min_stock"
                 type="number"

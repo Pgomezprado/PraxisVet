@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppointmentForm } from "@/components/appointments/appointment-form";
 import {
   getAppointment,
-  getVets,
+  getProfessionals,
   getClientsWithPets,
   getServices,
 } from "../../actions";
@@ -26,11 +26,11 @@ export default async function EditAppointmentPage({
     return <p className="text-sm text-muted-foreground">Organizacion no encontrada.</p>;
   }
 
-  const [appointmentResult, clientsResult, vetsResult, servicesResult] =
+  const [appointmentResult, clientsResult, professionalsResult, servicesResult] =
     await Promise.all([
       getAppointment(id),
       getClientsWithPets(org.id),
-      getVets(org.id),
+      getProfessionals(org.id),
       getServices(org.id),
     ]);
 
@@ -53,13 +53,14 @@ export default async function EditAppointmentPage({
         orgId={org.id}
         clinicSlug={clinic}
         clients={clientsResult.data ?? []}
-        vets={vetsResult.data ?? []}
+        professionals={professionalsResult.data ?? []}
         services={servicesResult.data ?? []}
         appointmentId={id}
         defaultValues={{
           client_id: appointment.client_id,
           pet_id: appointment.pet_id,
-          vet_id: appointment.vet_id,
+          assigned_to: appointment.assigned_to,
+          type: appointment.type,
           service_id: appointment.service_id ?? "",
           date: appointment.date,
           start_time: appointment.start_time.slice(0, 5),

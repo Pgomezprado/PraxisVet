@@ -40,7 +40,7 @@ export function ClientsTable({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <SearchInput placeholder="Buscar por nombre, email o tel\u00e9fono..." />
+        <SearchInput placeholder="Buscar por nombre, email o teléfono..." />
         <Button render={<Link href={`/${clinicSlug}/clients/new`} />}>
           <Plus className="size-4" data-icon="inline-start" />
           Nuevo cliente
@@ -51,8 +51,8 @@ export function ClientsTable({
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <p className="text-sm text-muted-foreground">
             {search
-              ? "No se encontraron clientes con esa b\u00fasqueda."
-              : "A\u00fan no hay clientes registrados."}
+              ? "No se encontraron clientes con esa búsqueda."
+              : "Aún no hay clientes registrados."}
           </p>
           {!search && (
             <Button

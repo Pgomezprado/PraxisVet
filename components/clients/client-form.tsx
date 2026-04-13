@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -47,7 +46,6 @@ export function ClientForm({ client }: ClientFormProps) {
       email: client?.email ?? "",
       phone: client?.phone ?? "",
       address: client?.address ?? "",
-      notes: client?.notes ?? "",
     },
   });
 
@@ -75,7 +73,7 @@ export function ClientForm({ client }: ClientFormProps) {
         <CardDescription>
           {isEditing
             ? "Modifica los datos del cliente."
-            : "Registra un nuevo cliente en tu cl\u00ednica."}
+            : "Registra un nuevo cliente en tu clínica."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -131,7 +129,7 @@ export function ClientForm({ client }: ClientFormProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Tel\u00e9fono (opcional)</Label>
+              <Label htmlFor="phone">Teléfono (opcional)</Label>
               <Input
                 id="phone"
                 placeholder="ej: +52 55 1234 5678"
@@ -141,20 +139,11 @@ export function ClientForm({ client }: ClientFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address">Direcci\u00f3n (opcional)</Label>
+            <Label htmlFor="address">Dirección (opcional)</Label>
             <Input
               id="address"
-              placeholder="ej: Av. Principal 123, Col. Centro"
+              placeholder="ej: Av. Providencia 1234, Santiago"
               {...register("address")}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas (opcional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Informaci\u00f3n adicional del cliente..."
-              {...register("notes")}
             />
           </div>
 

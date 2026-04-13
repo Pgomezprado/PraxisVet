@@ -87,7 +87,7 @@ export function InvoicesTable({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <SearchInput placeholder="Buscar por cliente o n\u00famero..." />
+        <SearchInput placeholder="Buscar por cliente o número..." />
         <FilterSelect
           paramName="status"
           options={STATUS_OPTIONS}
@@ -188,7 +188,7 @@ export function InvoicesTable({
                               <DialogHeader>
                                 <DialogTitle>Eliminar factura</DialogTitle>
                                 <DialogDescription>
-                                  Se eliminar\u00e1 la factura {inv.invoice_number} permanentemente. Esta acci\u00f3n no se puede deshacer.
+                                  Se eliminará la factura {inv.invoice_number} permanentemente. Esta acción no se puede deshacer.
                                 </DialogDescription>
                               </DialogHeader>
                               {deleteError && (

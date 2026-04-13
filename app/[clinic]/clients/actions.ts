@@ -5,8 +5,10 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import {
   clientSchema,
   petSchema,
+  newTutorWithPetSchema,
   type ClientInput,
   type PetInput,
+  type NewTutorWithPetInput,
 } from "@/lib/validations/clients";
 import type { Client, Pet } from "@/types";
 
@@ -128,6 +130,74 @@ export async function createClient(
 
   revalidatePath(`/${clinicSlug}/clients`);
   return { success: true, data: data as Client };
+}
+
+/**
+ * Crea un tutor y su primer paciente en una sola operación.
+ * Si falla la creación del paciente, elimina el tutor recién creado
+ * para no dejar tutores huérfanos sin mascotas.
+ */
+export async function createTutorWithPet(
+  orgId: string,
+  clinicSlug: string,
+  input: NewTutorWithPetInput
+): Promise<ActionResult<{ clientId: string; petId: string }>> {
+  const parsed = newTutorWithPetSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const { supabase } = await getAuthUser();
+
+  const { data: client, error: clientError } = await supabase
+    .from("clients")
+    .insert({
+      org_id: orgId,
+      first_name: parsed.data.first_name,
+      last_name: parsed.data.last_name,
+      email: parsed.data.email || null,
+      phone: parsed.data.phone || null,
+      address: parsed.data.address || null,
+      notes: parsed.data.notes || null,
+    })
+    .select("id")
+    .single();
+
+  if (clientError || !client) {
+    return {
+      success: false,
+      error: clientError?.message || "No se pudo crear el tutor",
+    };
+  }
+
+  const { data: pet, error: petError } = await supabase
+    .from("pets")
+    .insert({
+      org_id: orgId,
+      client_id: client.id,
+      name: parsed.data.pet_name,
+      species: parsed.data.pet_species || null,
+      breed: parsed.data.pet_breed || null,
+      sex: parsed.data.pet_sex || null,
+      birthdate: parsed.data.pet_birthdate || null,
+      notes: parsed.data.pet_notes || null,
+    })
+    .select("id")
+    .single();
+
+  if (petError || !pet) {
+    // Rollback: eliminar el cliente recién creado para no dejar tutores huérfanos
+    await supabase.from("clients").delete().eq("id", client.id);
+    return {
+      success: false,
+      error:
+        petError?.message ||
+        "No se pudo crear el paciente. Se canceló la creación del tutor.",
+    };
+  }
+
+  revalidatePath(`/${clinicSlug}/clients`);
+  return { success: true, data: { clientId: client.id, petId: pet.id } };
 }
 
 export async function updateClient(

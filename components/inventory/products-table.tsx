@@ -85,7 +85,7 @@ export function ProductsTable({
             value: opt.value,
             label: opt.label,
           }))}
-          placeholder="Todas las categor\u00edas"
+          placeholder="Todas las categorías"
           className="w-44"
         />
         <Button render={<Link href={`/${clinicSlug}/inventory/new`} />}>
@@ -100,7 +100,7 @@ export function ProductsTable({
           <p className="text-sm text-muted-foreground">
             {search || category
               ? "No se encontraron productos con esos filtros."
-              : "A\u00fan no hay productos registrados."}
+              : "Aún no hay productos registrados."}
           </p>
           {!search && !category && (
             <Button
@@ -120,7 +120,7 @@ export function ProductsTable({
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead>Categor\u00eda</TableHead>
+                <TableHead>Categoría</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Min.</TableHead>
                 <TableHead>Precio venta</TableHead>
@@ -224,8 +224,8 @@ export function ProductsTable({
             </DialogTitle>
             <DialogDescription>
               {toggleProduct?.active
-                ? `\u00bfDesactivar ${toggleProduct.name}? No aparecer\u00e1 en b\u00fasquedas ni se podr\u00e1 usar en facturas.`
-                : `\u00bfReactivar ${toggleProduct?.name}? Volver\u00e1 a estar disponible en b\u00fasquedas y facturas.`}
+                ? `¿Desactivar ${toggleProduct.name}? No aparecerá en búsquedas ni se podrá usar en facturas.`
+                : `¿Reactivar ${toggleProduct?.name}? Volverá a estar disponible en búsquedas y facturas.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

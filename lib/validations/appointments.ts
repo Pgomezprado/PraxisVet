@@ -4,7 +4,8 @@ export const appointmentSchema = z
   .object({
     client_id: z.string().min(1, "Selecciona un cliente"),
     pet_id: z.string().min(1, "Selecciona una mascota"),
-    vet_id: z.string().min(1, "Selecciona un veterinario"),
+    assigned_to: z.string().min(1, "Selecciona un profesional"),
+    type: z.enum(["medical", "grooming"]),
     service_id: z.string().optional(),
     date: z.string().min(1, "Selecciona una fecha"),
     start_time: z.string().min(1, "Selecciona hora de inicio"),
@@ -32,6 +33,7 @@ export const updateStatusSchema = z.object({
     "pending",
     "confirmed",
     "in_progress",
+    "ready_for_pickup",
     "completed",
     "cancelled",
     "no_show",

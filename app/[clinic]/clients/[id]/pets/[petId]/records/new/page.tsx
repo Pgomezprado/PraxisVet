@@ -63,7 +63,7 @@ export default async function NewRecordPage({
     const appointmentResult = await getAppointment(appointmentId);
     if (appointmentResult.data) {
       defaultAppointmentId = appointmentResult.data.id;
-      defaultVetId = appointmentResult.data.vet_id;
+      defaultVetId = appointmentResult.data.assigned_to;
     }
   }
 
@@ -93,7 +93,7 @@ export default async function NewRecordPage({
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Nuevo registro cl\u00ednico
+            Nuevo registro clínico
           </h1>
           <p className="text-sm text-muted-foreground">
             {petResult.data.name} - {petResult.data.client.first_name}{" "}

@@ -41,7 +41,7 @@ export default async function AppointmentsPage({
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Agenda</h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona las citas de tu cl\u00ednica.
+            Gestiona las citas de tu clínica.
           </p>
         </div>
         <Link href={`/${clinic}/appointments/new`}>

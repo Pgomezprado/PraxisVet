@@ -34,7 +34,7 @@ function calculateAge(birthdate: string | null): string | null {
   if (totalMonths < 1) return "Menos de 1 mes";
   if (totalMonths < 12) return `${totalMonths} ${totalMonths === 1 ? "mes" : "meses"}`;
   const y = Math.floor(totalMonths / 12);
-  return `${y} ${y === 1 ? "a\u00f1o" : "a\u00f1os"}`;
+  return `${y} ${y === 1 ? "año" : "años"}`;
 }
 
 export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
@@ -105,7 +105,7 @@ export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
         </Button>
         <DeleteButton
           label="Eliminar mascota"
-          description={`Se eliminar\u00e1 a ${pet.name} y todos sus registros asociados. Esta acci\u00f3n no se puede deshacer.`}
+          description={`Se eliminará a ${pet.name} y todos sus registros asociados. Esta acción no se puede deshacer.`}
           onDelete={() => deletePet(pet.id, clientId, clinicSlug)}
         />
       </div>

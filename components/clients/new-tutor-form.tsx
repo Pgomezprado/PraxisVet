@@ -1,0 +1,289 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  newTutorWithPetSchema,
+  type NewTutorWithPetInput,
+  SPECIES_OPTIONS,
+  SEX_OPTIONS,
+} from "@/lib/validations/clients";
+import { getBreedSuggestions } from "@/lib/constants/breeds";
+import { useClinic } from "@/lib/context/clinic-context";
+import { createTutorWithPet } from "@/app/[clinic]/clients/actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Loader2, User, PawPrint } from "lucide-react";
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mt-1 text-xs text-destructive">{message}</p>;
+}
+
+export function NewTutorForm() {
+  const router = useRouter();
+  const { organization, clinicSlug } = useClinic();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    formState: { errors },
+  } = useForm<NewTutorWithPetInput>({
+    resolver: zodResolver(newTutorWithPetSchema),
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      address: "",
+      pet_name: "",
+      pet_species: "",
+      pet_breed: "",
+      pet_sex: "",
+      pet_birthdate: "",
+      pet_notes: "",
+    },
+  });
+
+  const watchedSpecies = watch("pet_species");
+  const breedSuggestions = getBreedSuggestions(watchedSpecies);
+
+  async function onSubmit(data: NewTutorWithPetInput) {
+    setError(null);
+    setLoading(true);
+
+    const result = await createTutorWithPet(organization.id, clinicSlug, data);
+
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+
+    router.push(`/${clinicSlug}/clients/${result.data.clientId}`);
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {error && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {/* Sección 1: Tutor */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <User className="size-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">
+                Datos del tutor
+              </CardTitle>
+              <CardDescription>
+                Persona responsable de la mascota.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="first_name">Nombre *</Label>
+              <Input
+                id="first_name"
+                placeholder="ej: María"
+                {...register("first_name")}
+                aria-invalid={!!errors.first_name}
+              />
+              <FieldError message={errors.first_name?.message} />
+            </div>
+            <div>
+              <Label htmlFor="last_name">Apellido *</Label>
+              <Input
+                id="last_name"
+                placeholder="ej: Pérez"
+                {...register("last_name")}
+                aria-invalid={!!errors.last_name}
+              />
+              <FieldError message={errors.last_name?.message} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="email">Email (opcional)</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="ej: maria@email.com"
+                {...register("email")}
+                aria-invalid={!!errors.email}
+              />
+              <FieldError message={errors.email?.message} />
+            </div>
+            <div>
+              <Label htmlFor="phone">Teléfono (opcional)</Label>
+              <Input
+                id="phone"
+                placeholder="ej: +56 9 1234 5678"
+                {...register("phone")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="address">Dirección (opcional)</Label>
+            <Input
+              id="address"
+              placeholder="ej: Av. Providencia 1234, Santiago"
+              {...register("address")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sección 2: Paciente */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <PawPrint className="size-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">
+                Datos del paciente
+              </CardTitle>
+              <CardDescription>
+                La mascota del tutor. Podrás agregar más pacientes después.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="pet_name">Nombre del paciente *</Label>
+            <Input
+              id="pet_name"
+              placeholder="ej: Luna"
+              {...register("pet_name")}
+              aria-invalid={!!errors.pet_name}
+            />
+            <FieldError message={errors.pet_name?.message} />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="pet_species">Especie (opcional)</Label>
+              <Select id="pet_species" {...register("pet_species")}>
+                <option value="">Seleccionar especie</option>
+                {SPECIES_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="pet_sex">Sexo (opcional)</Label>
+              <Select id="pet_sex" {...register("pet_sex")}>
+                <option value="">Seleccionar sexo</option>
+                {SEX_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="pet_breed">Raza (opcional)</Label>
+              <Controller
+                name="pet_breed"
+                control={control}
+                render={({ field }) => (
+                  <Combobox
+                    id="pet_breed"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    options={breedSuggestions}
+                    placeholder={
+                      breedSuggestions.length > 0
+                        ? "Escribe o elige de la lista"
+                        : "ej: Labrador"
+                    }
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pet_birthdate">Fecha de nacimiento (opcional)</Label>
+              <Controller
+                name="pet_birthdate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    id="pet_birthdate"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Seleccionar fecha"
+                  />
+                )}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="pet_notes">Notas del paciente (opcional)</Label>
+            <Textarea
+              id="pet_notes"
+              placeholder="Alergias, temperamento, observaciones…"
+              rows={2}
+              {...register("pet_notes")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-3">
+        <Button type="submit" disabled={loading}>
+          {loading && <Loader2 className="size-3.5 animate-spin" />}
+          Crear tutor y paciente
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push(`/${clinicSlug}/clients`)}
+          disabled={loading}
+        >
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}

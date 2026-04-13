@@ -21,10 +21,13 @@ export function AppHeader() {
   const router = useRouter();
   const { member } = useClinic();
 
-  const initials = [member.first_name?.[0], member.last_name?.[0]]
-    .filter(Boolean)
-    .join("")
-    .toUpperCase();
+  const initials = (() => {
+    const first = member.first_name?.trim();
+    const last = member.last_name?.trim();
+    if (first && last) return (first[0] + last[0]).toUpperCase();
+    if (first) return first.slice(0, 2).toUpperCase();
+    return "?";
+  })();
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -66,7 +69,7 @@ export function AppHeader() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 size-4" />
-            Cerrar sesi\u00f3n
+            Cerrar sesión
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

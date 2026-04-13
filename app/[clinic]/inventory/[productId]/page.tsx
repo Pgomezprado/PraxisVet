@@ -106,7 +106,7 @@ export default async function ProductDetailPage({
             />
             {product.low_stock && (
               <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                Stock por debajo del m\u00ednimo ({product.min_stock}{" "}
+                Stock por debajo del mínimo ({product.min_stock}{" "}
                 {UNIT_LABELS[product.unit]})
               </p>
             )}
@@ -115,7 +115,7 @@ export default async function ProductDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Informaci\u00f3n del producto</CardTitle>
+            <CardTitle>Información del producto</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-3 text-sm">
@@ -124,7 +124,7 @@ export default async function ProductDetailPage({
                 <dd className="font-medium">{UNIT_LABELS[product.unit]}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Stock m\u00ednimo</dt>
+                <dt className="text-muted-foreground">Stock mínimo</dt>
                 <dd className="font-medium">{product.min_stock}</dd>
               </div>
               <div>
@@ -207,7 +207,7 @@ export default async function ProductDetailPage({
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Cantidad</TableHead>
-                  <TableHead>Raz\u00f3n</TableHead>
+                  <TableHead>Razón</TableHead>
                   <TableHead>Notas</TableHead>
                 </TableRow>
               </TableHeader>

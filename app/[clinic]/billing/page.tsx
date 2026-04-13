@@ -34,7 +34,7 @@ export default async function BillingPage({
   if (!org) {
     return (
       <p className="text-sm text-muted-foreground">
-        Organizaci\u00f3n no encontrada.
+        Organización no encontrada.
       </p>
     );
   }
@@ -60,9 +60,9 @@ export default async function BillingPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Facturaci\u00f3n</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Facturación</h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona las facturas y pagos de tu cl\u00ednica.
+            Gestiona las facturas y pagos de tu clínica.
           </p>
         </div>
         <Link href={`/${clinic}/billing/new`}>

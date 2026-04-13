@@ -70,9 +70,9 @@ export function ClinicForm({ organization }: ClinicFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Datos de la cl\u00ednica</CardTitle>
+        <CardTitle>Datos de la clínica</CardTitle>
         <CardDescription>
-          Actualiza el nombre y datos de contacto de tu cl\u00ednica.
+          Actualiza el nombre y datos de contacto de tu clínica.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -90,10 +90,10 @@ export function ClinicForm({ organization }: ClinicFormProps) {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre de la cl\u00ednica</Label>
+            <Label htmlFor="name">Nombre de la clínica</Label>
             <Input
               id="name"
-              placeholder="ej: Cl\u00ednica Veterinaria San Rafael"
+              placeholder="ej: Clínica Veterinaria San Rafael"
               {...register("name")}
             />
             {errors.name && (
@@ -119,7 +119,7 @@ export function ClinicForm({ organization }: ClinicFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Tel\u00e9fono</Label>
+            <Label htmlFor="phone">Teléfono</Label>
             <Input
               id="phone"
               type="tel"
@@ -134,7 +134,7 @@ export function ClinicForm({ organization }: ClinicFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address">Direcci\u00f3n</Label>
+            <Label htmlFor="address">Dirección</Label>
             <Textarea
               id="address"
               placeholder="Calle, colonia, ciudad, estado..."

@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Plus,
   Receipt,
+  Scissors,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -28,6 +29,7 @@ import { StatusBadge } from "@/components/appointments/status-badge";
 import { StatusActions } from "@/components/appointments/status-actions";
 import { getAppointment } from "../actions";
 import { getLinkedRecord } from "@/app/[clinic]/clients/[id]/pets/[petId]/records/actions";
+import { getLinkedGroomingRecord } from "@/app/[clinic]/clients/[id]/pets/[petId]/grooming/actions";
 
 function formatTime(time: string): string {
   return time.slice(0, 5);
@@ -46,11 +48,15 @@ export default async function AppointmentDetailPage({
     notFound();
   }
 
-  const linkedRecord = await getLinkedRecord(appointment.id);
-
-  const vetName = [appointment.vet.first_name, appointment.vet.last_name]
-    .filter(Boolean)
-    .join(" ") || "Sin asignar";
+  const isGrooming = appointment.type === "grooming";
+  const [linkedRecord, linkedGroomingRecord] = await Promise.all([
+    isGrooming ? Promise.resolve(null) : getLinkedRecord(appointment.id),
+    isGrooming ? getLinkedGroomingRecord(appointment.id) : Promise.resolve(null),
+  ]);
+  const professionalName =
+    [appointment.professional.first_name, appointment.professional.last_name]
+      .filter(Boolean)
+      .join(" ") || "Sin asignar";
 
   const clientName = `${appointment.client.first_name} ${appointment.client.last_name}`;
 
@@ -90,17 +96,17 @@ export default async function AppointmentDetailPage({
         clinicSlug={clinic}
       />
 
-      {(appointment.status === "completed" || appointment.status === "in_progress") && (
+      {!isGrooming && (appointment.status === "completed" || appointment.status === "in_progress") && (
         <Card>
           <CardContent className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <ClipboardList className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Registro cl\u00ednico</p>
+                <p className="text-sm font-medium">Registro clínico</p>
                 <p className="text-xs text-muted-foreground">
                   {linkedRecord
-                    ? "Este registro est\u00e1 vinculado a esta cita."
-                    : "Registra los hallazgos cl\u00ednicos de esta consulta."}
+                    ? "Este registro está vinculado a esta cita."
+                    : "Registra los hallazgos clínicos de esta consulta."}
                 </p>
               </div>
             </div>
@@ -127,13 +133,53 @@ export default async function AppointmentDetailPage({
         </Card>
       )}
 
+      {isGrooming &&
+        (appointment.status === "in_progress" ||
+          appointment.status === "ready_for_pickup" ||
+          appointment.status === "completed") && (
+          <Card>
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <Scissors className="size-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Registro de peluquería</p>
+                  <p className="text-xs text-muted-foreground">
+                    {linkedGroomingRecord
+                      ? "Este servicio ya está registrado."
+                      : "Deja observaciones opcionales del servicio realizado."}
+                  </p>
+                </div>
+              </div>
+              {linkedGroomingRecord ? (
+                <Link
+                  href={`/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/grooming/${linkedGroomingRecord.id}`}
+                >
+                  <Button variant="outline" size="sm">
+                    <Scissors className="size-3.5" data-icon="inline-start" />
+                    Ver servicio
+                  </Button>
+                </Link>
+              ) : (
+                <Link
+                  href={`/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/grooming/new?appointment=${appointment.id}`}
+                >
+                  <Button size="sm">
+                    <Plus className="size-3.5" data-icon="inline-start" />
+                    Registrar servicio
+                  </Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
       {appointment.status === "completed" && (
         <Card>
           <CardContent className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <Receipt className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Facturaci\u00f3n</p>
+                <p className="text-sm font-medium">Facturación</p>
                 <p className="text-xs text-muted-foreground">
                   Genera una factura a partir de esta cita.
                 </p>
@@ -225,18 +271,18 @@ export default async function AppointmentDetailPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
               <Stethoscope className="size-4" />
-              Veterinario
+              {isGrooming ? "Peluquero" : "Veterinario"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Nombre</span>
-              <span className="text-sm font-medium">{vetName}</span>
+              <span className="text-sm font-medium">{professionalName}</span>
             </div>
-            {appointment.vet.specialty && (
+            {appointment.professional.specialty && (
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Especialidad</span>
-                <span className="text-sm font-medium">{appointment.vet.specialty}</span>
+                <span className="text-sm font-medium">{appointment.professional.specialty}</span>
               </div>
             )}
           </CardContent>

@@ -42,7 +42,7 @@ export function LoginForm() {
     });
 
     if (error) {
-      setError("Email o contrase\u00f1a incorrectos");
+      setError("Email o contraseña incorrectos");
       setLoading(false);
       return;
     }
@@ -65,9 +65,9 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Iniciar sesi\u00f3n</CardTitle>
+        <CardTitle className="text-2xl">Iniciar sesión</CardTitle>
         <CardDescription>
-          Ingresa tus credenciales para acceder a tu cl\u00ednica
+          Ingresa tus credenciales para acceder a tu clínica
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -93,12 +93,12 @@ export function LoginForm() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Contrase\u00f1a</Label>
+              <Label htmlFor="password">Contraseña</Label>
               <Link
                 href="/auth/forgot-password"
                 className="text-sm text-muted-foreground hover:text-foreground hover:underline"
               >
-                \u00bfOlvidaste tu contrase\u00f1a?
+                ¿Olvidaste tu contraseña?
               </Link>
             </div>
             <Input
@@ -115,7 +115,7 @@ export function LoginForm() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Ingresando..." : "Iniciar sesi\u00f3n"}
+            {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

@@ -1,9 +1,17 @@
-export type MemberRole = "admin" | "vet" | "receptionist";
+export type MemberRole = "admin" | "vet" | "receptionist" | "groomer";
 export type Plan = "free" | "pro" | "enterprise";
 export type Species = "dog" | "cat" | "bird" | "rabbit" | "reptile" | "other";
 export type Sex = "male" | "female";
 export type ServiceCategory = "consultation" | "surgery" | "grooming" | "vaccine" | "lab" | "imaging" | "other";
-export type AppointmentStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show";
+export type AppointmentType = "medical" | "grooming";
+export type AppointmentStatus =
+  | "pending"
+  | "confirmed"
+  | "in_progress"
+  | "ready_for_pickup"
+  | "completed"
+  | "cancelled"
+  | "no_show";
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
 export type PaymentMethod = "cash" | "card" | "transfer" | "other";
 export type ProductCategory = "medicine" | "supply" | "food" | "accessory" | "other";
@@ -29,7 +37,7 @@ export interface Organization {
 export interface OrganizationMember {
   id: string;
   org_id: string;
-  user_id: string;
+  user_id: string | null;
   role: MemberRole;
   first_name: string | null;
   last_name: string | null;
@@ -43,6 +51,7 @@ export interface Client {
   org_id: string;
   first_name: string;
   last_name: string;
+  rut: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
@@ -84,8 +93,9 @@ export interface Appointment {
   org_id: string;
   pet_id: string;
   client_id: string;
-  vet_id: string;
+  assigned_to: string;
   service_id: string | null;
+  type: AppointmentType;
   status: AppointmentStatus;
   date: string;
   start_time: string;
@@ -93,6 +103,19 @@ export interface Appointment {
   reason: string | null;
   notes: string | null;
   reminder_sent: boolean;
+  created_at: string;
+}
+
+export interface GroomingRecord {
+  id: string;
+  org_id: string;
+  pet_id: string;
+  appointment_id: string | null;
+  groomer_id: string | null;
+  date: string;
+  service_performed: string | null;
+  observations: string | null;
+  products_used: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -138,6 +161,8 @@ export interface Prescription {
   frequency: string | null;
   duration: string | null;
   notes: string | null;
+  is_retained: boolean;
+  retained_copy_url: string | null;
   created_at: string;
 }
 

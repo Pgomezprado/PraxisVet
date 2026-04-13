@@ -224,7 +224,7 @@ export function InvoiceForm({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%]">Descripci\u00f3n</TableHead>
+                <TableHead className="w-[40%]">Descripción</TableHead>
                 <TableHead className="w-[15%]">Tipo</TableHead>
                 <TableHead className="w-[12%] text-right">Cantidad</TableHead>
                 <TableHead className="w-[15%] text-right">
@@ -244,7 +244,7 @@ export function InvoiceForm({
                   <TableRow key={field.id}>
                     <TableCell>
                       <Input
-                        placeholder="Descripci\u00f3n del concepto"
+                        placeholder="Descripción del concepto"
                         {...register(`items.${index}.description`)}
                       />
                       {errors.items?.[index]?.description && (

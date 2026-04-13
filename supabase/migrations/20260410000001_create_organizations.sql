@@ -27,33 +27,13 @@ CREATE POLICY "authenticated_users_can_create_orgs"
   TO authenticated
   WITH CHECK (true);
 
--- Members can read their own org
-CREATE POLICY "members_can_read_own_org"
-  ON public.organizations
-  FOR SELECT
-  TO authenticated
-  USING (
-    id IN (
-      SELECT org_id FROM public.organization_members
-      WHERE user_id = auth.uid() AND active = true
-    )
-  );
-
--- Admins can update their own org
-CREATE POLICY "admins_can_update_own_org"
-  ON public.organizations
-  FOR UPDATE
-  TO authenticated
-  USING (
-    id IN (
-      SELECT org_id FROM public.organization_members
-      WHERE user_id = auth.uid() AND role = 'admin' AND active = true
-    )
-  );
-
 -- Allow anyone to check slug availability (for onboarding)
 CREATE POLICY "anyone_can_check_slug"
   ON public.organizations
   FOR SELECT
   TO authenticated
   USING (true);
+
+-- NOTE: Cross-table policies that reference organization_members
+-- (members_can_read_own_org, admins_can_update_own_org) live in
+-- migration 2, after organization_members is created.

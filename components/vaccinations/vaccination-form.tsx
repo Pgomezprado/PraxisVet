@@ -102,7 +102,7 @@ export function VaccinationForm({
         </CardTitle>
         <CardDescription>
           {isEditing
-            ? "Modifica los datos del registro de vacunaci\u00f3n."
+            ? "Modifica los datos del registro de vacunación."
             : "Registra una nueva vacuna aplicada."}
         </CardDescription>
       </CardHeader>
@@ -177,7 +177,7 @@ export function VaccinationForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="date_administered">Fecha de aplicaci\u00f3n</Label>
+              <Label htmlFor="date_administered">Fecha de aplicación</Label>
               <Input
                 id="date_administered"
                 type="date"
@@ -191,7 +191,7 @@ export function VaccinationForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="next_due_date">
-                Pr\u00f3xima dosis (opcional)
+                Próxima dosis (opcional)
               </Label>
               <Input
                 id="next_due_date"
@@ -203,7 +203,7 @@ export function VaccinationForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="lot_number">N\u00famero de lote (opcional)</Label>
+              <Label htmlFor="lot_number">Número de lote (opcional)</Label>
               <Input
                 id="lot_number"
                 placeholder="ej: AB1234"

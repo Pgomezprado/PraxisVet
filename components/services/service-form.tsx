@@ -80,7 +80,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
         <CardDescription>
           {isEditing
             ? "Modifica los datos del servicio."
-            : "Agrega un nuevo servicio a tu cat\u00e1logo."}
+            : "Agrega un nuevo servicio a tu catálogo."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -106,7 +106,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descripci\u00f3n (opcional)</Label>
+            <Label htmlFor="description">Descripción (opcional)</Label>
             <Textarea
               id="description"
               placeholder="Describe brevemente el servicio..."
@@ -116,13 +116,13 @@ export function ServiceForm({ service }: ServiceFormProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="category">Categor\u00eda (opcional)</Label>
+              <Label htmlFor="category">Categoría (opcional)</Label>
               <Select
                 id="category"
                 defaultValue={service?.category ?? ""}
                 {...register("category")}
               >
-                <option value="">Seleccionar categor\u00eda</option>
+                <option value="">Seleccionar categoría</option>
                 {categoryOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
@@ -137,7 +137,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration_minutes">Duraci\u00f3n (minutos)</Label>
+              <Label htmlFor="duration_minutes">Duración (minutos)</Label>
               <Input
                 id="duration_minutes"
                 type="number"

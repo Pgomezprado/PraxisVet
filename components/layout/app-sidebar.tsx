@@ -13,12 +13,12 @@ import {
 } from "lucide-react";
 import { useClinic } from "@/lib/context/clinic-context";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -54,7 +54,7 @@ const navItems: NavItem[] = [
     roles: ["admin", "vet", "receptionist"],
   },
   {
-    title: "Facturaci\u00f3n",
+    title: "Facturación",
     href: "/billing",
     icon: Receipt,
     roles: ["admin", "receptionist"],
@@ -66,7 +66,7 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "Configuraci\u00f3n",
+    title: "Configuración",
     href: "/settings",
     icon: Settings,
     roles: ["admin"],
@@ -81,40 +81,59 @@ export function AppSidebar() {
     item.roles.includes(member.role)
   );
 
+  const initials = (() => {
+    const first = member.first_name?.trim();
+    const last = member.last_name?.trim();
+    if (first && last) return (first[0] + last[0]).toUpperCase();
+    if (first) return first.slice(0, 2).toUpperCase();
+    return "?";
+  })();
+
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-border/40 px-4 py-4">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <PawPrint className="size-4" />
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-5">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <PawPrint className="size-5" />
           </div>
-          <div className="flex-1 truncate">
-            <p className="truncate text-sm font-semibold">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold leading-tight">
               {organization.name}
             </p>
-            <Badge variant="secondary" className="mt-0.5 text-[10px]">
-              {organization.plan}
+            <Badge
+              variant="secondary"
+              className="mt-1 text-[10px] uppercase tracking-wide"
+            >
+              Plan {organization.plan}
             </Badge>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>Men\u00fa</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {filteredItems.map((item) => {
                 const fullHref = `/${clinicSlug}${item.href}`;
-                const isActive = pathname === fullHref || pathname.startsWith(`${fullHref}/`);
+                const isActive =
+                  pathname === fullHref || pathname.startsWith(`${fullHref}/`);
 
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       isActive={isActive}
+                      size="lg"
+                      className="group relative h-11 gap-3 px-3 text-[15px] font-medium text-sidebar-foreground/75 transition-colors [&_svg]:size-5! hover:bg-sidebar-accent hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:font-semibold data-active:text-sidebar-primary"
                       render={<Link href={fullHref} />}
                     >
-                      <item.icon className="size-4" />
+                      {isActive && (
+                        <span
+                          aria-hidden
+                          className="absolute top-2 bottom-2 left-0 w-0.5 rounded-r-full bg-sidebar-primary"
+                        />
+                      )}
+                      <item.icon />
                       <span>{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -125,13 +144,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/40 px-4 py-3">
-        <p className="truncate text-xs text-muted-foreground">
-          {member.first_name} {member.last_name}
-        </p>
-        <p className="text-[10px] capitalize text-muted-foreground">
-          {member.role}
-        </p>
+      <SidebarFooter className="border-t border-sidebar-border px-4 py-4">
+        <div className="flex items-center gap-3">
+          <Avatar className="size-9 border border-sidebar-border">
+            <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium leading-tight">
+              {member.first_name} {member.last_name}
+            </p>
+            <p className="truncate text-xs capitalize text-sidebar-foreground/60">
+              {member.role}
+            </p>
+          </div>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

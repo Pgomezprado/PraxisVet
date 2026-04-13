@@ -46,7 +46,7 @@ export default async function InventoryPage({
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Inventario</h1>
           <p className="text-muted-foreground">
-            Gestiona los productos y el stock de tu cl\u00ednica.
+            Gestiona los productos y el stock de tu clínica.
           </p>
         </div>
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
@@ -64,7 +64,7 @@ export default async function InventoryPage({
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Inventario</h1>
         <p className="text-muted-foreground">
-          Gestiona los productos y el stock de tu cl\u00ednica.
+          Gestiona los productos y el stock de tu clínica.
         </p>
       </div>
 

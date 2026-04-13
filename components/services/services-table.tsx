@@ -83,7 +83,7 @@ export function ServicesTable({ services, clinicSlug }: ServicesTableProps) {
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre o categor\u00eda..."
+            placeholder="Buscar por nombre o categoría..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -103,8 +103,8 @@ export function ServicesTable({ services, clinicSlug }: ServicesTableProps) {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <p className="text-sm text-muted-foreground">
             {search
-              ? "No se encontraron servicios con esa b\u00fasqueda."
-              : "A\u00fan no hay servicios registrados."}
+              ? "No se encontraron servicios con esa búsqueda."
+              : "Aún no hay servicios registrados."}
           </p>
           {!search && (
             <Button
@@ -124,8 +124,8 @@ export function ServicesTable({ services, clinicSlug }: ServicesTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
-              <TableHead>Categor\u00eda</TableHead>
-              <TableHead>Duraci\u00f3n</TableHead>
+              <TableHead>Categoría</TableHead>
+              <TableHead>Duración</TableHead>
               <TableHead>Precio</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>

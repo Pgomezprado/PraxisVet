@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentForm } from "@/components/appointments/appointment-form";
-import { getVets, getClientsWithPets, getServices } from "../actions";
+import { getProfessionals, getClientsWithPets, getServices } from "../actions";
 
 export default async function NewAppointmentPage({
   params,
@@ -23,9 +23,9 @@ export default async function NewAppointmentPage({
     return <p className="text-sm text-muted-foreground">Organizacion no encontrada.</p>;
   }
 
-  const [clientsResult, vetsResult, servicesResult] = await Promise.all([
+  const [clientsResult, professionalsResult, servicesResult] = await Promise.all([
     getClientsWithPets(org.id),
-    getVets(org.id),
+    getProfessionals(org.id),
     getServices(org.id),
   ]);
 
@@ -42,7 +42,7 @@ export default async function NewAppointmentPage({
         orgId={org.id}
         clinicSlug={clinic}
         clients={clientsResult.data ?? []}
-        vets={vetsResult.data ?? []}
+        professionals={professionalsResult.data ?? []}
         services={servicesResult.data ?? []}
         defaultValues={dateParam ? { date: dateParam } : undefined}
       />

@@ -4,15 +4,16 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { appointmentSchema, updateStatusSchema } from "@/lib/validations/appointments";
 import type { AppointmentInput } from "@/lib/validations/appointments";
-import type { AppointmentStatus } from "@/types";
+import type { AppointmentStatus, AppointmentType, MemberRole } from "@/types";
 
 export type AppointmentWithRelations = {
   id: string;
   org_id: string;
   pet_id: string;
   client_id: string;
-  vet_id: string;
+  assigned_to: string;
   service_id: string | null;
+  type: AppointmentType;
   status: AppointmentStatus;
   date: string;
   start_time: string;
@@ -23,24 +24,30 @@ export type AppointmentWithRelations = {
   created_at: string;
   client: { id: string; first_name: string; last_name: string; phone: string | null };
   pet: { id: string; name: string; species: string | null; breed: string | null };
-  vet: { id: string; first_name: string | null; last_name: string | null; specialty: string | null };
+  professional: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    specialty: string | null;
+    role: MemberRole;
+  };
   service: { id: string; name: string; duration_minutes: number; price: number | null } | null;
 };
+
+const SELECT_WITH_RELATIONS = `
+      *,
+      client:clients!client_id (id, first_name, last_name, phone),
+      pet:pets!pet_id (id, name, species, breed),
+      professional:organization_members!assigned_to (id, first_name, last_name, specialty, role),
+      service:services!service_id (id, name, duration_minutes, price)
+    `;
 
 export async function getAppointments(orgId: string, date?: string) {
   const supabase = await createClient();
 
   let query = supabase
     .from("appointments")
-    .select(
-      `
-      *,
-      client:clients!client_id (id, first_name, last_name, phone),
-      pet:pets!pet_id (id, name, species, breed),
-      vet:organization_members!vet_id (id, first_name, last_name, specialty),
-      service:services!service_id (id, name, duration_minutes, price)
-    `
-    )
+    .select(SELECT_WITH_RELATIONS)
     .eq("org_id", orgId)
     .order("start_time", { ascending: true });
 
@@ -67,7 +74,7 @@ export async function getAppointment(appointmentId: string) {
       *,
       client:clients!client_id (id, first_name, last_name, phone, email),
       pet:pets!pet_id (id, name, species, breed, sex, birthdate),
-      vet:organization_members!vet_id (id, first_name, last_name, specialty),
+      professional:organization_members!assigned_to (id, first_name, last_name, specialty, role),
       service:services!service_id (id, name, duration_minutes, price, category)
     `
     )
@@ -103,7 +110,8 @@ export async function createAppointment(orgId: string, formData: AppointmentInpu
       org_id: orgId,
       client_id: parsed.data.client_id,
       pet_id: parsed.data.pet_id,
-      vet_id: parsed.data.vet_id,
+      assigned_to: parsed.data.assigned_to,
+      type: parsed.data.type,
       service_id: parsed.data.service_id || null,
       date: parsed.data.date,
       start_time: parsed.data.start_time,
@@ -144,7 +152,8 @@ export async function updateAppointment(appointmentId: string, formData: Appoint
     .update({
       client_id: parsed.data.client_id,
       pet_id: parsed.data.pet_id,
-      vet_id: parsed.data.vet_id,
+      assigned_to: parsed.data.assigned_to,
+      type: parsed.data.type,
       service_id: parsed.data.service_id || null,
       date: parsed.data.date,
       start_time: parsed.data.start_time,
@@ -230,15 +239,7 @@ export async function getWeekAppointments(orgId: string, weekStartDate: string) 
 
   const { data, error } = await supabase
     .from("appointments")
-    .select(
-      `
-      *,
-      client:clients!client_id (id, first_name, last_name, phone),
-      pet:pets!pet_id (id, name, species, breed),
-      vet:organization_members!vet_id (id, first_name, last_name, specialty),
-      service:services!service_id (id, name, duration_minutes, price)
-    `
-    )
+    .select(SELECT_WITH_RELATIONS)
     .eq("org_id", orgId)
     .gte("date", weekStartDate)
     .lte("date", endDateStr)
@@ -254,7 +255,7 @@ export async function getWeekAppointments(orgId: string, weekStartDate: string) 
 export async function checkConflicts(
   orgId: string,
   data: {
-    vet_id: string;
+    assigned_to: string;
     date: string;
     start_time: string;
     end_time: string;
@@ -265,17 +266,9 @@ export async function checkConflicts(
 
   let query = supabase
     .from("appointments")
-    .select(
-      `
-      *,
-      client:clients!client_id (id, first_name, last_name, phone),
-      pet:pets!pet_id (id, name, species, breed),
-      vet:organization_members!vet_id (id, first_name, last_name, specialty),
-      service:services!service_id (id, name, duration_minutes, price)
-    `
-    )
+    .select(SELECT_WITH_RELATIONS)
     .eq("org_id", orgId)
-    .eq("vet_id", data.vet_id)
+    .eq("assigned_to", data.assigned_to)
     .eq("date", data.date)
     .lt("start_time", data.end_time)
     .gt("end_time", data.start_time)
@@ -294,19 +287,23 @@ export async function checkConflicts(
   return { data: conflicts as unknown as AppointmentWithRelations[], error: null };
 }
 
-export async function getVetDayAppointments(orgId: string, vetId: string, date: string) {
+export async function getProfessionalDayAppointments(
+  orgId: string,
+  professionalId: string,
+  date: string
+) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("appointments")
     .select(
       `
-      id, start_time, end_time, status,
+      id, start_time, end_time, status, type,
       pet:pets!pet_id (id, name)
     `
     )
     .eq("org_id", orgId)
-    .eq("vet_id", vetId)
+    .eq("assigned_to", professionalId)
     .eq("date", date)
     .not("status", "in", '("cancelled","no_show")')
     .order("start_time", { ascending: true });
@@ -318,15 +315,15 @@ export async function getVetDayAppointments(orgId: string, vetId: string, date: 
   return { data, error: null };
 }
 
-export async function getVets(orgId: string) {
+export async function getProfessionals(orgId: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("organization_members")
-    .select("id, first_name, last_name, specialty")
+    .select("id, first_name, last_name, specialty, role")
     .eq("org_id", orgId)
     .eq("active", true)
-    .in("role", ["admin", "vet"])
+    .in("role", ["admin", "vet", "groomer"])
     .order("first_name");
 
   if (error) {

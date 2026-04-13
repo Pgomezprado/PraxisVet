@@ -75,3 +75,30 @@ CREATE POLICY "admins_can_insert_members"
       WHERE user_id = auth.uid() AND role = 'admin' AND active = true
     )
   );
+
+-- ============================================
+-- Cross-table policies on public.organizations
+-- (moved here because they reference organization_members)
+-- ============================================
+
+CREATE POLICY "members_can_read_own_org"
+  ON public.organizations
+  FOR SELECT
+  TO authenticated
+  USING (
+    id IN (
+      SELECT org_id FROM public.organization_members
+      WHERE user_id = auth.uid() AND active = true
+    )
+  );
+
+CREATE POLICY "admins_can_update_own_org"
+  ON public.organizations
+  FOR UPDATE
+  TO authenticated
+  USING (
+    id IN (
+      SELECT org_id FROM public.organization_members
+      WHERE user_id = auth.uid() AND role = 'admin' AND active = true
+    )
+  );

@@ -126,7 +126,7 @@ export default async function InvoiceDetailPage({
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Informaci\u00f3n general</CardTitle>
+            <CardTitle className="text-sm">Información general</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex justify-between">

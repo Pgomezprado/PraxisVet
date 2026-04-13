@@ -45,7 +45,7 @@ function StatusBadge({ status }: { status: VaccinationStatus | null }) {
 
   const config = {
     vigente: { label: "Vigente", variant: "default" as const },
-    por_vencer: { label: "Pr\u00f3xima", variant: "outline" as const, className: "border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30" },
+    por_vencer: { label: "Próxima", variant: "outline" as const, className: "border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30" },
     vencida: { label: "Vencida", variant: "destructive" as const },
   };
 
@@ -126,7 +126,7 @@ export function VaccinationTable({ vaccinations, basePath }: VaccinationTablePro
               <TableHead>Fecha</TableHead>
               <TableHead>Vacuna</TableHead>
               <TableHead>Lote</TableHead>
-              <TableHead>Pr\u00f3xima dosis</TableHead>
+              <TableHead>Próxima dosis</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Veterinario</TableHead>
               <TableHead className="w-25">Acciones</TableHead>
@@ -196,8 +196,8 @@ export function VaccinationTable({ vaccinations, basePath }: VaccinationTablePro
                           <DialogHeader>
                             <DialogTitle>Eliminar vacuna</DialogTitle>
                             <DialogDescription>
-                              Se eliminar\u00e1 el registro de {vac.vaccine_name} del{" "}
-                              {formatDate(vac.date_administered)}. Esta acci\u00f3n no se
+                              Se eliminará el registro de {vac.vaccine_name} del{" "}
+                              {formatDate(vac.date_administered)}. Esta acción no se
                               puede deshacer.
                             </DialogDescription>
                           </DialogHeader>

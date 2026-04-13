@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = {
-  title: "Iniciar sesi\u00f3n | PraxisVet",
+  title: "Iniciar sesión | PraxisVet",
 };
 
 export default function LoginPage() {

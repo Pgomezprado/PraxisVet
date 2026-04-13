@@ -187,12 +187,12 @@ export function RecordForm({
       <Card>
         <CardHeader>
           <CardTitle>
-            {isEditing ? "Editar registro cl\u00ednico" : "Nuevo registro cl\u00ednico"}
+            {isEditing ? "Editar registro clínico" : "Nuevo registro clínico"}
           </CardTitle>
           <CardDescription>
             {isEditing
-              ? "Modifica la informaci\u00f3n del registro cl\u00ednico."
-              : "Registra una nueva consulta cl\u00ednica para esta mascota."}
+              ? "Modifica la información del registro clínico."
+              : "Registra una nueva consulta clínica para esta mascota."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -209,7 +209,7 @@ export function RecordForm({
             {/* Plantillas rapidas */}
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">
-                Plantilla r\u00e1pida
+                Plantilla rápida
               </Label>
               <div className="flex flex-wrap gap-2">
                 {RECORD_TEMPLATES.map((template) => (
@@ -263,7 +263,7 @@ export function RecordForm({
                 <Label htmlFor="reason">Motivo</Label>
                 <AutoTextarea
                   id="reason"
-                  placeholder="ej: Control general, vacunaci\u00f3n, malestar digestivo..."
+                  placeholder="ej: Control general, vacunación, malestar digestivo..."
                   {...register("reason")}
                 />
                 {errors.reason && (
@@ -274,7 +274,7 @@ export function RecordForm({
               </div>
             </CollapsibleSection>
 
-            {/* Secci\u00f3n 2: Signos vitales - expandida por default */}
+            {/* Sección 2: Signos vitales - expandida por default */}
             <CollapsibleSection
               title="Signos vitales"
               defaultOpen
@@ -332,9 +332,9 @@ export function RecordForm({
               </div>
             </CollapsibleSection>
 
-            {/* Secci\u00f3n 3: Examen cl\u00ednico - colapsada por default */}
+            {/* Sección 3: Examen clínico - colapsada por default */}
             <CollapsibleSection
-              title="Examen cl\u00ednico"
+              title="Examen clínico"
               hasContent={hasExam}
               preview={
                 anamnesis
@@ -354,19 +354,19 @@ export function RecordForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="symptoms">S\u00edntomas / Hallazgos</Label>
+                  <Label htmlFor="symptoms">Síntomas / Hallazgos</Label>
                   <AutoTextarea
                     id="symptoms"
-                    placeholder="Hallazgos del examen f\u00edsico..."
+                    placeholder="Hallazgos del examen físico..."
                     {...register("symptoms")}
                   />
                 </div>
               </div>
             </CollapsibleSection>
 
-            {/* Secci\u00f3n 4: Diagn\u00f3stico y tratamiento - expandida por default */}
+            {/* Sección 4: Diagnóstico y tratamiento - expandida por default */}
             <CollapsibleSection
-              title="Diagn\u00f3stico y tratamiento"
+              title="Diagnóstico y tratamiento"
               defaultOpen
               hasContent={hasDiagTreatment}
               preview={
@@ -379,10 +379,10 @@ export function RecordForm({
             >
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="diagnosis">Diagn\u00f3stico</Label>
+                  <Label htmlFor="diagnosis">Diagnóstico</Label>
                   <AutoTextarea
                     id="diagnosis"
-                    placeholder="Diagn\u00f3stico presuntivo o definitivo..."
+                    placeholder="Diagnóstico presuntivo o definitivo..."
                     {...register("diagnosis")}
                   />
                 </div>
@@ -439,7 +439,7 @@ export function RecordForm({
         </CardContent>
       </Card>
 
-      {/* Dialog de confirmaci\u00f3n de plantilla */}
+      {/* Dialog de confirmación de plantilla */}
       <Dialog
         open={!!pendingTemplate}
         onOpenChange={(open) => {
@@ -450,8 +450,8 @@ export function RecordForm({
           <DialogHeader>
             <DialogTitle>Aplicar plantilla</DialogTitle>
             <DialogDescription>
-              Se aplicar\u00e1 la plantilla &quot;{pendingTemplate?.name}&quot;. Solo
-              se rellenar\u00e1n los campos que est\u00e9n vac\u00edos, no se sobreescribir\u00e1 lo
+              Se aplicará la plantilla &quot;{pendingTemplate?.name}&quot;. Solo
+              se rellenarán los campos que estén vacíos, no se sobreescribirá lo
               que ya hayas escrito.
             </DialogDescription>
           </DialogHeader>

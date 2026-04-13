@@ -136,7 +136,7 @@ export function PaymentDialog({
             <Label htmlFor="payment-reference">Referencia (opcional)</Label>
             <Input
               id="payment-reference"
-              placeholder="N\u00famero de transacci\u00f3n, recibo, etc."
+              placeholder="Número de transacción, recibo, etc."
               {...register("reference")}
             />
           </div>

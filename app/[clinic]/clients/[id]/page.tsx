@@ -73,7 +73,7 @@ export default async function ClientDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Informaci\u00f3n de contacto</CardTitle>
+          <CardTitle>Información de contacto</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -83,11 +83,11 @@ export default async function ClientDetailPage({
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Phone className="size-4 text-muted-foreground" />
-              <span>{client.phone || "Sin tel\u00e9fono"}</span>
+              <span>{client.phone || "Sin teléfono"}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="size-4 text-muted-foreground" />
-              <span>{client.address || "Sin direcci\u00f3n"}</span>
+              <span>{client.address || "Sin dirección"}</span>
             </div>
           </div>
           {client.notes && (

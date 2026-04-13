@@ -37,3 +37,21 @@ export const petSchema = z.object({
 });
 
 export type PetInput = z.infer<typeof petSchema>;
+
+/**
+ * Schema combinado para el onboarding de un nuevo tutor con su primer paciente.
+ * Usado solo en /clients/new. La edición sigue usando clientSchema.
+ */
+export const newTutorWithPetSchema = clientSchema.extend({
+  pet_name: z.string().min(1, "El nombre del paciente es obligatorio"),
+  pet_species: z
+    .enum(["dog", "cat", "bird", "rabbit", "reptile", "other"])
+    .optional()
+    .or(z.literal("")),
+  pet_breed: z.string().optional().or(z.literal("")),
+  pet_sex: z.enum(["male", "female"]).optional().or(z.literal("")),
+  pet_birthdate: z.string().optional().or(z.literal("")),
+  pet_notes: z.string().optional().or(z.literal("")),
+});
+
+export type NewTutorWithPetInput = z.infer<typeof newTutorWithPetSchema>;

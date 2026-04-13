@@ -64,7 +64,7 @@ export function InvoiceForm({
     defaultValues: {
       client_id: defaultClientId ?? "",
       appointment_id: defaultAppointmentId ?? "",
-      tax_rate: 16,
+      tax_rate: 19,
       due_date: "",
       notes: "",
       items: defaultItems?.length

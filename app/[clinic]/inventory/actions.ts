@@ -9,6 +9,7 @@ import {
   type StockMovementInput,
 } from "@/lib/validations/inventory";
 import type { Product, Stock, StockMovement } from "@/types";
+import { escapePostgrestSearch } from "@/lib/utils/search";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -53,9 +54,12 @@ export async function getProducts(
     .order("name", { ascending: true });
 
   if (search) {
-    query = query.or(
-      `name.ilike.%${search}%,sku.ilike.%${search}%`
-    );
+    const safe = escapePostgrestSearch(search);
+    if (safe) {
+      query = query.or(
+        `name.ilike.%${safe}%,sku.ilike.%${safe}%`
+      );
+    }
   }
 
   if (category) {

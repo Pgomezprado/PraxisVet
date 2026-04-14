@@ -11,6 +11,7 @@ import {
   type NewTutorWithPetInput,
 } from "@/lib/validations/clients";
 import type { Client, Pet } from "@/types";
+import { escapePostgrestSearch } from "@/lib/utils/search";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -46,9 +47,12 @@ export async function getClients(
     .order("last_name", { ascending: true });
 
   if (search) {
-    query = query.or(
-      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
-    );
+    const safe = escapePostgrestSearch(search);
+    if (safe) {
+      query = query.or(
+        `first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`
+      );
+    }
   }
 
   query = query.range(from, to);

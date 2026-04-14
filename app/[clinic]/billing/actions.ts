@@ -13,6 +13,7 @@ import {
   type PaymentInput,
 } from "@/lib/validations/billing";
 import type { InvoiceStatus } from "@/types";
+import { escapePostgrestSearch } from "@/lib/utils/search";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -114,22 +115,25 @@ export async function getInvoices(
       query = query.lte("created_at", filters.to + "T23:59:59");
     }
     if (search) {
-      const { data: matchingClients } = await supabase
-        .from("clients")
-        .select("id")
-        .eq("org_id", orgId)
-        .or(
-          `first_name.ilike.%${search}%,last_name.ilike.%${search}%`
-        );
+      const safe = escapePostgrestSearch(search);
+      if (safe) {
+        const { data: matchingClients } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("org_id", orgId)
+          .or(
+            `first_name.ilike.%${safe}%,last_name.ilike.%${safe}%`
+          );
 
-      const clientIds = (matchingClients ?? []).map((c) => c.id);
+        const clientIds = (matchingClients ?? []).map((c) => c.id);
 
-      if (clientIds.length > 0) {
-        query = query.or(
-          `invoice_number.ilike.%${search}%,client_id.in.(${clientIds.join(",")})`
-        );
-      } else {
-        query = query.ilike("invoice_number", `%${search}%`);
+        if (clientIds.length > 0) {
+          query = query.or(
+            `invoice_number.ilike.%${safe}%,client_id.in.(${clientIds.join(",")})`
+          );
+        } else {
+          query = query.ilike("invoice_number", `%${safe}%`);
+        }
       }
     }
 

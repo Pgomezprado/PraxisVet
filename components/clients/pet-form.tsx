@@ -62,7 +62,7 @@ export function PetForm({ clientId, pet }: PetFormProps) {
     setError(null);
 
     const result = isEditing
-      ? await updatePet(pet!.id, clientId, clinicSlug, data)
+      ? await updatePet(organization.id, pet!.id, clientId, clinicSlug, data)
       : await createPet(organization.id, clientId, clinicSlug, data);
 
     if (!result.success) {

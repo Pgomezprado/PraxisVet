@@ -146,6 +146,7 @@ export default async function ClientDetailPage({
                   pet={pet}
                   clientId={id}
                   clinicSlug={clinic}
+                  orgId={client.org_id}
                 />
               ))}
             </div>

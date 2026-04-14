@@ -13,6 +13,7 @@ interface PetCardProps {
   pet: Pet;
   clientId: string;
   clinicSlug: string;
+  orgId: string;
 }
 
 function getSpeciesLabel(species: string | null) {
@@ -37,7 +38,7 @@ function calculateAge(birthdate: string | null): string | null {
   return `${y} ${y === 1 ? "año" : "años"}`;
 }
 
-export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
+export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
   const age = calculateAge(pet.birthdate);
 
   return (
@@ -106,7 +107,7 @@ export function PetCard({ pet, clientId, clinicSlug }: PetCardProps) {
         <DeleteButton
           label="Eliminar mascota"
           description={`Se eliminará a ${pet.name} y todos sus registros asociados. Esta acción no se puede deshacer.`}
-          onDelete={() => deletePet(pet.id, clientId, clinicSlug)}
+          onDelete={() => deletePet(orgId, pet.id, clientId, clinicSlug)}
         />
       </div>
     </div>

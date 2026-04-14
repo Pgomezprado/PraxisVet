@@ -271,6 +271,16 @@ export async function createPet(
 
   const { supabase } = await getAuthUser();
 
+  const { data: tutor, error: tutorError } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("id", clientId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+
+  if (tutorError) return { success: false, error: tutorError.message };
+  if (!tutor) return { success: false, error: "Tutor no pertenece a esta clinica" };
+
   const { data, error } = await supabase
     .from("pets")
     .insert({
@@ -298,6 +308,7 @@ export async function createPet(
 }
 
 export async function updatePet(
+  orgId: string,
   petId: string,
   clientId: string,
   clinicSlug: string,
@@ -309,6 +320,19 @@ export async function updatePet(
   }
 
   const { supabase } = await getAuthUser();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("pets")
+    .select("id, client_id")
+    .eq("id", petId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+
+  if (existingError) return { success: false, error: existingError.message };
+  if (!existing) return { success: false, error: "Paciente no pertenece a esta clinica" };
+  if (existing.client_id !== clientId) {
+    return { success: false, error: "Paciente no pertenece al tutor indicado" };
+  }
 
   const { data, error } = await supabase
     .from("pets")
@@ -323,6 +347,7 @@ export async function updatePet(
       notes: parsed.data.notes || null,
     })
     .eq("id", petId)
+    .eq("org_id", orgId)
     .select()
     .single();
 
@@ -335,13 +360,31 @@ export async function updatePet(
 }
 
 export async function deletePet(
+  orgId: string,
   petId: string,
   clientId: string,
   clinicSlug: string
 ): Promise<ActionResult> {
   const { supabase } = await getAuthUser();
 
-  const { error } = await supabase.from("pets").delete().eq("id", petId);
+  const { data: existing, error: existingError } = await supabase
+    .from("pets")
+    .select("id, client_id")
+    .eq("id", petId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+
+  if (existingError) return { success: false, error: existingError.message };
+  if (!existing) return { success: false, error: "Paciente no pertenece a esta clinica" };
+  if (existing.client_id !== clientId) {
+    return { success: false, error: "Paciente no pertenece al tutor indicado" };
+  }
+
+  const { error } = await supabase
+    .from("pets")
+    .delete()
+    .eq("id", petId)
+    .eq("org_id", orgId);
 
   if (error) {
     return { success: false, error: error.message };

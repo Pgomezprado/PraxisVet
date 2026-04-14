@@ -24,7 +24,7 @@ const ALLOWED_STATUS_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
   sent: ["paid", "overdue", "cancelled"],
   overdue: ["paid", "cancelled"],
   paid: [],
-  cancelled: ["draft"],
+  cancelled: [],
 };
 
 async function getInvoiceInOrg(

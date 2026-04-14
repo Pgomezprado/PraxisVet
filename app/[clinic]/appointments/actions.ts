@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { appointmentSchema, updateStatusSchema } from "@/lib/validations/appointments";
 import type { AppointmentInput } from "@/lib/validations/appointments";
 import type { AppointmentStatus, AppointmentType, MemberRole } from "@/types";
+import { validateMemberInOrg } from "@/lib/auth/validate-member";
 
 export type AppointmentWithRelations = {
   id: string;
@@ -104,6 +105,15 @@ export async function createAppointment(orgId: string, formData: AppointmentInpu
     return { data: null, error: "No autenticado" };
   }
 
+  const memberCheck = await validateMemberInOrg(
+    supabase,
+    parsed.data.assigned_to,
+    orgId
+  );
+  if (!memberCheck.ok) {
+    return { data: null, error: memberCheck.error };
+  }
+
   const { data, error } = await supabase
     .from("appointments")
     .insert({
@@ -145,6 +155,25 @@ export async function updateAppointment(appointmentId: string, formData: Appoint
 
   if (!user) {
     return { data: null, error: "No autenticado" };
+  }
+
+  const { data: existing } = await supabase
+    .from("appointments")
+    .select("org_id")
+    .eq("id", appointmentId)
+    .maybeSingle();
+
+  if (!existing) {
+    return { data: null, error: "Cita no encontrada" };
+  }
+
+  const memberCheck = await validateMemberInOrg(
+    supabase,
+    parsed.data.assigned_to,
+    existing.org_id
+  );
+  if (!memberCheck.ok) {
+    return { data: null, error: memberCheck.error };
   }
 
   const { data, error } = await supabase

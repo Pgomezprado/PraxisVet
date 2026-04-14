@@ -6,6 +6,7 @@ import {
   groomingRecordSchema,
   type GroomingRecordInput,
 } from "@/lib/validations/grooming-records";
+import { validateMemberInOrg } from "@/lib/auth/validate-member";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -125,6 +126,17 @@ export async function createGroomingRecord(
 
   const { supabase } = await getAuthUser();
 
+  if (parsed.data.groomer_id) {
+    const memberCheck = await validateMemberInOrg(
+      supabase,
+      parsed.data.groomer_id,
+      orgId
+    );
+    if (!memberCheck.ok) {
+      return { success: false, error: memberCheck.error };
+    }
+  }
+
   const { data, error } = await supabase
     .from("grooming_records")
     .insert({
@@ -165,6 +177,27 @@ export async function updateGroomingRecord(
   }
 
   const { supabase } = await getAuthUser();
+
+  const { data: existingGrooming } = await supabase
+    .from("grooming_records")
+    .select("org_id")
+    .eq("id", recordId)
+    .maybeSingle();
+
+  if (!existingGrooming) {
+    return { success: false, error: "Registro de peluqueria no encontrado" };
+  }
+
+  if (parsed.data.groomer_id) {
+    const memberCheck = await validateMemberInOrg(
+      supabase,
+      parsed.data.groomer_id,
+      existingGrooming.org_id
+    );
+    if (!memberCheck.ok) {
+      return { success: false, error: memberCheck.error };
+    }
+  }
 
   const { data, error } = await supabase
     .from("grooming_records")

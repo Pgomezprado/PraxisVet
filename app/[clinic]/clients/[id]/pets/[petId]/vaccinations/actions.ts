@@ -7,6 +7,7 @@ import {
   type VaccinationInput,
 } from "@/lib/validations/vaccinations";
 import type { Vaccination, OrganizationMember } from "@/types";
+import { validateMemberInOrg } from "@/lib/auth/validate-member";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -76,6 +77,17 @@ export async function createVaccination(
 
   const { supabase } = await getAuthUser();
 
+  if (parsed.data.vet_id) {
+    const memberCheck = await validateMemberInOrg(
+      supabase,
+      parsed.data.vet_id,
+      orgId
+    );
+    if (!memberCheck.ok) {
+      return { success: false, error: memberCheck.error };
+    }
+  }
+
   const { data, error } = await supabase
     .from("vaccinations")
     .insert({
@@ -109,6 +121,27 @@ export async function updateVaccination(
   }
 
   const { supabase } = await getAuthUser();
+
+  const { data: existingVax } = await supabase
+    .from("vaccinations")
+    .select("org_id")
+    .eq("id", vaccinationId)
+    .maybeSingle();
+
+  if (!existingVax) {
+    return { success: false, error: "Vacunacion no encontrada" };
+  }
+
+  if (parsed.data.vet_id) {
+    const memberCheck = await validateMemberInOrg(
+      supabase,
+      parsed.data.vet_id,
+      existingVax.org_id
+    );
+    if (!memberCheck.ok) {
+      return { success: false, error: memberCheck.error };
+    }
+  }
 
   const { data, error } = await supabase
     .from("vaccinations")

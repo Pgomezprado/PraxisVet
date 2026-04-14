@@ -7,6 +7,7 @@ import {
   type ClinicalRecordInput,
   type ClinicalRecordParsed,
 } from "@/lib/validations/clinical-records";
+import { validateMemberInOrg } from "@/lib/auth/validate-member";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -139,6 +140,15 @@ export async function createRecord(
 
   const { supabase } = await getAuthUser();
 
+  const memberCheck = await validateMemberInOrg(
+    supabase,
+    parsed.data.vet_id,
+    orgId
+  );
+  if (!memberCheck.ok) {
+    return { success: false, error: memberCheck.error };
+  }
+
   const { data, error } = await supabase
     .from("clinical_records")
     .insert({
@@ -183,6 +193,25 @@ export async function updateRecord(
   }
 
   const { supabase } = await getAuthUser();
+
+  const { data: existing } = await supabase
+    .from("clinical_records")
+    .select("org_id")
+    .eq("id", recordId)
+    .maybeSingle();
+
+  if (!existing) {
+    return { success: false, error: "Registro clinico no encontrado" };
+  }
+
+  const memberCheck = await validateMemberInOrg(
+    supabase,
+    parsed.data.vet_id,
+    existing.org_id
+  );
+  if (!memberCheck.ok) {
+    return { success: false, error: memberCheck.error };
+  }
 
   const { data, error } = await supabase
     .from("clinical_records")

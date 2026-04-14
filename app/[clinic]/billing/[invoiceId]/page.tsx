@@ -121,6 +121,7 @@ export default async function InvoiceDetailPage({
         invoiceId={invoice.id}
         currentStatus={invoice.status}
         clinicSlug={clinic}
+        orgId={invoice.org_id}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">

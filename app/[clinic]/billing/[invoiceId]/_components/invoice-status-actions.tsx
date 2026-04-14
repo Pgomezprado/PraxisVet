@@ -47,10 +47,12 @@ export function InvoiceStatusActions({
   invoiceId,
   currentStatus,
   clinicSlug,
+  orgId,
 }: {
   invoiceId: string;
   currentStatus: InvoiceStatus;
   clinicSlug: string;
+  orgId: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export function InvoiceStatusActions({
 
   async function handleStatusChange(newStatus: InvoiceStatus) {
     setLoading(newStatus);
-    const result = await updateInvoiceStatus(invoiceId, newStatus);
+    const result = await updateInvoiceStatus(orgId, invoiceId, newStatus);
     setLoading(null);
 
     if (!result.success) {

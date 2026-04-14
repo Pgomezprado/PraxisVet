@@ -82,6 +82,7 @@ export default async function BillingPage({
       <InvoicesTable
         invoices={invoices}
         clinicSlug={clinic}
+        orgId={org.id}
         currentPage={page}
         totalPages={totalPages}
         totalItems={total}

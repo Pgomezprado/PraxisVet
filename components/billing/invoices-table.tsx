@@ -46,6 +46,7 @@ const STATUS_OPTIONS = [
 interface InvoicesTableProps {
   invoices: InvoiceWithClient[];
   clinicSlug: string;
+  orgId: string;
   currentPage: number;
   totalPages: number;
   totalItems: number;
@@ -57,6 +58,7 @@ interface InvoicesTableProps {
 export function InvoicesTable({
   invoices,
   clinicSlug,
+  orgId,
   currentPage,
   totalPages,
   totalItems,
@@ -73,7 +75,7 @@ export function InvoicesTable({
     if (!deleteId) return;
     setDeleting(deleteId);
     setDeleteError(null);
-    const result = await deleteInvoice(deleteId);
+    const result = await deleteInvoice(orgId, deleteId);
     if (!result.success) {
       setDeleteError(result.error);
       setDeleting(null);

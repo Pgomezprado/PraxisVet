@@ -19,6 +19,40 @@ type ActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string };
 
+const ALLOWED_STATUS_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
+  draft: ["sent", "cancelled"],
+  sent: ["paid", "overdue", "cancelled"],
+  overdue: ["paid", "cancelled"],
+  paid: [],
+  cancelled: ["draft"],
+};
+
+async function getInvoiceInOrg(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invoiceId: string,
+  orgId: string
+): Promise<
+  | { ok: true; invoice: { id: string; status: InvoiceStatus; total: number } }
+  | { ok: false; error: string }
+> {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("id, status, total")
+    .eq("id", invoiceId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Factura no pertenece a esta clinica" };
+  return {
+    ok: true,
+    invoice: {
+      id: data.id as string,
+      status: data.status as InvoiceStatus,
+      total: Number(data.total),
+    },
+  };
+}
+
 async function getAuthUser() {
   const supabase = await createClient();
   const {
@@ -284,6 +318,7 @@ export async function createInvoice(
 }
 
 export async function updateInvoice(
+  orgId: string,
   invoiceId: string,
   formData: InvoiceUpdateInput
 ): Promise<ActionResult> {
@@ -295,13 +330,9 @@ export async function updateInvoice(
 
     const { supabase } = await getAuthUser();
 
-    const { data: invoice } = await supabase
-      .from("invoices")
-      .select("status")
-      .eq("id", invoiceId)
-      .single();
-
-    if (!invoice || invoice.status !== "draft") {
+    const check = await getInvoiceInOrg(supabase, invoiceId, orgId);
+    if (!check.ok) return { success: false, error: check.error };
+    if (check.invoice.status !== "draft") {
       return {
         success: false,
         error: "Solo se pueden editar facturas en borrador",
@@ -333,7 +364,8 @@ export async function updateInvoice(
     const { error } = await supabase
       .from("invoices")
       .update(updateData)
-      .eq("id", invoiceId);
+      .eq("id", invoiceId)
+      .eq("org_id", orgId);
 
     if (error) return { success: false, error: error.message };
 
@@ -375,6 +407,7 @@ async function recalculateInvoiceTotals(
 }
 
 export async function addInvoiceItem(
+  orgId: string,
   invoiceId: string,
   item: InvoiceItemInput
 ): Promise<ActionResult> {
@@ -385,6 +418,15 @@ export async function addInvoiceItem(
     }
 
     const { supabase } = await getAuthUser();
+
+    const check = await getInvoiceInOrg(supabase, invoiceId, orgId);
+    if (!check.ok) return { success: false, error: check.error };
+    if (check.invoice.status !== "draft") {
+      return {
+        success: false,
+        error: "Solo se pueden modificar items en facturas en borrador",
+      };
+    }
 
     const { error } = await supabase.from("invoice_items").insert({
       invoice_id: invoiceId,
@@ -407,16 +449,27 @@ export async function addInvoiceItem(
 }
 
 export async function removeInvoiceItem(
+  orgId: string,
   itemId: string,
   invoiceId: string
 ): Promise<ActionResult> {
   try {
     const { supabase } = await getAuthUser();
 
+    const check = await getInvoiceInOrg(supabase, invoiceId, orgId);
+    if (!check.ok) return { success: false, error: check.error };
+    if (check.invoice.status !== "draft") {
+      return {
+        success: false,
+        error: "Solo se pueden modificar items en facturas en borrador",
+      };
+    }
+
     const { error } = await supabase
       .from("invoice_items")
       .delete()
-      .eq("id", itemId);
+      .eq("id", itemId)
+      .eq("invoice_id", invoiceId);
 
     if (error) return { success: false, error: error.message };
 
@@ -430,11 +483,40 @@ export async function removeInvoiceItem(
 }
 
 export async function updateInvoiceStatus(
+  orgId: string,
   invoiceId: string,
   status: InvoiceStatus
 ): Promise<ActionResult> {
   try {
     const { supabase } = await getAuthUser();
+
+    const check = await getInvoiceInOrg(supabase, invoiceId, orgId);
+    if (!check.ok) return { success: false, error: check.error };
+
+    const allowed = ALLOWED_STATUS_TRANSITIONS[check.invoice.status] ?? [];
+    if (!allowed.includes(status)) {
+      return {
+        success: false,
+        error: `Transicion no permitida: ${check.invoice.status} -> ${status}`,
+      };
+    }
+
+    if (status === "paid") {
+      const { data: payments } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("invoice_id", invoiceId);
+      const totalPaid = (payments ?? []).reduce(
+        (sum, p) => sum + Number(p.amount),
+        0
+      );
+      if (totalPaid < check.invoice.total) {
+        return {
+          success: false,
+          error: "No se puede marcar como pagada: pagos insuficientes",
+        };
+      }
+    }
 
     const updateData: Record<string, unknown> = { status };
     if (status === "paid") {
@@ -444,7 +526,8 @@ export async function updateInvoiceStatus(
     const { error } = await supabase
       .from("invoices")
       .update(updateData)
-      .eq("id", invoiceId);
+      .eq("id", invoiceId)
+      .eq("org_id", orgId);
 
     if (error) return { success: false, error: error.message };
 
@@ -469,6 +552,40 @@ export async function registerPayment(
 
     const { supabase } = await getAuthUser();
 
+    const check = await getInvoiceInOrg(supabase, invoiceId, orgId);
+    if (!check.ok) return { success: false, error: check.error };
+
+    if (
+      check.invoice.status === "paid" ||
+      check.invoice.status === "cancelled"
+    ) {
+      return {
+        success: false,
+        error: "No se pueden registrar pagos en facturas pagadas o canceladas",
+      };
+    }
+
+    const { data: existingPayments } = await supabase
+      .from("payments")
+      .select("amount")
+      .eq("invoice_id", invoiceId);
+
+    const alreadyPaid = (existingPayments ?? []).reduce(
+      (sum, p) => sum + Number(p.amount),
+      0
+    );
+    const remaining = check.invoice.total - alreadyPaid;
+
+    if (parsed.data.amount <= 0) {
+      return { success: false, error: "El monto debe ser positivo" };
+    }
+    if (parsed.data.amount > remaining + 0.009) {
+      return {
+        success: false,
+        error: `El monto excede el saldo pendiente (${remaining.toFixed(2)})`,
+      };
+    }
+
     const { error: paymentError } = await supabase.from("payments").insert({
       org_id: orgId,
       invoice_id: invoiceId,
@@ -480,27 +597,14 @@ export async function registerPayment(
 
     if (paymentError) return { success: false, error: paymentError.message };
 
-    const { data: payments } = await supabase
-      .from("payments")
-      .select("amount")
-      .eq("invoice_id", invoiceId);
+    const totalPaid = alreadyPaid + parsed.data.amount;
 
-    const { data: invoice } = await supabase
-      .from("invoices")
-      .select("total")
-      .eq("id", invoiceId)
-      .single();
-
-    const totalPaid = (payments ?? []).reduce(
-      (sum, p) => sum + Number(p.amount),
-      0
-    );
-
-    if (invoice && totalPaid >= Number(invoice.total)) {
+    if (totalPaid + 0.009 >= check.invoice.total) {
       await supabase
         .from("invoices")
         .update({ status: "paid", paid_at: new Date().toISOString() })
-        .eq("id", invoiceId);
+        .eq("id", invoiceId)
+        .eq("org_id", orgId);
     }
 
     revalidatePath("/[clinic]/billing", "page");
@@ -512,18 +616,15 @@ export async function registerPayment(
 }
 
 export async function deleteInvoice(
+  orgId: string,
   invoiceId: string
 ): Promise<ActionResult> {
   try {
     const { supabase } = await getAuthUser();
 
-    const { data: invoice } = await supabase
-      .from("invoices")
-      .select("status")
-      .eq("id", invoiceId)
-      .single();
-
-    if (!invoice || invoice.status !== "draft") {
+    const check = await getInvoiceInOrg(supabase, invoiceId, orgId);
+    if (!check.ok) return { success: false, error: check.error };
+    if (check.invoice.status !== "draft") {
       return {
         success: false,
         error: "Solo se pueden eliminar facturas en borrador",
@@ -533,7 +634,8 @@ export async function deleteInvoice(
     const { error } = await supabase
       .from("invoices")
       .delete()
-      .eq("id", invoiceId);
+      .eq("id", invoiceId)
+      .eq("org_id", orgId);
 
     if (error) return { success: false, error: error.message };
 

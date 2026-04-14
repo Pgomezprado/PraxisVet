@@ -83,7 +83,7 @@ export function EditInvoiceForm({
     setLoading(true);
     setError(null);
 
-    const result = await updateInvoice(invoice.id, data);
+    const result = await updateInvoice(invoice.org_id, invoice.id, data);
 
     if (!result.success) {
       setError(result.error);
@@ -105,7 +105,7 @@ export function EditInvoiceForm({
       item_type: newItemType === "service" || newItemType === "product" ? newItemType : undefined,
     };
 
-    const result = await addInvoiceItem(invoice.id, item);
+    const result = await addInvoiceItem(invoice.org_id, invoice.id, item);
     if (!result.success) {
       alert(result.error);
     } else {
@@ -120,7 +120,7 @@ export function EditInvoiceForm({
 
   async function handleRemoveItem(itemId: string) {
     setRemovingItem(itemId);
-    const result = await removeInvoiceItem(itemId, invoice.id);
+    const result = await removeInvoiceItem(invoice.org_id, itemId, invoice.id);
     if (!result.success) {
       alert(result.error);
     } else {

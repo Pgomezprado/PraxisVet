@@ -29,7 +29,7 @@ export const invoiceUpdateSchema = z.object({
 export type InvoiceUpdateInput = z.infer<typeof invoiceUpdateSchema>;
 
 export const paymentSchema = z.object({
-  amount: z.number().min(0.01, "El monto minimo es $0.01"),
+  amount: z.number().min(0.01, "El monto minimo es $0.01").max(99_999_999_999),
   method: z.enum(["cash", "card", "transfer", "other"], {
     message: "Selecciona un metodo de pago",
   }),

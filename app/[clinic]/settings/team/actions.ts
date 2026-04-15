@@ -6,6 +6,7 @@ import {
   teamMemberSchema,
   type TeamMemberInput,
 } from "@/lib/validations/team-members";
+import { createAndSendInvitation } from "@/lib/invitations/service";
 import type { OrganizationMember } from "@/types";
 
 type ActionResult<T = void> =
@@ -62,13 +63,13 @@ export async function createTeamMember(
   orgId: string,
   clinicSlug: string,
   input: TeamMemberInput
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; invited: boolean }>> {
   const parsed = teamMemberSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { supabase } = await getAuthContext();
+  const { supabase, user } = await getAuthContext();
 
   const { data, error } = await supabase
     .from("organization_members")
@@ -88,8 +89,47 @@ export async function createTeamMember(
     return { success: false, error: error.message };
   }
 
+  let invited = false;
+  const email = parsed.data.email?.trim();
+  if (email) {
+    const inviteRes = await createAndSendInvitation({
+      memberId: data.id,
+      email,
+      invitedBy: user.id,
+    });
+    if (!inviteRes.success) {
+      revalidatePath(`/${clinicSlug}/settings/team`);
+      return {
+        success: false,
+        error: `Miembro creado, pero falló el envío: ${inviteRes.error}`,
+      };
+    }
+    invited = true;
+  }
+
   revalidatePath(`/${clinicSlug}/settings/team`);
-  return { success: true, data: { id: data.id } };
+  return { success: true, data: { id: data.id, invited } };
+}
+
+export async function inviteExistingMember(
+  memberId: string,
+  clinicSlug: string,
+  email: string
+): Promise<ActionResult> {
+  const { user } = await getAuthContext();
+
+  const result = await createAndSendInvitation({
+    memberId,
+    email: email.trim(),
+    invitedBy: user.id,
+  });
+
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  revalidatePath(`/${clinicSlug}/settings/team`);
+  return { success: true, data: undefined };
 }
 
 export async function updateTeamMember(

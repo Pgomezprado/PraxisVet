@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -53,14 +54,16 @@ export function AppHeader() {
           }
         />
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuLabel>
-            <p className="text-sm font-medium">
-              {member.first_name} {member.last_name}
-            </p>
-            <p className="text-xs capitalize text-muted-foreground">
-              {member.role}
-            </p>
-          </DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>
+              <p className="text-sm font-medium">
+                {member.first_name} {member.last_name}
+              </p>
+              <p className="text-xs capitalize text-muted-foreground">
+                {member.role}
+              </p>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem disabled>
             <User className="mr-2 size-4" />

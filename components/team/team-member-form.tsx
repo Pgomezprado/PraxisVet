@@ -66,6 +66,7 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
       last_name: member?.last_name ?? "",
       role: member?.role ?? "vet",
       specialty: member?.specialty ?? "",
+      email: "",
     },
   });
 
@@ -203,10 +204,37 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
             </p>
           </div>
 
+          {!isEditing && (
+            <div>
+              <Label htmlFor="email">
+                Email{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (opcional — para enviar invitación)
+                </span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Ej: sofia@clinica.cl"
+                {...register("email")}
+                aria-invalid={!!errors.email}
+              />
+              <FieldError message={errors.email?.message} />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Si lo dejas vacío, el miembro se crea como perfil sin acceso al
+                sistema. Podrás invitarlo más tarde.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center gap-3 pt-2">
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="size-3.5 animate-spin" />}
-              {isEditing ? "Guardar cambios" : "Crear miembro"}
+              {isEditing
+                ? "Guardar cambios"
+                : watch("email")
+                ? "Crear y enviar invitación"
+                : "Crear miembro"}
             </Button>
             <Button
               type="button"
@@ -218,11 +246,13 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
             </Button>
           </div>
 
-          <p className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-            💡 Los miembros creados aquí no tienen cuenta de acceso al sistema —
-            son perfiles para asignarles citas y servicios. Más adelante podrás
-            invitarlos por email para que se registren y puedan ingresar.
-          </p>
+          {!isEditing && (
+            <p className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+              💡 Con email → se envía una invitación y el miembro podrá iniciar
+              sesión tras crear su contraseña. Sin email → perfil para asignar
+              citas, sin acceso al sistema.
+            </p>
+          )}
         </form>
       </CardContent>
     </Card>

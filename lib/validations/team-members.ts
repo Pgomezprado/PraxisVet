@@ -13,10 +13,34 @@ export const teamMemberSchema = z.object({
   role: z.enum(memberRoles),
   specialty: z.string().trim().optional().or(z.literal("")),
   active: z.boolean().optional(),
+  email: z
+    .string()
+    .trim()
+    .email("Email inválido")
+    .optional()
+    .or(z.literal("")),
 });
 
 export type TeamMemberInput = z.input<typeof teamMemberSchema>;
 export type TeamMemberParsed = z.output<typeof teamMemberSchema>;
+
+export const inviteMemberSchema = z.object({
+  member_id: z.string().uuid(),
+  email: z.string().trim().email("Email inválido"),
+});
+
+export const acceptInvitationSchema = z
+  .object({
+    token: z.string().min(10),
+    password: z
+      .string()
+      .min(8, "La contraseña debe tener al menos 8 caracteres"),
+    confirm: z.string(),
+  })
+  .refine((d) => d.password === d.confirm, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirm"],
+  });
 
 export const roleLabels: Record<(typeof memberRoles)[number], string> = {
   admin: "Administrador",

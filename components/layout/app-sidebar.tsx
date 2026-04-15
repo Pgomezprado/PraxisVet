@@ -12,6 +12,7 @@ import {
   PawPrint,
 } from "lucide-react";
 import { useClinic } from "@/lib/context/clinic-context";
+import { roleLabels } from "@/lib/validations/team-members";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -39,19 +40,19 @@ const navItems: NavItem[] = [
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-    roles: ["admin", "vet", "receptionist"],
+    roles: ["admin", "vet", "receptionist", "groomer"],
   },
   {
     title: "Citas",
     href: "/appointments",
     icon: CalendarDays,
-    roles: ["admin", "vet", "receptionist"],
+    roles: ["admin", "vet", "receptionist", "groomer"],
   },
   {
     title: "Clientes",
     href: "/clients",
     icon: Users,
-    roles: ["admin", "vet", "receptionist"],
+    roles: ["admin", "vet", "receptionist", "groomer"],
   },
   {
     title: "Facturación",
@@ -155,8 +156,8 @@ export function AppSidebar() {
             <p className="truncate text-sm font-medium leading-tight">
               {member.first_name} {member.last_name}
             </p>
-            <p className="truncate text-xs capitalize text-sidebar-foreground/60">
-              {member.role}
+            <p className="truncate text-xs text-sidebar-foreground/60">
+              {roleLabels[member.role]}
             </p>
           </div>
         </div>

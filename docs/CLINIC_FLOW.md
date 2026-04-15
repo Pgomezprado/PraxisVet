@@ -261,6 +261,29 @@ Leyenda: ✅ ver y editar · 👁 solo ver · ⚠️ ver datos básicos · ❌ s
 
 **Regla de oro:** El peluquero nunca ve el historial clínico médico del paciente. El recepcionista nunca ve el detalle clínico (anamnesis, diagnóstico, tratamiento). Esta separación va a nivel de RLS en Supabase, no solo en UI.
 
+### 5.1 Dashboard por rol
+
+Cada rol ve un dashboard distinto al entrar al sistema. La selección está en [app/[clinic]/dashboard/page.tsx](../app/%5Bclinic%5D/dashboard/page.tsx). Los widgets reutilizables están en [components/dashboard/widgets/](../components/dashboard/widgets/).
+
+| Widget | Admin | Vet | Recepcionista | Peluquero |
+|---|---|---|---|---|
+| Quick actions (Cita / Cliente / Cobro) | ✅ todas | ✅ Cita + walk-in | ✅ todas | ✅ solo "Nuevo servicio" |
+| KPI Ingresos del día | ✅ | ❌ | ✅ | ❌ |
+| KPI Ingresos del mes | ✅ | ❌ | ❌ | ❌ |
+| KPI "Mis citas hoy" | — | ✅ | — | ✅ (servicios) |
+| KPI "En sala / en curso" | — | ✅ | ✅ | ✅ |
+| Agenda del día (completa) | ✅ | ❌ (solo la propia) | ✅ (unificada) | ❌ (solo propia) |
+| Próxima cita (card destacado) | — | ✅ | — | ✅ |
+| Panel "Atención urgente" | ✅ | ❌ | ✅ | ❌ |
+| Cobros pendientes | ✅ | ❌ | ✅ | ❌ |
+| Actividad reciente (clientes) | ✅ | ❌ | ❌ | ❌ |
+| Onboarding checklist | ✅ | ❌ | ❌ | ❌ |
+
+**Filtros obligatorios:**
+- Vet: `assigned_to = member.id` y `type = 'medical'`.
+- Peluquero: `assigned_to = member.id` y `type = 'grooming'`.
+- Admin/Recepcionista: sin filtro (agenda unificada).
+
 ---
 
 ## 6. Particularidades de Chile

@@ -1,20 +1,15 @@
 import Link from "next/link";
-import { PawPrint, Globe, Mail, MessageCircle, Lock } from "lucide-react";
+import { PawPrint, Globe, Mail, Lock } from "lucide-react";
 
 const footerLinks = {
   Producto: [
     { href: "#funcionalidades", label: "Funcionalidades" },
-    { href: "#precios", label: "Precios" },
+    { href: "#para-tu-equipo", label: "Para tu equipo" },
     { href: "#como-funciona", label: "Como funciona" },
-    { href: "#testimonios", label: "Testimonios" },
   ],
   Empresa: [
     { href: "mailto:contacto@praxisvet.cl", label: "Contacto" },
     { href: "mailto:ventas@praxisvet.cl", label: "Ventas" },
-  ],
-  Legal: [
-    { href: "/privacidad", label: "Privacidad" },
-    { href: "/terminos", label: "Terminos de servicio" },
   ],
 };
 
@@ -31,8 +26,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              La plataforma integral para gestionar tu clinica veterinaria de
-              forma moderna y eficiente.
+              La plataforma integral para clinicas veterinarias en Chile:
+              gestion medica, peluqueria y facturacion SII en un solo lugar.
             </p>
 
             <div className="flex items-center gap-3">
@@ -49,13 +44,6 @@ export function Footer() {
                 aria-label="Email"
               >
                 <Mail className="size-4" />
-              </a>
-              <a
-                href="https://wa.me/56900000000"
-                className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-                aria-label="WhatsApp"
-              >
-                <MessageCircle className="size-4" />
               </a>
             </div>
 

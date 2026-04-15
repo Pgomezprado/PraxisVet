@@ -27,6 +27,10 @@ import {
   TrendingUp,
   Syringe,
   Clock,
+  Scissors,
+  Stethoscope,
+  UserCog,
+  Headset,
 } from "lucide-react";
 
 const features = [
@@ -45,10 +49,17 @@ const features = [
     large: true,
   },
   {
-    icon: Receipt,
-    title: "Facturacion",
+    icon: Scissors,
+    title: "Peluqueria Integrada",
     description:
-      "Genera facturas, registra pagos parciales o totales y exporta todo a PDF. Dashboard de ingresos en tiempo real.",
+      "Agenda, servicios y notas de peluqueria en el mismo sistema que la parte medica. Tu peluquero tiene su propio dashboard y flujo.",
+    large: true,
+  },
+  {
+    icon: Receipt,
+    title: "Facturacion SII",
+    description:
+      "Boleta y factura electronica compatibles con SII. Receta retenida para medicamentos controlados. Exporta a PDF.",
     large: false,
   },
   {
@@ -67,10 +78,37 @@ const features = [
   },
   {
     icon: ShieldCheck,
-    title: "Seguridad Total",
+    title: "Seguridad y Chile",
     description:
-      "Row Level Security garantiza que cada clinica accede unicamente a su informacion.",
+      "RUT, CLP y cumplimiento normativo chileno. Row Level Security garantiza aislamiento total entre clinicas.",
     large: false,
+  },
+];
+
+const roles = [
+  {
+    icon: UserCog,
+    title: "Administrador",
+    description:
+      "Dashboard con ingresos, equipo, inventario y reportes para controlar el negocio de un vistazo.",
+  },
+  {
+    icon: Stethoscope,
+    title: "Veterinario",
+    description:
+      "Consulta, historial clinico, recetas y vacunas en el flujo justo para atender entre paciente y paciente.",
+  },
+  {
+    icon: Headset,
+    title: "Recepcionista",
+    description:
+      "Agenda del dia, busqueda rapida de clientes y cobro con boleta SII sin salir de la misma pantalla.",
+  },
+  {
+    icon: Scissors,
+    title: "Peluquero",
+    description:
+      "Sus propias citas, servicios y notas de peluqueria. Sin mezclarse con el flujo medico.",
   },
 ];
 
@@ -252,7 +290,7 @@ export default function LandingPage() {
                 className="animate-fade-in-up mb-6 px-4 py-1.5 text-sm font-medium"
               >
                 <Star className="mr-1.5 size-3.5 fill-accent text-accent" />
-                Plataforma #1 en LATAM
+                Hecho en Chile, para clinicas chilenas
               </Badge>
 
               <h1 className="animate-fade-in-up animation-delay-200 text-pretty text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
@@ -261,9 +299,10 @@ export default function LandingPage() {
               </h1>
 
               <p className="animate-fade-in-up animation-delay-400 mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                Citas, historial clinico, facturacion e inventario en una sola
-                plataforma. Disenada para veterinarios que quieren enfocarse en
-                lo que importa: el cuidado de sus pacientes.
+                Agenda, historial clinico, peluqueria, facturacion SII e
+                inventario en una sola plataforma. Disenada para clinicas
+                veterinarias en Chile que quieren enfocarse en lo que importa:
+                el cuidado de sus pacientes.
               </p>
 
               <div className="animate-fade-in-up animation-delay-600 mt-8 flex flex-col items-start gap-4 sm:flex-row">
@@ -306,6 +345,11 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2">
                   <PawPrint className="size-4 text-primary" />
                   <span className="text-sm text-muted-foreground">Hecho para veterinarios</span>
+                </div>
+                <div className="h-4 w-px bg-border/60" />
+                <div className="flex items-center gap-2">
+                  <Receipt className="size-4 text-primary" />
+                  <span className="text-sm text-muted-foreground">Cumple con SII</span>
                 </div>
               </div>
             </div>
@@ -358,7 +402,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.filter((f) => f.large).map((feature) => (
               <Card
                 key={feature.title}
@@ -408,7 +452,7 @@ export default function LandingPage() {
                       <div className="mt-2 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <Syringe className="size-3 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">Vacuna antirrAbica - 15/03</span>
+                          <span className="text-[10px] text-muted-foreground">Vacuna antirrabica - 15/03</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Activity className="size-3 text-muted-foreground" />
@@ -437,6 +481,50 @@ export default function LandingPage() {
                 <CardContent>
                   <CardDescription className="text-sm leading-relaxed">
                     {feature.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/*  ROLES — Para todo tu equipo                                 */}
+      {/* ============================================================ */}
+      <section
+        id="para-tu-equipo"
+        className="border-t border-border/40 py-20 sm:py-28"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <Badge variant="secondary" className="mb-4">
+              Para todo tu equipo
+            </Badge>
+            <h2 className="text-pretty text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Un dashboard para cada rol
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Admin, veterinarios, recepcionistas y peluqueros: cada uno ve
+              exactamente lo que necesita para su dia a dia.
+            </p>
+          </div>
+
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {roles.map((role) => (
+              <Card
+                key={role.title}
+                className="group border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                <CardHeader className="pb-2">
+                  <div className="mb-2 flex size-11 items-center justify-center rounded-lg bg-primary/10">
+                    <role.icon className="size-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-base">{role.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {role.description}
                   </CardDescription>
                 </CardContent>
               </Card>

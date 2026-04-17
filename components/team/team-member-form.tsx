@@ -15,6 +15,7 @@ import { useClinic } from "@/lib/context/clinic-context";
 import {
   createTeamMember,
   updateTeamMember,
+  inviteExistingMember,
 } from "@/app/[clinic]/settings/team/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
   const [loading, setLoading] = useState(false);
 
   const isEditing = !!member;
+  const canInvite = !member?.user_id;
 
   const {
     register,
@@ -80,13 +82,27 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
       ? await updateTeamMember(member.id, clinicSlug, data)
       : await createTeamMember(organization.id, clinicSlug, data);
 
-    setLoading(false);
-
     if (!result.success) {
+      setLoading(false);
       setError(result.error);
       return;
     }
 
+    const email = data.email?.trim();
+    if (isEditing && canInvite && email) {
+      const inviteRes = await inviteExistingMember(
+        member.id,
+        clinicSlug,
+        email
+      );
+      if (!inviteRes.success) {
+        setLoading(false);
+        setError(`Datos guardados, pero falló el envío: ${inviteRes.error}`);
+        return;
+      }
+    }
+
+    setLoading(false);
     router.push(`/${clinicSlug}/settings/team`);
     router.refresh();
   }
@@ -204,12 +220,14 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
             </p>
           </div>
 
-          {!isEditing && (
+          {(!isEditing || canInvite) && (
             <div>
               <Label htmlFor="email">
                 Email{" "}
                 <span className="text-xs font-normal text-muted-foreground">
-                  (opcional — para enviar invitación)
+                  {isEditing
+                    ? "(para enviar invitación de acceso)"
+                    : "(opcional — para enviar invitación)"}
                 </span>
               </Label>
               <Input
@@ -221,8 +239,9 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
               />
               <FieldError message={errors.email?.message} />
               <p className="mt-1 text-xs text-muted-foreground">
-                Si lo dejas vacío, el miembro se crea como perfil sin acceso al
-                sistema. Podrás invitarlo más tarde.
+                {isEditing
+                  ? "Este miembro aún no tiene acceso al sistema. Ingresa un email para enviarle la invitación."
+                  : "Si lo dejas vacío, el miembro se crea como perfil sin acceso al sistema. Podrás invitarlo más tarde."}
               </p>
             </div>
           )}
@@ -231,7 +250,9 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="size-3.5 animate-spin" />}
               {isEditing
-                ? "Guardar cambios"
+                ? canInvite && watch("email")
+                  ? "Guardar y enviar invitación"
+                  : "Guardar cambios"
                 : watch("email")
                 ? "Crear y enviar invitación"
                 : "Crear miembro"}
@@ -251,6 +272,12 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
               💡 Con email → se envía una invitación y el miembro podrá iniciar
               sesión tras crear su contraseña. Sin email → perfil para asignar
               citas, sin acceso al sistema.
+            </p>
+          )}
+          {isEditing && canInvite && (
+            <p className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+              💡 Este miembro fue creado sin acceso. Ingresa su email y al
+              guardar se enviará la invitación para que cree su contraseña.
             </p>
           )}
         </form>

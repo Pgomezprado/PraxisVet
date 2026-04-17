@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -22,6 +22,11 @@ export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.signOut().catch(() => {});
+  }, []);
 
   const {
     register,
@@ -57,9 +62,21 @@ export function LoginForm() {
 
     if (org?.slug) {
       router.push(`/${org.slug}/dashboard`);
-    } else {
-      router.push("/onboarding");
+      return;
     }
+
+    const { data: platformAdmin } = await supabase
+      .from("platform_admins")
+      .select("user_id")
+      .is("revoked_at", null)
+      .maybeSingle();
+
+    if (platformAdmin) {
+      router.push("/superadmin");
+      return;
+    }
+
+    router.push("/onboarding");
   }
 
   return (

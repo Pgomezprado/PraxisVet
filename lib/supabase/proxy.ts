@@ -58,10 +58,20 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && pathname.startsWith("/auth")) {
+  const isPlatformAdmin = Boolean(user?.app_metadata?.platform_admin);
+
+  // Redirect authenticated users away from auth pages,
+  // excepto /auth/login que siempre muestra el form (permite re-login / cambio de cuenta).
+  if (user && pathname.startsWith("/auth") && pathname !== "/auth/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/onboarding";
+    url.pathname = isPlatformAdmin ? "/superadmin" : "/onboarding";
+    return NextResponse.redirect(url);
+  }
+
+  // Platform admins sin clínica no van a onboarding, van al panel
+  if (user && isPlatformAdmin && pathname.startsWith("/onboarding")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/superadmin";
     return NextResponse.redirect(url);
   }
 

@@ -77,29 +77,14 @@ export async function requirePlatformAdmin(): Promise<PlatformAdminContext> {
   const appMetadata = (user.app_metadata ?? {}) as Record<string, unknown>;
   const claimIsPlatformAdmin = appMetadata.platform_admin === true;
 
-  // ---- Paso 3: AAL2 en la sesión actual ----
-  try {
-    await requireAal2();
-  } catch (err) {
-    await logAccessDenied({
-      adminUserId: user.id,
-      adminEmail: user.email ?? null,
-      reason: err instanceof PlatformAdminAccessDenied ? err.reason : "aal_error",
-    });
-    throw err;
-  }
-
-  // ---- Paso 4: verificación fresca contra platform_admins ----
-  // Usamos el cliente authenticated + la policy self_select: si existe
-  // fila activa para el user, la veremos; si no, no. El chequeo de MFA
-  // lo reforzamos además llamando a is_platform_admin() vía RPC.
+  // ---- Paso 3: verificación fresca contra platform_admins (sin MFA, modo soft) ----
   const { data: selfRow, error: selfErr } = await supabase
     .from("platform_admins")
-    .select("user_id, role, revoked_at, mfa_enrolled_at")
+    .select("user_id, role, revoked_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (selfErr || !selfRow || selfRow.revoked_at || !selfRow.mfa_enrolled_at) {
+  if (selfErr || !selfRow || selfRow.revoked_at) {
     await logAccessDenied({
       adminUserId: user.id,
       adminEmail: user.email ?? null,

@@ -9,6 +9,8 @@ function isPublicRoute(pathname: string) {
   if (pathname === "/") return true;
   // Marketing routes handled by (marketing) group
   if (pathname.startsWith("/auth")) return true;
+  // Invitation acceptance: invitee is anonymous y debe ver el form de contraseña
+  if (pathname.startsWith("/accept-invite")) return true;
   // Static and API routes
   if (pathname.startsWith("/api")) return true;
   return false;

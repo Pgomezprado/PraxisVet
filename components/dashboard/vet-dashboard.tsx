@@ -114,7 +114,11 @@ export function VetDashboard({
         }
         appointments={agenda}
         emptyTitle="Sin pacientes asignados hoy"
-        emptyDescription="No tienes citas asignadas para hoy. Si esperabas alguna, revisa con la recepcionista."
+        emptyDescription="No tienes citas asignadas para hoy. Si esperabas alguna, revisa la agenda completa de la clínica."
+        emptyAction={{
+          label: "Ver agenda completa",
+          href: `/${clinicSlug}/appointments`,
+        }}
         clinicSlug={clinicSlug}
         maxHeight
       />

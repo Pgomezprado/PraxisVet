@@ -3,8 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { VaccinationForm } from "@/components/vaccinations/vaccination-form";
+import { getVaccineCatalogForPet } from "@/lib/vaccines/catalog";
 import { getVets } from "../../actions";
-import type { Vaccination } from "@/types";
+import type { Species, Vaccination } from "@/types";
 
 export default async function EditVaccinationPage({
   params,
@@ -32,13 +33,16 @@ export default async function EditVaccinationPage({
 
   const { data: pet } = await supabase
     .from("pets")
-    .select("org_id, name")
+    .select("org_id, name, species")
     .eq("id", petId)
     .single();
 
   const orgId = pet?.org_id ?? typedVaccination.org_id;
   const vetsResult = await getVets(orgId);
   const vets = vetsResult.success ? vetsResult.data : [];
+  const catalog = pet?.species
+    ? await getVaccineCatalogForPet(pet.species as Species, orgId)
+    : [];
 
   const returnPath = `/${clinic}/clients/${id}/pets/${petId}/vaccinations`;
 
@@ -62,6 +66,7 @@ export default async function EditVaccinationPage({
         clientId={id}
         vaccination={typedVaccination}
         vets={vets}
+        catalog={catalog}
         returnPath={returnPath}
       />
     </div>

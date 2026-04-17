@@ -89,7 +89,7 @@ export function VaccinationTable({ vaccinations, basePath }: VaccinationTablePro
     setDeleting(selectedId);
     setError(null);
 
-    const result = await deleteVaccination(selectedId);
+    const result = await deleteVaccination(selectedId, basePath);
     if (!result.success) {
       setError(result.error);
       setDeleting(null);

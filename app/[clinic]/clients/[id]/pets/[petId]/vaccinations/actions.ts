@@ -8,6 +8,7 @@ import {
 } from "@/lib/validations/vaccinations";
 import type { Vaccination, OrganizationMember } from "@/types";
 import { validateMemberInOrg } from "@/lib/auth/validate-member";
+import { formatSupabaseError } from "@/lib/errors/format-supabase-error";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -20,6 +21,10 @@ async function getAuthUser() {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
   return { supabase, user };
+}
+
+function revalidateVaccinations(basePath?: string) {
+  if (basePath) revalidatePath(basePath);
 }
 
 export interface VaccinationWithVet extends Vaccination {
@@ -47,7 +52,7 @@ export async function getVaccinations(
     .order("date_administered", { ascending: false });
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: formatSupabaseError(error) };
   }
 
   const vaccinations = (data ?? []).map((v) => {
@@ -68,7 +73,8 @@ export async function getVaccinations(
 
 export async function createVaccination(
   orgId: string,
-  input: VaccinationInput
+  input: VaccinationInput,
+  basePath?: string
 ): Promise<ActionResult<Vaccination>> {
   const parsed = vaccinationSchema.safeParse(input);
   if (!parsed.success) {
@@ -76,6 +82,58 @@ export async function createVaccination(
   }
 
   const { supabase } = await getAuthUser();
+
+  const { data: pet } = await supabase
+    .from("pets")
+    .select("org_id, species")
+    .eq("id", parsed.data.pet_id)
+    .maybeSingle();
+
+  if (!pet || pet.org_id !== orgId) {
+    return { success: false, error: "Mascota no válida" };
+  }
+
+  if (parsed.data.dose_id) {
+    const { data: dose } = await supabase
+      .from("vaccine_protocol_doses")
+      .select(
+        "id, protocol_id, vaccine_protocols!inner(id, vaccine_id, species)"
+      )
+      .eq("id", parsed.data.dose_id)
+      .maybeSingle();
+
+    if (!dose) {
+      return { success: false, error: "Dosis no encontrada" };
+    }
+
+    const proto = dose.vaccine_protocols as unknown as {
+      id: string;
+      vaccine_id: string;
+      species: string;
+    };
+
+    if (parsed.data.protocol_id && parsed.data.protocol_id !== proto.id) {
+      return {
+        success: false,
+        error: "Protocolo inconsistente con la dosis",
+      };
+    }
+    if (
+      parsed.data.vaccine_catalog_id &&
+      parsed.data.vaccine_catalog_id !== proto.vaccine_id
+    ) {
+      return {
+        success: false,
+        error: "Vacuna inconsistente con el protocolo",
+      };
+    }
+    if (pet.species && pet.species !== proto.species) {
+      return {
+        success: false,
+        error: "La dosis no aplica para la especie de la mascota",
+      };
+    }
+  }
 
   if (parsed.data.vet_id) {
     const memberCheck = await validateMemberInOrg(
@@ -97,23 +155,29 @@ export async function createVaccination(
       vaccine_name: parsed.data.vaccine_name,
       lot_number: parsed.data.lot_number || null,
       date_administered: parsed.data.date_administered,
+      // Si viene dose_id, el trigger SQL recalcula next_due_date automáticamente.
       next_due_date: parsed.data.next_due_date || null,
       vet_id: parsed.data.vet_id || null,
       notes: parsed.data.notes || null,
+      vaccine_catalog_id: parsed.data.vaccine_catalog_id || null,
+      protocol_id: parsed.data.protocol_id || null,
+      dose_id: parsed.data.dose_id || null,
     })
     .select()
     .single();
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: formatSupabaseError(error) };
   }
 
+  revalidateVaccinations(basePath);
   return { success: true, data: data as Vaccination };
 }
 
 export async function updateVaccination(
   vaccinationId: string,
-  input: VaccinationInput
+  input: VaccinationInput,
+  basePath?: string
 ): Promise<ActionResult<Vaccination>> {
   const parsed = vaccinationSchema.safeParse(input);
   if (!parsed.success) {
@@ -130,6 +194,58 @@ export async function updateVaccination(
 
   if (!existingVax) {
     return { success: false, error: "Vacunacion no encontrada" };
+  }
+
+  const { data: pet } = await supabase
+    .from("pets")
+    .select("org_id, species")
+    .eq("id", parsed.data.pet_id)
+    .maybeSingle();
+
+  if (!pet || pet.org_id !== existingVax.org_id) {
+    return { success: false, error: "Mascota no válida" };
+  }
+
+  if (parsed.data.dose_id) {
+    const { data: dose } = await supabase
+      .from("vaccine_protocol_doses")
+      .select(
+        "id, protocol_id, vaccine_protocols!inner(id, vaccine_id, species)"
+      )
+      .eq("id", parsed.data.dose_id)
+      .maybeSingle();
+
+    if (!dose) {
+      return { success: false, error: "Dosis no encontrada" };
+    }
+
+    const proto = dose.vaccine_protocols as unknown as {
+      id: string;
+      vaccine_id: string;
+      species: string;
+    };
+
+    if (parsed.data.protocol_id && parsed.data.protocol_id !== proto.id) {
+      return {
+        success: false,
+        error: "Protocolo inconsistente con la dosis",
+      };
+    }
+    if (
+      parsed.data.vaccine_catalog_id &&
+      parsed.data.vaccine_catalog_id !== proto.vaccine_id
+    ) {
+      return {
+        success: false,
+        error: "Vacuna inconsistente con el protocolo",
+      };
+    }
+    if (pet.species && pet.species !== proto.species) {
+      return {
+        success: false,
+        error: "La dosis no aplica para la especie de la mascota",
+      };
+    }
   }
 
   if (parsed.data.vet_id) {
@@ -153,22 +269,37 @@ export async function updateVaccination(
       vet_id: parsed.data.vet_id || null,
       notes: parsed.data.notes || null,
       clinical_record_id: parsed.data.clinical_record_id || null,
+      vaccine_catalog_id: parsed.data.vaccine_catalog_id || null,
+      protocol_id: parsed.data.protocol_id || null,
+      dose_id: parsed.data.dose_id || null,
     })
     .eq("id", vaccinationId)
     .select()
     .single();
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: formatSupabaseError(error) };
   }
 
+  revalidateVaccinations(basePath);
   return { success: true, data: data as Vaccination };
 }
 
 export async function deleteVaccination(
-  vaccinationId: string
+  vaccinationId: string,
+  basePath?: string
 ): Promise<ActionResult> {
   const { supabase } = await getAuthUser();
+
+  const { data: existing } = await supabase
+    .from("vaccinations")
+    .select("id")
+    .eq("id", vaccinationId)
+    .maybeSingle();
+
+  if (!existing) {
+    return { success: false, error: "Vacunación no encontrada" };
+  }
 
   const { error } = await supabase
     .from("vaccinations")
@@ -176,9 +307,10 @@ export async function deleteVaccination(
     .eq("id", vaccinationId);
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: formatSupabaseError(error) };
   }
 
+  revalidateVaccinations(basePath);
   return { success: true, data: undefined };
 }
 
@@ -196,7 +328,7 @@ export async function getVets(
     .order("last_name", { ascending: true });
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: formatSupabaseError(error) };
   }
 
   return { success: true, data: data ?? [] };

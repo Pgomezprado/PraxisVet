@@ -9,6 +9,7 @@ import {
   type NewTutorWithPetInput,
   SPECIES_OPTIONS,
   SEX_OPTIONS,
+  getReproductiveStatusOptions,
 } from "@/lib/validations/clients";
 import { getBreedSuggestions } from "@/lib/constants/breeds";
 import { useClinic } from "@/lib/context/clinic-context";
@@ -57,14 +58,19 @@ export function NewTutorForm() {
       pet_name: "",
       pet_species: "",
       pet_breed: "",
+      pet_color: "",
       pet_sex: "",
       pet_birthdate: "",
+      pet_microchip: "",
+      pet_reproductive_status: "",
       pet_notes: "",
     },
   });
 
   const watchedSpecies = watch("pet_species");
+  const watchedSex = watch("pet_sex");
   const breedSuggestions = getBreedSuggestions(watchedSpecies);
+  const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
 
   async function onSubmit(data: NewTutorWithPetInput) {
     setError(null);
@@ -206,20 +212,6 @@ export function NewTutorForm() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="pet_sex">Sexo (opcional)</Label>
-              <Select id="pet_sex" {...register("pet_sex")}>
-                <option value="">Seleccionar sexo</option>
-                {SEX_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
               <Label htmlFor="pet_breed">Raza (opcional)</Label>
               <Controller
                 name="pet_breed"
@@ -240,6 +232,44 @@ export function NewTutorForm() {
                 )}
               />
             </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="pet_sex">Sexo (opcional)</Label>
+              <Select id="pet_sex" {...register("pet_sex")}>
+                <option value="">Seleccionar sexo</option>
+                {SEX_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="pet_reproductive_status">
+                Estado reproductivo (opcional)
+              </Label>
+              <Select
+                id="pet_reproductive_status"
+                {...register("pet_reproductive_status")}
+                disabled={reproductiveOptions.length === 0}
+              >
+                <option value="">
+                  {reproductiveOptions.length === 0
+                    ? "Selecciona sexo primero"
+                    : "Seleccionar estado"}
+                </option>
+                {reproductiveOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="pet_birthdate">Fecha de nacimiento (opcional)</Label>
               <Controller
@@ -256,6 +286,23 @@ export function NewTutorForm() {
                 )}
               />
             </div>
+            <div>
+              <Label htmlFor="pet_color">Color (opcional)</Label>
+              <Input
+                id="pet_color"
+                placeholder="ej: Dorado"
+                {...register("pet_color")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="pet_microchip">Microchip (opcional)</Label>
+            <Input
+              id="pet_microchip"
+              placeholder="ej: 985112345678901"
+              {...register("pet_microchip")}
+            />
           </div>
 
           <div>

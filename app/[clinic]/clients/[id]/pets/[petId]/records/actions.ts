@@ -8,6 +8,7 @@ import {
   type ClinicalRecordParsed,
 } from "@/lib/validations/clinical-records";
 import { validateMemberInOrg } from "@/lib/auth/validate-member";
+import type { PhysicalExam } from "@/types";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -56,6 +57,10 @@ export type RecordDetail = {
   weight: number | null;
   temperature: number | null;
   heart_rate: number | null;
+  respiratory_rate: number | null;
+  capillary_refill_seconds: number | null;
+  skin_fold_seconds: number | null;
+  physical_exam: PhysicalExam | null;
   created_at: string;
   vet: {
     id: string;
@@ -166,6 +171,10 @@ export async function createRecord(
       weight: parsed.data.weight ?? null,
       temperature: parsed.data.temperature ?? null,
       heart_rate: parsed.data.heart_rate ?? null,
+      respiratory_rate: parsed.data.respiratory_rate ?? null,
+      capillary_refill_seconds: parsed.data.capillary_refill_seconds ?? null,
+      skin_fold_seconds: parsed.data.skin_fold_seconds ?? null,
+      physical_exam: parsed.data.physical_exam ?? null,
     })
     .select("id")
     .single();
@@ -228,6 +237,10 @@ export async function updateRecord(
       weight: parsed.data.weight ?? null,
       temperature: parsed.data.temperature ?? null,
       heart_rate: parsed.data.heart_rate ?? null,
+      respiratory_rate: parsed.data.respiratory_rate ?? null,
+      capillary_refill_seconds: parsed.data.capillary_refill_seconds ?? null,
+      skin_fold_seconds: parsed.data.skin_fold_seconds ?? null,
+      physical_exam: parsed.data.physical_exam ?? null,
     })
     .eq("id", recordId)
     .select("id")

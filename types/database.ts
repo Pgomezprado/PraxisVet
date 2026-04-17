@@ -1,7 +1,8 @@
 export type MemberRole = "admin" | "vet" | "receptionist" | "groomer";
 export type Plan = "free" | "pro" | "enterprise";
-export type Species = "dog" | "cat" | "bird" | "rabbit" | "reptile" | "other";
+export type Species = "canino" | "felino" | "exotico";
 export type Sex = "male" | "female";
+export type ReproductiveStatus = "intact" | "sterilized";
 export type ServiceCategory = "consultation" | "surgery" | "grooming" | "vaccine" | "lab" | "imaging" | "other";
 export type AppointmentType = "medical" | "grooming";
 export type AppointmentStatus =
@@ -70,6 +71,7 @@ export interface Pet {
   sex: Sex | null;
   birthdate: string | null;
   microchip: string | null;
+  reproductive_status: ReproductiveStatus | null;
   photo_url: string | null;
   notes: string | null;
   active: boolean;
@@ -119,6 +121,18 @@ export interface GroomingRecord {
   created_at: string;
 }
 
+export interface PhysicalExam {
+  mucous_color?: "rosadas" | "pálidas" | "ictéricas" | "cianóticas" | "congestivas";
+  ear_inspection?: "normal" | "cerumen" | "otitis" | "otro";
+  ear_notes?: string;
+  cough_reflex?: "negativo" | "positivo";
+  lymph_nodes?: "normales" | "aumentados" | "no_palpables";
+  lymph_nodes_notes?: string;
+  abdominal_palpation?: "normal" | "dolor" | "masa" | "otro";
+  abdominal_palpation_notes?: string;
+  consciousness?: "alerta" | "deprimido" | "estuporoso" | "comatoso";
+}
+
 export interface ClinicalRecord {
   id: string;
   org_id: string;
@@ -135,6 +149,10 @@ export interface ClinicalRecord {
   weight: number | null;
   temperature: number | null;
   heart_rate: number | null;
+  respiratory_rate: number | null;
+  capillary_refill_seconds: number | null;
+  skin_fold_seconds: number | null;
+  physical_exam: PhysicalExam | null;
   created_at: string;
 }
 
@@ -149,6 +167,79 @@ export interface Vaccination {
   next_due_date: string | null;
   vet_id: string | null;
   notes: string | null;
+  protocol_id: string | null;
+  dose_id: string | null;
+  vaccine_catalog_id: string | null;
+  created_at: string;
+}
+
+export type VaccineLifeStage = "puppy" | "kitten" | "adulto" | "anual";
+
+export interface VaccineCatalogEntry {
+  id: string;
+  code: string;
+  name: string;
+  species: Species[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface VaccineProtocol {
+  id: string;
+  vaccine_id: string;
+  code: string;
+  name: string;
+  species: Species;
+  life_stage: VaccineLifeStage;
+  created_at: string;
+}
+
+export interface VaccineProtocolDose {
+  id: string;
+  protocol_id: string;
+  sequence: number;
+  name: string;
+  interval_days: number;
+  created_at: string;
+}
+
+export interface OrganizationVaccinePreference {
+  org_id: string;
+  vaccine_id: string;
+  is_disabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DewormingType = "interna" | "externa";
+
+export interface Deworming {
+  id: string;
+  org_id: string;
+  pet_id: string;
+  clinical_record_id: string | null;
+  vet_id: string | null;
+  type: DewormingType;
+  date_administered: string;
+  product: string | null;
+  next_due_date: string | null;
+  pregnant_cohabitation: boolean;
+  notes: string | null;
+  created_at: string;
+}
+
+export type ReminderType = "vaccination" | "deworming" | "appointment";
+export type ReminderStatus = "pending" | "sent" | "done" | "cancelled";
+
+export interface Reminder {
+  id: string;
+  org_id: string;
+  pet_id: string;
+  type: ReminderType;
+  source_table: string | null;
+  source_id: string | null;
+  due_date: string;
+  status: ReminderStatus;
   created_at: string;
 }
 

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecordCard } from "@/components/clinical/record-card";
 import { SPECIES_OPTIONS } from "@/lib/validations/clients";
+import { UpcomingRemindersCard } from "@/components/reminders/upcoming-reminders-card";
+import { getCurrentMember, canViewClinical } from "@/lib/auth/current-member";
 import { getRecords, getPetWithClient } from "./actions";
 
 function getSpeciesLabel(species: string | null) {
@@ -17,10 +19,12 @@ export default async function PetRecordsPage({
 }) {
   const { clinic, id, petId } = await params;
 
-  const [petResult, recordsResult] = await Promise.all([
+  const [petResult, recordsResult, member] = await Promise.all([
     getPetWithClient(petId),
     getRecords(petId),
+    getCurrentMember(clinic),
   ]);
+  const showReminders = !!member && canViewClinical(member.role);
 
   if (petResult.error || !petResult.data) {
     return (
@@ -65,6 +69,8 @@ export default async function PetRecordsPage({
           Nuevo registro
         </Button>
       </div>
+
+      {showReminders && <UpcomingRemindersCard petId={petId} />}
 
       {!recordsResult.success && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">

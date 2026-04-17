@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { PawPrint, Pencil, Syringe, ClipboardList } from "lucide-react";
+import { PawPrint, Pencil, Syringe, ClipboardList, Bug, Scissors } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteButton } from "@/components/clients/delete-button";
 import { deletePet } from "../../actions";
-import { SPECIES_OPTIONS, SEX_OPTIONS } from "@/lib/validations/clients";
+import { useClinic } from "@/lib/context/clinic-context";
+import {
+  SPECIES_OPTIONS,
+  SEX_OPTIONS,
+  formatReproductiveStatus,
+} from "@/lib/validations/clients";
 import type { Pet } from "@/types";
 
 interface PetCardProps {
@@ -39,7 +44,14 @@ function calculateAge(birthdate: string | null): string | null {
 }
 
 export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
+  const { member } = useClinic();
+  const canSeeClinical = member.role === "admin" || member.role === "vet";
+  const canSeeGrooming = member.role === "admin" || member.role === "groomer";
   const age = calculateAge(pet.birthdate);
+  const reproductiveLabel = formatReproductiveStatus(
+    pet.reproductive_status,
+    pet.sex
+  );
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-4">
@@ -65,6 +77,9 @@ export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
         {pet.sex && (
           <Badge variant="outline">{getSexLabel(pet.sex)}</Badge>
         )}
+        {reproductiveLabel && (
+          <Badge variant="outline">{reproductiveLabel}</Badge>
+        )}
         {age && <Badge variant="outline">{age}</Badge>}
         {pet.color && <Badge variant="outline">{pet.color}</Badge>}
       </div>
@@ -80,22 +95,52 @@ export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
       )}
 
       <div className="flex flex-wrap gap-2 pt-1">
-        <Button
-          variant="outline"
-          size="xs"
-          render={<Link href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/records`} />}
-        >
-          <ClipboardList className="size-3" data-icon="inline-start" />
-          Historial
-        </Button>
-        <Button
-          variant="outline"
-          size="xs"
-          render={<Link href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/vaccinations`} />}
-        >
-          <Syringe className="size-3" data-icon="inline-start" />
-          Vacunas
-        </Button>
+        {canSeeClinical && (
+          <>
+            <Button
+              variant="outline"
+              size="xs"
+              render={<Link href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/records`} />}
+            >
+              <ClipboardList className="size-3" data-icon="inline-start" />
+              Historial
+            </Button>
+            <Button
+              variant="outline"
+              size="xs"
+              render={<Link href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/vaccinations`} />}
+            >
+              <Syringe className="size-3" data-icon="inline-start" />
+              Vacunas
+            </Button>
+            <Button
+              variant="outline"
+              size="xs"
+              render={
+                <Link
+                  href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/dewormings`}
+                />
+              }
+            >
+              <Bug className="size-3" data-icon="inline-start" />
+              Desparasitaciones
+            </Button>
+          </>
+        )}
+        {canSeeGrooming && (
+          <Button
+            variant="outline"
+            size="xs"
+            render={
+              <Link
+                href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/grooming`}
+              />
+            }
+          >
+            <Scissors className="size-3" data-icon="inline-start" />
+            Peluquería
+          </Button>
+        )}
         <Button
           variant="outline"
           size="xs"

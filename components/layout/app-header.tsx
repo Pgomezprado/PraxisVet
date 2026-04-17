@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useClinic } from "@/lib/context/clinic-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -64,11 +64,6 @@ export function AppHeader() {
               </p>
             </DropdownMenuLabel>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem disabled>
-            <User className="mr-2 size-4" />
-            Mi perfil
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 size-4" />

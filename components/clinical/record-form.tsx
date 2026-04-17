@@ -36,6 +36,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { RECORD_TEMPLATES, type RecordTemplate } from "./record-templates";
+import { PhysicalExamFields } from "./physical-exam-fields";
+import type { PhysicalExam } from "@/types";
 
 interface Vet {
   id: string;
@@ -62,6 +64,10 @@ interface RecordFormProps {
     weight: number | null;
     temperature: number | null;
     heart_rate: number | null;
+    respiratory_rate: number | null;
+    capillary_refill_seconds: number | null;
+    skin_fold_seconds: number | null;
+    physical_exam: PhysicalExam | null;
   };
   defaultAppointmentId?: string;
   defaultVetId?: string;
@@ -108,8 +114,27 @@ export function RecordForm({
       weight: record?.weight ?? ("" as unknown as undefined),
       temperature: record?.temperature ?? ("" as unknown as undefined),
       heart_rate: record?.heart_rate ?? ("" as unknown as undefined),
+      respiratory_rate: record?.respiratory_rate ?? ("" as unknown as undefined),
+      capillary_refill_seconds:
+        record?.capillary_refill_seconds ?? ("" as unknown as undefined),
+      skin_fold_seconds:
+        record?.skin_fold_seconds ?? ("" as unknown as undefined),
+      physical_exam: record?.physical_exam ?? {},
     },
   });
+
+  const physicalExam = watch("physical_exam");
+  const hasPhysicalExam =
+    !!physicalExam &&
+    Object.values(physicalExam).some((v) => v != null && v !== "");
+  const respiratoryRate = watch("respiratory_rate");
+  const capillaryRefill = watch("capillary_refill_seconds");
+  const skinFold = watch("skin_fold_seconds");
+  const hasPhysicalContent =
+    hasPhysicalExam ||
+    (respiratoryRate != null && respiratoryRate !== "") ||
+    (capillaryRefill != null && capillaryRefill !== "") ||
+    (skinFold != null && skinFold !== "");
 
   const watchedValues = watch([
     "reason",
@@ -118,9 +143,6 @@ export function RecordForm({
     "diagnosis",
     "treatment",
     "observations",
-    "weight",
-    "temperature",
-    "heart_rate",
   ]);
 
   const [
@@ -130,23 +152,11 @@ export function RecordForm({
     diagnosis,
     treatment,
     observations,
-    weight,
-    temperature,
-    heartRate,
   ] = watchedValues;
 
-  const hasVitals = !!(weight || temperature || heartRate);
   const hasExam = !!(anamnesis || symptoms);
   const hasDiagTreatment = !!(diagnosis || treatment);
   const hasObservations = !!observations;
-
-  const vitalsPreview = [
-    weight ? `${weight} kg` : null,
-    temperature ? `${temperature} °C` : null,
-    heartRate ? `${heartRate} bpm` : null,
-  ]
-    .filter(Boolean)
-    .join(" / ");
 
   const applyTemplate = useCallback(
     (template: RecordTemplate) => {
@@ -166,6 +176,20 @@ export function RecordForm({
   async function onSubmit(data: ClinicalRecordInput) {
     setLoading(true);
     setError(null);
+
+    // Sanea strings vacíos de physical_exam que Zod enum rechaza.
+    if (data.physical_exam) {
+      const cleaned: Record<string, string> = {};
+      for (const [k, v] of Object.entries(data.physical_exam)) {
+        if (typeof v === "string" && v.trim() !== "") cleaned[k] = v;
+      }
+      data = {
+        ...data,
+        physical_exam: Object.keys(cleaned).length
+          ? (cleaned as ClinicalRecordInput["physical_exam"])
+          : undefined,
+      };
+    }
 
     const result = isEditing
       ? await updateRecord(record!.id, clinicSlug, clientId, petId, data)
@@ -257,30 +281,8 @@ export function RecordForm({
               </div>
             </div>
 
-            {/* Seccion 1: Motivo de consulta - siempre abierta */}
-            <CollapsibleSection title="Motivo de consulta" alwaysOpen hasContent={!!reason} preview={reason || ""}>
-              <div className="space-y-2">
-                <Label htmlFor="reason">Motivo</Label>
-                <AutoTextarea
-                  id="reason"
-                  placeholder="ej: Control general, vacunación, malestar digestivo..."
-                  {...register("reason")}
-                />
-                {errors.reason && (
-                  <p className="text-sm text-destructive">
-                    {errors.reason.message}
-                  </p>
-                )}
-              </div>
-            </CollapsibleSection>
-
-            {/* Sección 2: Signos vitales - expandida por default */}
-            <CollapsibleSection
-              title="Signos vitales"
-              defaultOpen
-              hasContent={hasVitals}
-              preview={vitalsPreview}
-            >
+            {/* Vitales clave siempre visibles: peso + temperatura son lo más usado en cada consulta */}
+            <div className="rounded-lg border bg-muted/30 p-4">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="weight">Peso (kg)</Label>
@@ -330,6 +332,40 @@ export function RecordForm({
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Motivo de consulta - siempre abierta */}
+            <CollapsibleSection title="Motivo de consulta" alwaysOpen hasContent={!!reason} preview={reason || ""}>
+              <div className="space-y-2">
+                <Label htmlFor="reason">Motivo</Label>
+                <AutoTextarea
+                  id="reason"
+                  placeholder="ej: Control general, vacunación, malestar digestivo..."
+                  {...register("reason")}
+                />
+                {errors.reason && (
+                  <p className="text-sm text-destructive">
+                    {errors.reason.message}
+                  </p>
+                )}
+              </div>
+            </CollapsibleSection>
+
+            {/* Examen físico: constantes fisiológicas + observacionales (Excel clínica) */}
+            <CollapsibleSection
+              title="Examen físico"
+              hasContent={hasPhysicalContent}
+              preview={
+                hasPhysicalContent
+                  ? "FR, TLLC, PC, mucosas, linfonodos..."
+                  : ""
+              }
+            >
+              <PhysicalExamFields
+                register={register}
+                errors={errors}
+                earInspection={physicalExam?.ear_inspection}
+              />
             </CollapsibleSection>
 
             {/* Sección 3: Examen clínico - colapsada por default */}

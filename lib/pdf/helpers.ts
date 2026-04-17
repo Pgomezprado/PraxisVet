@@ -47,12 +47,9 @@ export function calculateAge(birthdate: string | null): string {
 }
 
 const SPECIES_MAP: Record<string, string> = {
-  dog: "Perro",
-  cat: "Gato",
-  bird: "Ave",
-  rabbit: "Conejo",
-  reptile: "Reptil",
-  other: "Otro",
+  canino: "Canino",
+  felino: "Felino",
+  exotico: "Exótico",
 };
 
 const SEX_MAP: Record<string, string> = {

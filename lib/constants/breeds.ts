@@ -80,19 +80,17 @@ export const RABBIT_BREEDS = [
 ];
 
 /**
- * Devuelve sugerencias de raza según la especie.
- * Si la especie es desconocida o "other", devuelve una lista vacía y el usuario escribe libremente.
+ * Devuelve sugerencias de raza según la especie clínica.
+ * Para "exotico" no se sugieren razas porque agrupa muchos taxones distintos
+ * (aves, conejos, reptiles, etc.) y el usuario escribe libremente. Pendiente
+ * subdividir cuando se valide con la clínica.
  */
 export function getBreedSuggestions(species: string | null | undefined): string[] {
   switch (species) {
-    case "dog":
+    case "canino":
       return DOG_BREEDS;
-    case "cat":
+    case "felino":
       return CAT_BREEDS;
-    case "bird":
-      return BIRD_BREEDS;
-    case "rabbit":
-      return RABBIT_BREEDS;
     default:
       return [];
   }

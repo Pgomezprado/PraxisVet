@@ -75,10 +75,25 @@ export default async function ClinicLayout({
     created_at: membership.created_at,
   };
 
+  const today = new Date().toISOString().split("T")[0];
+  let appointmentsQuery = supabase
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", org.id)
+    .eq("date", today)
+    .in("status", ["pending", "confirmed", "in_progress", "ready_for_pickup"]);
+
+  if (member.role === "vet" || member.role === "groomer") {
+    appointmentsQuery = appointmentsQuery.eq("assigned_to", member.id);
+  }
+
+  const { count: appointmentsTodayCount } = await appointmentsQuery;
+  const appointmentsBadge = appointmentsTodayCount ?? 0;
+
   return (
     <ClinicProvider organization={org} member={member}>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar appointmentsBadge={appointmentsBadge} />
         <SidebarInset>
           <AppHeader />
           <main className="flex-1 p-6">{children}</main>

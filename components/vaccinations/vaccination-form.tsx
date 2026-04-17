@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   vaccinationSchema,
   type VaccinationInput,
-  COMMON_VACCINES,
 } from "@/lib/validations/vaccinations";
+import type { CatalogVaccineGroup } from "@/lib/vaccines/catalog";
 import { useClinic } from "@/lib/context/clinic-context";
 import {
   createVaccination,
@@ -33,23 +33,67 @@ interface VaccinationFormProps {
   clientId: string;
   vaccination?: Vaccination;
   vets: Pick<OrganizationMember, "id" | "first_name" | "last_name">[];
+  catalog: CatalogVaccineGroup[];
   returnPath: string;
+}
+
+const FREE_DOSE_VALUE = "__free__";
+
+// Valor compuesto: `${vaccineId}:${protocolId}:${doseId}`
+function buildDoseValue(
+  vaccineId: string,
+  protocolId: string,
+  doseId: string
+): string {
+  return `${vaccineId}:${protocolId}:${doseId}`;
+}
+
+function parseDoseValue(value: string): {
+  vaccineId: string;
+  protocolId: string;
+  doseId: string;
+} | null {
+  if (!value || value === FREE_DOSE_VALUE) return null;
+  const parts = value.split(":");
+  if (parts.length !== 3) return null;
+  return { vaccineId: parts[0], protocolId: parts[1], doseId: parts[2] };
+}
+
+function addDays(iso: string, days: number): string {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
 }
 
 export function VaccinationForm({
   petId,
-  clientId,
+  clientId: _clientId,
   vaccination,
   vets,
+  catalog,
   returnPath,
 }: VaccinationFormProps) {
   const router = useRouter();
   const { organization } = useClinic();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   const isEditing = !!vaccination;
+
+  // Si la vacuna ya tiene dose_id vinculada, partimos con ese valor seleccionado.
+  const initialDoseValue = vaccination?.dose_id
+    ? (() => {
+        for (const v of catalog) {
+          for (const p of v.protocols) {
+            const match = p.doses.find((d) => d.doseId === vaccination.dose_id);
+            if (match) return buildDoseValue(v.vaccineId, p.protocolId, match.doseId);
+          }
+        }
+        return FREE_DOSE_VALUE;
+      })()
+    : FREE_DOSE_VALUE;
+
+  const [selectedDose, setSelectedDose] = useState<string>(initialDoseValue);
 
   const {
     register,
@@ -62,36 +106,92 @@ export function VaccinationForm({
     defaultValues: {
       vaccine_name: vaccination?.vaccine_name ?? "",
       lot_number: vaccination?.lot_number ?? "",
-      date_administered: vaccination?.date_administered ?? "",
+      date_administered:
+        vaccination?.date_administered ??
+        new Date().toISOString().split("T")[0],
       next_due_date: vaccination?.next_due_date ?? "",
       vet_id: vaccination?.vet_id ?? "",
       notes: vaccination?.notes ?? "",
       pet_id: petId,
       clinical_record_id: vaccination?.clinical_record_id ?? "",
+      vaccine_catalog_id: vaccination?.vaccine_catalog_id ?? "",
+      protocol_id: vaccination?.protocol_id ?? "",
+      dose_id: vaccination?.dose_id ?? "",
     },
   });
 
-  const vaccineNameValue = watch("vaccine_name");
+  const dateAdministered = watch("date_administered");
+  const nextDueDate = watch("next_due_date");
+  const isFromCatalog = selectedDose !== FREE_DOSE_VALUE;
 
-  const filteredSuggestions = COMMON_VACCINES.filter((v) =>
-    v.toLowerCase().includes((vaccineNameValue ?? "").toLowerCase())
-  );
+  // Índice rápido de dosis seleccionada
+  const selectedMeta = useMemo(() => {
+    const parsed = parseDoseValue(selectedDose);
+    if (!parsed) return null;
+    const v = catalog.find((c) => c.vaccineId === parsed.vaccineId);
+    const p = v?.protocols.find((p) => p.protocolId === parsed.protocolId);
+    const d = p?.doses.find((d) => d.doseId === parsed.doseId);
+    if (!v || !p || !d) return null;
+    return { vaccine: v, protocol: p, dose: d };
+  }, [selectedDose, catalog]);
+
+  function handleDoseChange(value: string) {
+    setSelectedDose(value);
+    const parsed = parseDoseValue(value);
+    if (!parsed) {
+      // dosis libre: limpiar ids pero dejar textos
+      setValue("vaccine_catalog_id", "");
+      setValue("protocol_id", "");
+      setValue("dose_id", "");
+      return;
+    }
+    const v = catalog.find((c) => c.vaccineId === parsed.vaccineId);
+    const p = v?.protocols.find((pp) => pp.protocolId === parsed.protocolId);
+    const d = p?.doses.find((dd) => dd.doseId === parsed.doseId);
+    if (!v || !p || !d) return;
+
+    setValue("vaccine_catalog_id", v.vaccineId, { shouldValidate: true });
+    setValue("protocol_id", p.protocolId, { shouldValidate: true });
+    setValue("dose_id", d.doseId, { shouldValidate: true });
+    // prellenar nombre visible
+    setValue("vaccine_name", `${v.vaccineName} - ${d.doseName}`, {
+      shouldValidate: true,
+    });
+    // preview de next_due_date si hay fecha
+    if (dateAdministered) {
+      setValue("next_due_date", addDays(dateAdministered, d.intervalDays));
+    }
+  }
+
+  // Recalcula preview si cambia fecha con dosis del catálogo seleccionada
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setValue("date_administered", value, { shouldValidate: true });
+    if (selectedMeta && value) {
+      setValue(
+        "next_due_date",
+        addDays(value, selectedMeta.dose.intervalDays)
+      );
+    }
+  }
 
   async function onSubmit(data: VaccinationInput) {
-    setLoading(true);
+    if (isPending) return;
     setError(null);
+    setIsPending(true);
 
     const result = isEditing
-      ? await updateVaccination(vaccination!.id, data)
-      : await createVaccination(organization.id, data);
+      ? await updateVaccination(vaccination!.id, data, returnPath)
+      : await createVaccination(organization.id, data, returnPath);
 
     if (!result.success) {
       setError(result.error);
-      setLoading(false);
+      setIsPending(false);
       return;
     }
 
-    router.push(returnPath);
+    router.replace(returnPath);
+    router.refresh();
   }
 
   return (
@@ -103,7 +203,7 @@ export function VaccinationForm({
         <CardDescription>
           {isEditing
             ? "Modifica los datos del registro de vacunación."
-            : "Registra una nueva vacuna aplicada."}
+            : "Selecciona una dosis del catálogo o registra una aplicación libre."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -116,62 +216,69 @@ export function VaccinationForm({
 
           <input type="hidden" {...register("pet_id")} />
           <input type="hidden" {...register("clinical_record_id")} />
+          <input type="hidden" {...register("vaccine_catalog_id")} />
+          <input type="hidden" {...register("protocol_id")} />
+          <input type="hidden" {...register("dose_id")} />
+
+          {/* Selector de catálogo agrupado */}
+          <div className="space-y-2">
+            <Label htmlFor="catalog_dose">Vacuna / dosis</Label>
+            <Select
+              id="catalog_dose"
+              value={selectedDose}
+              onChange={(e) => handleDoseChange(e.target.value)}
+            >
+              {catalog.length === 0 && (
+                <option value={FREE_DOSE_VALUE}>
+                  Sin catálogo disponible - dosis libre
+                </option>
+              )}
+              {catalog.map((v) => (
+                <optgroup key={v.vaccineId} label={v.vaccineName}>
+                  {v.protocols.flatMap((p) =>
+                    p.doses.map((d) => (
+                      <option
+                        key={d.doseId}
+                        value={buildDoseValue(v.vaccineId, p.protocolId, d.doseId)}
+                      >
+                        {p.protocolName} · {d.doseName} ({d.intervalDays} días)
+                      </option>
+                    ))
+                  )}
+                </optgroup>
+              ))}
+              <optgroup label="Otros">
+                <option value={FREE_DOSE_VALUE}>
+                  Dosis libre (sin protocolo)
+                </option>
+              </optgroup>
+            </Select>
+            {selectedMeta && (
+              <p className="text-xs text-muted-foreground">
+                {selectedMeta.vaccine.vaccineName} →{" "}
+                {selectedMeta.protocol.protocolName} → {selectedMeta.dose.doseName} ·
+                próxima dosis a {selectedMeta.dose.intervalDays} días.
+              </p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="vaccine_name">Nombre de la vacuna</Label>
-            <div className="relative">
-              <Input
-                id="vaccine_name"
-                placeholder="ej: Rabia, Parvovirus..."
-                autoComplete="off"
-                {...register("vaccine_name")}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => {
-                  setTimeout(() => setShowSuggestions(false), 200);
-                }}
-              />
-              {showSuggestions && filteredSuggestions.length > 0 && vaccineNameValue && (
-                <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
-                  {filteredSuggestions.map((suggestion) => (
-                    <li key={suggestion}>
-                      <button
-                        type="button"
-                        className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setValue("vaccine_name", suggestion, {
-                            shouldValidate: true,
-                          });
-                          setShowSuggestions(false);
-                        }}
-                      >
-                        {suggestion}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <Input
+              id="vaccine_name"
+              placeholder="ej: Óctuple Canina - 1era Puppy"
+              readOnly={isFromCatalog}
+              {...register("vaccine_name")}
+            />
+            {isFromCatalog && (
+              <p className="text-xs text-muted-foreground">
+                Autocompletado desde el catálogo. Para editar, selecciona &quot;Dosis libre&quot;.
+              </p>
+            )}
             {errors.vaccine_name && (
               <p className="text-sm text-destructive">
                 {errors.vaccine_name.message}
               </p>
-            )}
-            {!vaccineNameValue && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {COMMON_VACCINES.slice(0, 6).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    onClick={() =>
-                      setValue("vaccine_name", v, { shouldValidate: true })
-                    }
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
             )}
           </div>
 
@@ -181,7 +288,8 @@ export function VaccinationForm({
               <Input
                 id="date_administered"
                 type="date"
-                {...register("date_administered")}
+                value={dateAdministered ?? ""}
+                onChange={handleDateChange}
               />
               {errors.date_administered && (
                 <p className="text-sm text-destructive">
@@ -191,13 +299,23 @@ export function VaccinationForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="next_due_date">
-                Próxima dosis (opcional)
+                Próxima dosis {isFromCatalog && "(preview automático)"}
               </Label>
               <Input
                 id="next_due_date"
                 type="date"
-                {...register("next_due_date")}
+                value={nextDueDate ?? ""}
+                onChange={(e) =>
+                  setValue("next_due_date", e.target.value, {
+                    shouldValidate: true,
+                  })
+                }
               />
+              {isFromCatalog && (
+                <p className="text-xs text-muted-foreground">
+                  El sistema recalcula esta fecha al guardar si la dejas como viene.
+                </p>
+              )}
             </div>
           </div>
 
@@ -233,8 +351,8 @@ export function VaccinationForm({
           </div>
 
           <div className="flex gap-3">
-            <Button type="submit" disabled={loading}>
-              {loading
+            <Button type="submit" disabled={isPending}>
+              {isPending
                 ? isEditing
                   ? "Guardando..."
                   : "Registrando..."

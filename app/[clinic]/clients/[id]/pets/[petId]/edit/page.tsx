@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PetForm } from "@/components/clients/pet-form";
+import { getClient } from "../../../../actions";
 import type { Pet } from "@/types";
 
 export default async function EditPetPage({
@@ -10,11 +11,10 @@ export default async function EditPetPage({
   const { id, petId } = await params;
   const supabase = await createClient();
 
-  const { data: pet, error } = await supabase
-    .from("pets")
-    .select("*")
-    .eq("id", petId)
-    .single();
+  const [{ data: pet, error }, clientResult] = await Promise.all([
+    supabase.from("pets").select("*").eq("id", petId).single(),
+    getClient(id),
+  ]);
 
   if (error || !pet) {
     return (
@@ -26,6 +26,13 @@ export default async function EditPetPage({
 
   return (
     <div className="mx-auto max-w-2xl">
+      {clientResult.success && (
+        <div className="mb-4">
+          <p className="text-sm text-muted-foreground">
+            Cliente: {clientResult.data.first_name} {clientResult.data.last_name}
+          </p>
+        </div>
+      )}
       <PetForm clientId={id} pet={pet as Pet} />
     </div>
   );

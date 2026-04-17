@@ -182,8 +182,11 @@ export async function createTutorWithPet(
       name: parsed.data.pet_name,
       species: parsed.data.pet_species || null,
       breed: parsed.data.pet_breed || null,
+      color: parsed.data.pet_color || null,
       sex: parsed.data.pet_sex || null,
       birthdate: parsed.data.pet_birthdate || null,
+      microchip: parsed.data.pet_microchip || null,
+      reproductive_status: parsed.data.pet_reproductive_status || null,
       notes: parsed.data.pet_notes || null,
     })
     .select("id")
@@ -293,6 +296,7 @@ export async function createPet(
       sex: parsed.data.sex || null,
       birthdate: parsed.data.birthdate || null,
       microchip: parsed.data.microchip || null,
+      reproductive_status: parsed.data.reproductive_status || null,
       notes: parsed.data.notes || null,
     })
     .select()
@@ -344,6 +348,7 @@ export async function updatePet(
       sex: parsed.data.sex || null,
       birthdate: parsed.data.birthdate || null,
       microchip: parsed.data.microchip || null,
+      reproductive_status: parsed.data.reproductive_status || null,
       notes: parsed.data.notes || null,
     })
     .eq("id", petId)

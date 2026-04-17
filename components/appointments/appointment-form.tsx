@@ -21,6 +21,8 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Clock, Loader2 } from "lucide-react";
+import { formatCLP } from "@/lib/utils/format";
+import { formatSpecies } from "@/lib/validations/clients";
 
 type ClientWithPets = {
   id: string;
@@ -249,6 +251,16 @@ export function AppointmentForm({
     }
   }
 
+  const computeEndTime = useCallback(
+    (startTime: string, durationMinutes: number): string => {
+      const [hours, minutes] = startTime.split(":").map(Number);
+      if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+      const endDate = new Date(2000, 0, 1, hours, minutes + durationMinutes);
+      return `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+    },
+    []
+  );
+
   function handleServiceChange(serviceId: string) {
     setValue("service_id", serviceId);
 
@@ -256,10 +268,28 @@ export function AppointmentForm({
 
     const service = filteredServices.find((s) => s.id === serviceId);
     if (service && watch("start_time")) {
-      const [hours, minutes] = watch("start_time").split(":").map(Number);
-      const endDate = new Date(2000, 0, 1, hours, minutes + service.duration_minutes);
-      const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
-      setValue("end_time", endTime);
+      setValue("end_time", computeEndTime(watch("start_time"), service.duration_minutes), {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }
+
+  function handleStartTimeChange(value: string) {
+    setValue("start_time", value, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    const currentServiceId = watch("service_id");
+    if (!currentServiceId || !value) return;
+
+    const service = filteredServices.find((s) => s.id === currentServiceId);
+    if (service) {
+      setValue("end_time", computeEndTime(value, service.duration_minutes), {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
   }
 
@@ -330,7 +360,7 @@ export function AppointmentForm({
                 {availablePets.map((pet) => (
                   <option key={pet.id} value={pet.id}>
                     {pet.name}
-                    {pet.species ? ` (${pet.species})` : ""}
+                    {pet.species ? ` (${formatSpecies(pet.species)})` : ""}
                   </option>
                 ))}
               </Select>
@@ -366,7 +396,7 @@ export function AppointmentForm({
                 {filteredServices.map((service) => (
                   <option key={service.id} value={service.id}>
                     {service.name}
-                    {service.price != null ? ` - $${service.price}` : ""}
+                    {service.price != null ? ` - ${formatCLP(service.price)}` : ""}
                     {` (${service.duration_minutes} min)`}
                   </option>
                 ))}
@@ -390,12 +420,7 @@ export function AppointmentForm({
                 <TimePicker
                   id="start_time"
                   value={watch("start_time")}
-                  onChange={(v) =>
-                    setValue("start_time", v, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    })
-                  }
+                  onChange={handleStartTimeChange}
                   aria-invalid={!!errors.start_time}
                 />
                 <FieldError message={errors.start_time?.message} />

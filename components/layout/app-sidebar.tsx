@@ -33,6 +33,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: MemberRole[];
+  badgeKey?: "appointments";
 }
 
 const navItems: NavItem[] = [
@@ -47,6 +48,7 @@ const navItems: NavItem[] = [
     href: "/appointments",
     icon: CalendarDays,
     roles: ["admin", "vet", "receptionist", "groomer"],
+    badgeKey: "appointments",
   },
   {
     title: "Clientes",
@@ -74,7 +76,11 @@ const navItems: NavItem[] = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({
+  appointmentsBadge = 0,
+}: {
+  appointmentsBadge?: number;
+}) {
   const pathname = usePathname();
   const { organization, member, clinicSlug } = useClinic();
 
@@ -135,7 +141,16 @@ export function AppSidebar() {
                         />
                       )}
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.badgeKey === "appointments" &&
+                        appointmentsBadge > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="ml-auto h-5 min-w-5 justify-center px-1.5 text-[10px] font-semibold"
+                          >
+                            {appointmentsBadge}
+                          </Badge>
+                        )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

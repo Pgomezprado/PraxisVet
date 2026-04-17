@@ -17,6 +17,7 @@ import {
 import { updateAppointmentStatus } from "@/app/[clinic]/appointments/actions";
 import type { AppointmentWithRelations } from "@/app/[clinic]/appointments/actions";
 import type { AppointmentStatus } from "@/types";
+import { formatSpecies } from "@/lib/validations/clients";
 
 function formatTime(time: string): string {
   return time.slice(0, 5);
@@ -100,7 +101,7 @@ export function AppointmentCard({
               {appointment.pet.name}
               {appointment.pet.species && (
                 <span className="ml-1 text-xs text-muted-foreground">
-                  ({appointment.pet.species})
+                  ({formatSpecies(appointment.pet.species)})
                 </span>
               )}
             </h3>

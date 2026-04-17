@@ -16,6 +16,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 
 const env = Object.fromEntries(
   readFileSync(resolve(process.cwd(), ".env.local"), "utf8")
@@ -65,6 +66,25 @@ async function ensureAuthUser(email) {
   });
   if (error) die(`createUser ${email}`, error);
   return data.user.id;
+}
+
+// ---------------------------------------------------------------
+// 0) Seed del catálogo global de vacunas (idempotente, requiere SUPABASE_DB_URL)
+// ---------------------------------------------------------------
+const dbUrl = env.SUPABASE_DB_URL || env.DATABASE_URL || process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+if (dbUrl) {
+  const res = spawnSync(
+    "node",
+    ["scripts/apply-sql.mjs", "supabase/seed/vaccines_catalog.sql"],
+    { stdio: "inherit", env: { ...process.env, SUPABASE_DB_URL: dbUrl } },
+  );
+  if (res.status !== 0) die("seed vaccines_catalog falló");
+  console.log("✓ Catálogo global de vacunas seedeado");
+} else {
+  console.warn(
+    "⚠ SUPABASE_DB_URL no configurado — omitiendo seed de vaccines_catalog. " +
+    "Corre manualmente en Supabase SQL Editor: supabase/seed/vaccines_catalog.sql",
+  );
 }
 
 // ---------------------------------------------------------------
@@ -211,12 +231,12 @@ if (clientsErr) die("clients", clientsErr);
 console.log("✓ Clients:", clients.length);
 
 const petsPayload = [
-  { client: clients[0], name: "Firulais", species: "dog", breed: "Labrador" },
-  { client: clients[1], name: "Luna", species: "cat", breed: "Siamés" },
-  { client: clients[2], name: "Rocky", species: "dog", breed: "Bulldog" },
-  { client: clients[3], name: "Toby", species: "dog", breed: "Golden Retriever" },
-  { client: clients[4], name: "Mia", species: "cat", breed: "Persa" },
-  { client: clients[0], name: "Coco", species: "dog", breed: "Poodle" },
+  { client: clients[0], name: "Firulais", species: "canino", breed: "Labrador" },
+  { client: clients[1], name: "Luna", species: "felino", breed: "Siamés" },
+  { client: clients[2], name: "Rocky", species: "canino", breed: "Bulldog" },
+  { client: clients[3], name: "Toby", species: "canino", breed: "Golden Retriever" },
+  { client: clients[4], name: "Mia", species: "felino", breed: "Persa" },
+  { client: clients[0], name: "Coco", species: "canino", breed: "Poodle" },
 ];
 
 const { data: pets, error: petsErr } = await s

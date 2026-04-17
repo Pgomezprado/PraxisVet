@@ -166,7 +166,7 @@ CREATE TABLE public.pets (
   org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   client_id uuid NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
   name text NOT NULL,
-  species text CHECK (species IN ('dog', 'cat', 'bird', 'rabbit', 'reptile', 'other')),
+  species text CHECK (species IN ('canino', 'felino', 'exotico')),
   breed text,
   color text,
   sex text CHECK (sex IN ('male', 'female')),

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { VitalsDisplay } from "@/components/clinical/vitals-display";
+import { PhysicalExamDisplay } from "@/components/clinical/physical-exam-display";
 import { PrescriptionList } from "@/components/clinical/prescription-list";
 import { DownloadPdfButton } from "@/components/pdf/DownloadPdfButton";
 import { RecordDeleteButton } from "./_components/record-delete-button";
@@ -164,6 +165,13 @@ export default async function RecordDetailPage({
         weight={record.weight}
         temperature={record.temperature}
         heartRate={record.heart_rate}
+      />
+
+      <PhysicalExamDisplay
+        respiratoryRate={record.respiratory_rate}
+        capillaryRefill={record.capillary_refill_seconds}
+        skinFold={record.skin_fold_seconds}
+        physicalExam={record.physical_exam}
       />
 
       {sections.length > 0 && (

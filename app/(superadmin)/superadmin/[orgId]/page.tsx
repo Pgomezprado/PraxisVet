@@ -274,7 +274,7 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
             <div className="space-y-1">
               <CardTitle className="text-2xl">{identity.name}</CardTitle>
               <CardDescription>
-                praxisvet.com/{identity.slug}
+                praxisvet.cl/{identity.slug}
               </CardDescription>
             </div>
             <PlanBadge plan={identity.plan} />

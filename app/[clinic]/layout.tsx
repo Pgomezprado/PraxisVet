@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ClinicProvider } from "@/lib/context/clinic-context";
@@ -5,6 +6,10 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import type { Organization, OrganizationMember } from "@/types";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function ClinicLayout({
   children,

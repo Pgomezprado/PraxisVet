@@ -121,7 +121,7 @@ export function OnboardingForm() {
           <div className="space-y-2">
             <Label htmlFor="slug">URL de tu clinica</Label>
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <span>praxisvet.com/</span>
+              <span>praxisvet.cl/</span>
               <Input
                 id="slug"
                 placeholder="mi-clinica"

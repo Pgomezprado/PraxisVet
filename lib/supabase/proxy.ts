@@ -5,8 +5,17 @@ const PUBLIC_ROUTES = ["/", "/auth"];
 const AUTH_ROUTES = ["/auth"];
 const PROTECTED_PREFIXES = ["/onboarding"];
 
+const SEO_ROUTES = new Set([
+  "/robots.txt",
+  "/sitemap.xml",
+  "/opengraph-image",
+  "/twitter-image",
+  "/manifest.webmanifest",
+]);
+
 function isPublicRoute(pathname: string) {
   if (pathname === "/") return true;
+  if (SEO_ROUTES.has(pathname)) return true;
   // Marketing routes handled by (marketing) group
   if (pathname.startsWith("/auth")) return true;
   // Invitation acceptance: invitee is anonymous y debe ver el form de contraseña

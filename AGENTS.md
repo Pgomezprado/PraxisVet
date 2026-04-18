@@ -340,7 +340,7 @@ Estas reglas no se negocian. Si una propuesta las rompe, se rechaza.
 - **Razón social:** PRAXIS SpA
 - **RUT:** 78.383.804-4
 - **Producto:** PraxisVet — HCE SaaS para clínicas veterinarias
-- **Dominio:** praxisvet.com
+- **Dominio:** praxisvet.cl
 - **Mercado:** Chile
 
 ---

@@ -1,6 +1,6 @@
 # PraxisVet
 
-**Dominio:** praxisvet.com
+**Dominio:** praxisvet.cl
 **Estado:** En desarrollo activo
 **Empresa:** PRAXIS SpA
 
@@ -8,7 +8,7 @@
 Plataforma SaaS multi-tenant de Historia Clínica Electrónica (HCE) para veterinarios y clínicas veterinarias.
 
 ## Arquitectura
-- Multi-tenant por slug: `praxisvet.com/[clinic-slug]/dashboard`
+- Multi-tenant por slug: `praxisvet.cl/[clinic-slug]/dashboard`
 - Row Level Security (RLS) con `org_id` en Supabase
 - Roles: Super Admin, Clinic Admin, Veterinario, Recepcionista
 

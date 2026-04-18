@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 export const metadata = {
   title: "Superadmin · PraxisVet",
+  robots: { index: false, follow: false },
 };
 
 export default function SuperadminLayout({ children }: { children: ReactNode }) {

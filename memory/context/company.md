@@ -9,7 +9,7 @@
 | Producto | Dominio | Descripción |
 |----------|---------|-------------|
 | **PraxisApp** | praxisapp.cl | HCE para médicos, clínicas medianas/pequeñas y odontología |
-| **PraxisVet** | praxisvet.com | HCE para veterinarios (plataforma SaaS multi-tenant) |
+| **PraxisVet** | praxisvet.cl | HCE para veterinarios (plataforma SaaS multi-tenant) |
 
 ## Stack Tecnológico (PraxisVet)
 | Capa | Tecnología |

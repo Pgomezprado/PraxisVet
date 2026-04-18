@@ -13,7 +13,7 @@
 | Nombre | Descripción |
 |--------|-------------|
 | PraxisApp | HCE para médicos y odontología — praxisapp.cl |
-| PraxisVet | HCE para veterinarios — praxisvet.com |
+| PraxisVet | HCE para veterinarios — praxisvet.cl |
 
 ## Empresa
 | Campo | Valor |

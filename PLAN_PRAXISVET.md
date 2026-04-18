@@ -51,8 +51,8 @@ Usuario autenticado → JWT contiene org_id + role
 ```
 
 ### Identificación de clínica por subdominio o slug
-- URL: `praxisvet.com/[clinic-slug]/dashboard`
-- O con subdominios: `mivet.praxisvet.com` (avanzado, Phase 2)
+- URL: `praxisvet.cl/[clinic-slug]/dashboard`
+- O con subdominios: `mivet.praxisvet.cl` (avanzado, Phase 2)
 
 ---
 
@@ -530,7 +530,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
 # App
-NEXT_PUBLIC_APP_URL=https://praxisvet.com
+NEXT_PUBLIC_APP_URL=https://praxisvet.cl
 
 # Email
 RESEND_API_KEY=

@@ -3,9 +3,10 @@ import { PawPrint, Globe, Mail, Lock } from "lucide-react";
 
 const footerLinks = {
   Producto: [
-    { href: "#funcionalidades", label: "Funcionalidades" },
-    { href: "#para-tu-equipo", label: "Para tu equipo" },
-    { href: "#como-funciona", label: "Como funciona" },
+    { href: "/#funcionalidades", label: "Funcionalidades" },
+    { href: "/#precios", label: "Precios" },
+    { href: "/#faq", label: "Preguntas frecuentes" },
+    { href: "/#como-funciona", label: "Cómo funciona" },
   ],
   Empresa: [
     { href: "mailto:contacto@praxisvet.cl", label: "Contacto" },
@@ -26,8 +27,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              La plataforma integral para clinicas veterinarias en Chile:
-              gestion medica, peluqueria y facturacion SII en un solo lugar.
+              La plataforma integral para clínicas veterinarias en Chile:
+              gestión médica, peluquería y facturación SII en un solo lugar.
             </p>
 
             <div className="flex items-center gap-3">
@@ -50,7 +51,7 @@ export function Footer() {
             <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 px-3 py-2">
               <Lock className="size-4 text-primary" />
               <span className="text-xs text-muted-foreground">
-                Datos protegidos con encriptacion
+                Datos protegidos con encriptación
               </span>
             </div>
           </div>

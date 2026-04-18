@@ -22,6 +22,9 @@ const superadminAllowlist = [
   "lib/supabase/admin.server.ts",
   "lib/invitations/**",
   "app/accept-invite/**",
+  // Cron jobs corren como procesos de Vercel (auth via CRON_SECRET), no como
+  // usuarios; necesitan service-role para recorrer todas las orgs.
+  "app/api/cron/**",
 ];
 
 const restrictedSuperadmin = {

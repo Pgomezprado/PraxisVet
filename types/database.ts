@@ -1,5 +1,11 @@
 export type MemberRole = "admin" | "vet" | "receptionist" | "groomer";
-export type Plan = "free" | "pro" | "enterprise";
+export type Plan = "basico" | "pro" | "enterprise";
+export type SubscriptionStatus =
+  | "trial"
+  | "active"
+  | "past_due"
+  | "expired"
+  | "cancelled";
 export type Species = "canino" | "felino" | "exotico";
 export type Sex = "male" | "female";
 export type ReproductiveStatus = "intact" | "sterilized";
@@ -33,6 +39,9 @@ export interface Organization {
   settings: Record<string, unknown>;
   active: boolean;
   created_at: string;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  subscription_status: SubscriptionStatus;
 }
 
 export interface OrganizationMember {

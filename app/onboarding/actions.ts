@@ -1,8 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { addDays } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema, type OnboardingInput } from "@/lib/validations/onboarding";
+import { TRIAL_DURATION_DAYS } from "@/lib/billing/constants";
 
 export async function createOrganization(input: OnboardingInput) {
   const parsed = onboardingSchema.safeParse(input);
@@ -30,6 +32,9 @@ export async function createOrganization(input: OnboardingInput) {
     return { success: false as const, error: "Este slug ya esta en uso" };
   }
 
+  const trialStartedAt = new Date();
+  const trialEndsAt = addDays(trialStartedAt, TRIAL_DURATION_DAYS);
+
   const { data: org, error: orgError } = await supabase
     .from("organizations")
     .insert({
@@ -37,6 +42,10 @@ export async function createOrganization(input: OnboardingInput) {
       slug: parsed.data.slug,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
+      plan: "pro",
+      trial_started_at: trialStartedAt.toISOString(),
+      trial_ends_at: trialEndsAt.toISOString(),
+      subscription_status: "trial",
     })
     .select("id, slug")
     .single();

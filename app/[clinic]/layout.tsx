@@ -5,6 +5,7 @@ import { ClinicProvider } from "@/lib/context/clinic-context";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
+import { TrialBanner } from "@/components/billing/trial-banner";
 import type { Organization, OrganizationMember } from "@/types";
 
 export const metadata: Metadata = {
@@ -54,7 +55,10 @@ export default async function ClinicLayout({
         logo_url,
         settings,
         active,
-        created_at
+        created_at,
+        trial_started_at,
+        trial_ends_at,
+        subscription_status
       )
     `
     )
@@ -80,6 +84,33 @@ export default async function ClinicLayout({
     created_at: membership.created_at,
   };
 
+  // Trial / subscription gate. Platform admins bypass the check because they
+  // may need to inspect expired orgs from the superadmin panel.
+  const isPlatformAdmin = Boolean(user.app_metadata?.platform_admin);
+  if (!isPlatformAdmin) {
+    const trialEnded =
+      org.subscription_status === "trial" &&
+      org.trial_ends_at !== null &&
+      new Date(org.trial_ends_at) <= new Date();
+
+    if (trialEnded) {
+      // Self-heal: persist the expired status so the cron + UI stay in sync.
+      await supabase
+        .from("organizations")
+        .update({ subscription_status: "expired" })
+        .eq("id", org.id);
+      redirect("/billing/upgrade");
+    }
+
+    if (
+      org.subscription_status === "expired" ||
+      org.subscription_status === "past_due" ||
+      org.subscription_status === "cancelled"
+    ) {
+      redirect("/billing/upgrade");
+    }
+  }
+
   const today = new Date().toISOString().split("T")[0];
   let appointmentsQuery = supabase
     .from("appointments")
@@ -101,6 +132,10 @@ export default async function ClinicLayout({
         <AppSidebar appointmentsBadge={appointmentsBadge} />
         <SidebarInset>
           <AppHeader />
+          <TrialBanner
+            trialEndsAt={org.trial_ends_at}
+            subscriptionStatus={org.subscription_status}
+          />
           <main className="flex-1 p-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>

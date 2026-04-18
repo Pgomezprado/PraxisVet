@@ -8,6 +8,8 @@ import { Menu, X, PawPrint, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
+  { href: "#precios", label: "Precios" },
+  { href: "#faq", label: "FAQ" },
   { href: "#como-funciona", label: "Cómo funciona" },
 ];
 
@@ -25,12 +27,12 @@ export function Navbar() {
     <>
       <div className="relative z-50 flex h-8 items-center justify-center bg-accent text-accent-foreground">
         <p className="text-xs font-medium sm:text-sm">
-          Nuevo: Control de inventario inteligente
+          Prueba PraxisVet 2 meses gratis, sin tarjeta
           <Link
-            href="#funcionalidades"
+            href="#precios"
             className="ml-2 inline-flex items-center gap-1 underline underline-offset-2 hover:opacity-80"
           >
-            Ver mas
+            Ver precios
             <ArrowRight className="size-3" />
           </Link>
         </p>
@@ -72,7 +74,7 @@ export function Navbar() {
               href="/auth/login"
               className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
             >
-              Iniciar sesion
+              Iniciar sesión
             </Link>
             <Link
               href="/auth/register"
@@ -81,14 +83,14 @@ export function Navbar() {
                 "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
               )}
             >
-              Comenzar gratis
+              Probar gratis
             </Link>
           </div>
 
           <button
             className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:text-foreground md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Abrir menu"
+            aria-label="Abrir menú"
           >
             {mobileOpen ? (
               <X className="size-5" />
@@ -119,7 +121,7 @@ export function Navbar() {
                   "justify-center"
                 )}
               >
-                Iniciar sesion
+                Iniciar sesión
               </Link>
               <Link
                 href="/auth/register"
@@ -128,7 +130,7 @@ export function Navbar() {
                   "justify-center"
                 )}
               >
-                Comenzar gratis
+                Probar gratis
               </Link>
             </div>
           </div>

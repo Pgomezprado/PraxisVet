@@ -17,6 +17,13 @@ type ActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string };
 
+export type ClientPetPreview = Pick<Pet, "id" | "name" | "species">;
+
+export interface ClientWithPetsPreview extends Client {
+  pet_count: number;
+  pets_preview: ClientPetPreview[];
+}
+
 async function getAuthUser() {
   const supabase = await createSupabaseClient();
   const {
@@ -30,7 +37,7 @@ export async function getClients(
   orgId: string,
   options?: { page?: number; pageSize?: number; search?: string }
 ): Promise<
-  ActionResult<{ data: (Client & { pet_count: number })[]; total: number }>
+  ActionResult<{ data: ClientWithPetsPreview[]; total: number }>
 > {
   const { supabase } = await getAuthUser();
 
@@ -42,16 +49,40 @@ export async function getClients(
 
   let query = supabase
     .from("clients")
-    .select("*, pets(count)", { count: "exact", head: false })
+    .select(
+      "*, pets(id, active), pets_preview:pets(id, name, species, active, created_at)",
+      { count: "exact", head: false }
+    )
     .eq("org_id", orgId)
-    .order("last_name", { ascending: true });
+    .order("last_name", { ascending: true })
+    .order("created_at", {
+      ascending: true,
+      referencedTable: "pets_preview",
+    })
+    .limit(4, { referencedTable: "pets_preview" });
 
   if (search) {
     const safe = escapePostgrestSearch(search);
     if (safe) {
-      query = query.or(
-        `first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`
-      );
+      const { data: matchingPets } = await supabase
+        .from("pets")
+        .select("client_id")
+        .eq("org_id", orgId)
+        .ilike("name", `%${safe}%`);
+
+      const petClientIds = Array.from(
+        new Set(
+          (matchingPets ?? []).map((p: { client_id: string }) => p.client_id)
+        )
+      ).slice(0, 500);
+
+      const baseOr = `first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`;
+      const orExpr =
+        petClientIds.length > 0
+          ? `${baseOr},id.in.(${petClientIds.join(",")})`
+          : baseOr;
+
+      query = query.or(orExpr);
     }
   }
 
@@ -63,13 +94,32 @@ export async function getClients(
     return { success: false, error: error.message };
   }
 
-  const clients = (data ?? []).map((client) => {
-    const { pets, ...rest } = client;
-    const pet_count =
-      Array.isArray(pets) && pets.length > 0
-        ? (pets[0] as { count: number }).count
-        : 0;
-    return { ...rest, pet_count } as Client & { pet_count: number };
+  const clients: ClientWithPetsPreview[] = (data ?? []).map((client) => {
+    const { pets, pets_preview, ...rest } = client as typeof client & {
+      pets: { id: string; active: boolean }[] | null;
+      pets_preview:
+        | (ClientPetPreview & { active: boolean; created_at: string })[]
+        | null;
+    };
+
+    const allPets = Array.isArray(pets) ? pets : [];
+    const pet_count = allPets.filter((p) => p.active !== false).length;
+
+    const preview = Array.isArray(pets_preview) ? pets_preview : [];
+    const pets_preview_active: ClientPetPreview[] = preview
+      .filter((p) => p.active !== false)
+      .slice(0, 4)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        species: p.species,
+      }));
+
+    return {
+      ...(rest as Client),
+      pet_count,
+      pets_preview: pets_preview_active,
+    };
   });
 
   return { success: true, data: { data: clients, total: count ?? 0 } };

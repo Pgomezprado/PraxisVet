@@ -12,14 +12,11 @@ import {
 } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
-import type { Client } from "@/types";
-
-interface ClientWithPetCount extends Client {
-  pet_count: number;
-}
+import { PetsInlinePreview } from "./pets-inline-preview";
+import type { ClientWithPetsPreview } from "@/app/[clinic]/clients/actions";
 
 interface ClientsTableProps {
-  clients: ClientWithPetCount[];
+  clients: ClientWithPetsPreview[];
   clinicSlug: string;
   currentPage: number;
   totalPages: number;
@@ -40,7 +37,7 @@ export function ClientsTable({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <SearchInput placeholder="Buscar por nombre, email o teléfono..." />
+        <SearchInput placeholder="Buscar por nombre, mascota, email o teléfono..." />
         <Button render={<Link href={`/${clinicSlug}/clients/new`} />}>
           <Plus className="size-4" data-icon="inline-start" />
           Nuevo cliente
@@ -80,12 +77,18 @@ export function ClientsTable({
               {clients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell>
-                    <Link
-                      href={`/${clinicSlug}/clients/${client.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {client.last_name}, {client.first_name}
-                    </Link>
+                    <div className="flex flex-col gap-1">
+                      <Link
+                        href={`/${clinicSlug}/clients/${client.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {client.last_name}, {client.first_name}
+                      </Link>
+                      <PetsInlinePreview
+                        pets={client.pets_preview}
+                        totalCount={client.pet_count}
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">

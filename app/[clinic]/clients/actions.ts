@@ -238,6 +238,7 @@ export async function createTutorWithPet(
       microchip: parsed.data.pet_microchip || null,
       reproductive_status: parsed.data.pet_reproductive_status || null,
       notes: parsed.data.pet_notes || null,
+      photo_url: parsed.data.pet_photo_url ?? null,
     })
     .select("id")
     .single();
@@ -348,6 +349,7 @@ export async function createPet(
       microchip: parsed.data.microchip || null,
       reproductive_status: parsed.data.reproductive_status || null,
       notes: parsed.data.notes || null,
+      photo_url: parsed.data.photo_url ?? null,
     })
     .select()
     .single();
@@ -400,6 +402,7 @@ export async function updatePet(
       microchip: parsed.data.microchip || null,
       reproductive_status: parsed.data.reproductive_status || null,
       notes: parsed.data.notes || null,
+      photo_url: parsed.data.photo_url ?? null,
     })
     .eq("id", petId)
     .eq("org_id", orgId)

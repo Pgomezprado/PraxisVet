@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { PawPrint, Pencil, Syringe, ClipboardList, Bug, Scissors } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -57,9 +58,21 @@ export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
     <div className="flex flex-col gap-3 rounded-lg border p-4">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-full bg-muted">
-            <PawPrint className="size-4 text-muted-foreground" />
-          </div>
+          {pet.photo_url ? (
+            <div className="relative size-10 shrink-0 overflow-hidden rounded-full border">
+              <Image
+                src={pet.photo_url}
+                alt={pet.name}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
+              <PawPrint className="size-5 text-muted-foreground" />
+            </div>
+          )}
           <div>
             <p className="font-medium">{pet.name}</p>
             {pet.species && (

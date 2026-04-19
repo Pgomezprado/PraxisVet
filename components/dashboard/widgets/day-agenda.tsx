@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   Card,
@@ -111,7 +112,19 @@ export function DayAgenda({
                       <span className="min-w-18 text-sm font-semibold tabular-nums text-primary">
                         {formatTime(apt.start_time)}
                       </span>
-                      <TypeIcon className="size-4 shrink-0 text-muted-foreground" />
+                      {apt.pet?.photo_url ? (
+                        <div className="relative size-8 shrink-0 overflow-hidden rounded-full border">
+                          <Image
+                            src={apt.pet.photo_url}
+                            alt={apt.pet.name}
+                            fill
+                            sizes="32px"
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <TypeIcon className="size-4 shrink-0 text-muted-foreground" />
+                      )}
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">
                           {apt.pet?.name ?? "Sin mascota"}

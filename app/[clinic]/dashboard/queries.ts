@@ -11,7 +11,12 @@ export type TodayAppointment = {
   status: string;
   type: string;
   reason: string | null;
-  pet: { id: string; name: string; species: string | null } | null;
+  pet: {
+    id: string;
+    name: string;
+    species: string | null;
+    photo_url: string | null;
+  } | null;
   client: { id: string; first_name: string; last_name: string } | null;
   assignee: { id: string; first_name: string | null; last_name: string | null } | null;
   service: { id: string; name: string } | null;
@@ -25,7 +30,12 @@ type RawAppointment = {
   status: string;
   type: string;
   reason: string | null;
-  pets: { id: string; name: string; species: string | null } | null;
+  pets: {
+    id: string;
+    name: string;
+    species: string | null;
+    photo_url: string | null;
+  } | null;
   clients: { id: string; first_name: string; last_name: string } | null;
   organization_members: {
     id: string;
@@ -53,7 +63,7 @@ function shapeAppointment(raw: RawAppointment): TodayAppointment {
 
 const APPOINTMENT_SELECT = `
   id, date, start_time, end_time, status, type, reason,
-  pets ( id, name, species ),
+  pets ( id, name, species, photo_url ),
   clients ( id, first_name, last_name ),
   organization_members!appointments_assigned_to_fkey ( id, first_name, last_name ),
   services ( id, name )

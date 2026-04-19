@@ -28,6 +28,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { PetPhotoUpload } from "@/components/ui/pet-photo-upload";
 import { Loader2, PawPrint } from "lucide-react";
 import type { Pet } from "@/types";
 
@@ -54,6 +55,7 @@ export function PetForm({ clientId, pet }: PetFormProps) {
     handleSubmit,
     watch,
     control,
+    setValue,
     formState: { errors },
   } = useForm<PetInput>({
     resolver: zodResolver(petSchema),
@@ -67,11 +69,13 @@ export function PetForm({ clientId, pet }: PetFormProps) {
       microchip: pet?.microchip ?? "",
       reproductive_status: pet?.reproductive_status ?? "",
       notes: pet?.notes ?? "",
+      photo_url: pet?.photo_url ?? null,
     },
   });
 
   const watchedSpecies = watch("species");
   const watchedSex = watch("sex");
+  const watchedPhotoUrl = watch("photo_url");
   const breedSuggestions = getBreedSuggestions(watchedSpecies);
   const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
 
@@ -119,6 +123,20 @@ export function PetForm({ clientId, pet }: PetFormProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div>
+            <Label>Foto del paciente (opcional)</Label>
+            <div className="mt-2">
+              <PetPhotoUpload
+                orgId={organization.id}
+                value={watchedPhotoUrl ?? null}
+                onChange={(url) =>
+                  setValue("photo_url", url, { shouldDirty: true })
+                }
+                disabled={loading}
+              />
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="name">Nombre del paciente *</Label>
             <Input

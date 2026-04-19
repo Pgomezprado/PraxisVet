@@ -77,6 +77,7 @@ export const petSchema = z.object({
     .optional()
     .or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
+  photo_url: z.string().url().nullable().optional(),
 });
 
 export type PetInput = z.infer<typeof petSchema>;
@@ -101,6 +102,7 @@ export const newTutorWithPetSchema = clientSchema.extend({
     .optional()
     .or(z.literal("")),
   pet_notes: z.string().optional().or(z.literal("")),
+  pet_photo_url: z.string().url().nullable().optional(),
 });
 
 export type NewTutorWithPetInput = z.infer<typeof newTutorWithPetSchema>;

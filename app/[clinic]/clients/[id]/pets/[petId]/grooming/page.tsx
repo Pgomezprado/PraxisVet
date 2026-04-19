@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Plus, ArrowLeft, PawPrint, Scissors } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -62,9 +63,21 @@ export default async function GroomingPage({
       </div>
 
       <div className="flex items-center gap-4 rounded-lg border p-4">
-        <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-          <PawPrint className="size-5 text-muted-foreground" />
-        </div>
+        {typedPet.photo_url ? (
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-full border">
+            <Image
+              src={typedPet.photo_url}
+              alt={typedPet.name}
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          </div>
+        ) : (
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-muted">
+            <PawPrint className="size-6 text-muted-foreground" />
+          </div>
+        )}
         <div className="flex-1">
           <p className="font-medium">{typedPet.name}</p>
           <p className="text-sm text-muted-foreground">

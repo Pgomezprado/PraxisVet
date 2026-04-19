@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   Card,
@@ -51,8 +52,20 @@ export function NextAppointmentCard({
     <Card className="border-primary/40 bg-primary/5">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Icon className="size-5 text-primary" />
+          <div className="flex items-center gap-3">
+            {appointment.pet?.photo_url ? (
+              <div className="relative size-10 shrink-0 overflow-hidden rounded-full border">
+                <Image
+                  src={appointment.pet.photo_url}
+                  alt={appointment.pet.name}
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <Icon className="size-5 text-primary" />
+            )}
             <CardTitle className="text-base font-semibold">
               Próximo: {appointment.pet?.name ?? "Sin mascota"}
             </CardTitle>

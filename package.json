@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "node scripts/migrate.mjs --env=dev",
+    "db:migrate:prod": "node scripts/migrate.mjs --env=prod",
+    "db:migrate:dry": "node scripts/migrate.mjs --env=dev --dry-run",
+    "db:migrate:dry:prod": "node scripts/migrate.mjs --env=prod --dry-run",
+    "db:migrate:init": "node scripts/migrate.mjs --env=dev --init-baseline",
+    "db:migrate:init:prod": "node scripts/migrate.mjs --env=prod --init-baseline"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  Info,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -84,6 +90,43 @@ type OrgDetail = {
   adoption: AdoptionRow[];
 };
 
+type BlindSpotSeverity = "ok" | "info" | "warning" | "critical";
+type BlindSpot = {
+  key: string;
+  label: string;
+  ok: boolean;
+  severity: BlindSpotSeverity;
+  detail: string;
+};
+
+type DailyPoint = {
+  day: string;
+  appointments: number;
+  consultations: number;
+  grooming: number;
+  invoices: number;
+  new_clients: number;
+};
+
+type Trial = {
+  plan: string;
+  subscription_status: string | null;
+  trial_ends_at: string | null;
+  days_to_trial_end: number | null;
+  founder_since: string | null;
+};
+
+type OrgPulse = {
+  trial: Trial;
+  blind_spots: BlindSpot[];
+  daily_activity: DailyPoint[];
+  totals: {
+    clients_total: number;
+    invoices_7d: number;
+    invoices_30d: number;
+  };
+};
+
 // ============================================================
 // Helpers de formato
 // ============================================================
@@ -156,6 +199,101 @@ function StatusDot({ status }: { status: MemberStatus }) {
   );
 }
 
+function BlindSpotRow({ spot }: { spot: BlindSpot }) {
+  const tone: Record<BlindSpotSeverity, string> = {
+    ok: "border-emerald-500/40 bg-emerald-500/5 text-emerald-400",
+    info: "border-sky-500/40 bg-sky-500/5 text-sky-400",
+    warning: "border-amber-500/40 bg-amber-500/5 text-amber-400",
+    critical: "border-red-500/40 bg-red-500/5 text-red-400",
+  };
+  const Icon =
+    spot.severity === "ok"
+      ? CheckCircle2
+      : spot.severity === "info"
+        ? Info
+        : AlertTriangle;
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-md border px-3 py-2.5 text-sm ${tone[spot.severity]}`}
+    >
+      <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+      <div className="flex-1">
+        <div className="font-medium text-foreground">{spot.label}</div>
+        <div className="text-xs text-muted-foreground">{spot.detail}</div>
+      </div>
+    </div>
+  );
+}
+
+function DailySparkline({ series }: { series: DailyPoint[] }) {
+  const maxAppt = Math.max(1, ...series.map((d) => d.appointments));
+  return (
+    <div className="flex items-end gap-1">
+      {series.map((d) => {
+        const h = Math.round((d.appointments / maxAppt) * 100);
+        const empty = d.appointments === 0;
+        const dayLabel = format(parseISO(d.day), "dd", { locale: es });
+        return (
+          <div
+            key={d.day}
+            className="group flex flex-1 flex-col items-center gap-1"
+            title={`${format(parseISO(d.day), "dd-MM-yyyy", { locale: es })}\n${d.appointments} citas · ${d.consultations} consultas · ${d.grooming} peluquería · ${d.invoices} docs · ${d.new_clients} clientes`}
+          >
+            <div className="flex h-24 w-full items-end">
+              <div
+                className={`w-full rounded-sm transition-colors ${
+                  empty
+                    ? "bg-muted/30"
+                    : "bg-primary/70 group-hover:bg-primary"
+                }`}
+                style={{ height: empty ? "4px" : `${Math.max(h, 6)}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-mono text-muted-foreground">
+              {dayLabel}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TrialBadge({ trial }: { trial: Trial }) {
+  const isFounder = !!trial.founder_since;
+  const days = trial.days_to_trial_end;
+  const status = trial.subscription_status ?? "—";
+
+  if (isFounder) {
+    return (
+      <Badge
+        variant="outline"
+        className="border-violet-500/40 bg-violet-500/10 text-violet-400"
+      >
+        Fundadora · desde {trial.founder_since}
+      </Badge>
+    );
+  }
+  if (status === "trial" && days !== null) {
+    const tone =
+      days <= 3
+        ? "border-red-500/40 bg-red-500/10 text-red-400"
+        : days <= 10
+          ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+          : "border-sky-500/40 bg-sky-500/10 text-sky-400";
+    return (
+      <Badge variant="outline" className={tone}>
+        Trial · {days}d restantes
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="border-border/60 bg-muted/40">
+      {status}
+    </Badge>
+  );
+}
+
 function StatCard({
   label,
   value7d,
@@ -212,9 +350,11 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
 
   // ---- Fetch ----
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("superadmin_org_detail", {
-    p_org_id: orgId,
-  });
+  const [{ data, error }, { data: pulseData, error: pulseError }] =
+    await Promise.all([
+      supabase.rpc("superadmin_org_detail", { p_org_id: orgId }),
+      supabase.rpc("superadmin_org_pulse", { p_org_id: orgId }),
+    ]);
 
   if (error) {
     if (error.code === "P0002" || /org_not_found/.test(error.message ?? "")) {
@@ -236,6 +376,7 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
   }
 
   const detail = data as OrgDetail;
+  const pulse = (pulseError ? null : (pulseData as OrgPulse | null)) ?? null;
 
   // ---- Audit log ----
   await logSuperadminAction({
@@ -312,6 +453,68 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Bloque A.2 — Pulso del piloto (blind spots + timeline 14d) */}
+      {pulse && (
+        <>
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <CardTitle>Puntos ciegos del piloto</CardTitle>
+                  <CardDescription>
+                    Features no activadas y riesgos detectados automáticamente
+                  </CardDescription>
+                </div>
+                <TrialBadge trial={pulse.trial} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                {pulse.blind_spots.map((s) => (
+                  <BlindSpotRow key={s.key} spot={s} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Pulso de uso · últimos 14 días</CardTitle>
+              <CardDescription>
+                Citas por día. Pasa el mouse por una barra para el desglose.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <DailySparkline series={pulse.daily_activity} />
+              <dl className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                <div>
+                  <dt className="text-muted-foreground">Clientes totales</dt>
+                  <dd className="font-mono text-sm">{pulse.totals.clients_total}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Docs emitidos 7d</dt>
+                  <dd className="font-mono text-sm">{pulse.totals.invoices_7d}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Docs emitidos 30d</dt>
+                  <dd className="font-mono text-sm">{pulse.totals.invoices_30d}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Días con actividad</dt>
+                  <dd className="font-mono text-sm">
+                    {
+                      pulse.daily_activity.filter((d) => d.appointments > 0)
+                        .length
+                    }
+                    /14
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Bloque B — Equipo */}
       <Card>

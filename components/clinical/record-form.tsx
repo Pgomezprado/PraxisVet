@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,6 +72,7 @@ interface RecordFormProps {
   };
   defaultAppointmentId?: string;
   defaultVetId?: string;
+  extraSections?: ReactNode;
 }
 
 export function RecordForm({
@@ -81,6 +82,7 @@ export function RecordForm({
   record,
   defaultAppointmentId,
   defaultVetId,
+  extraSections,
 }: RecordFormProps) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
@@ -89,6 +91,9 @@ export function RecordForm({
   const [pendingTemplate, setPendingTemplate] = useState<RecordTemplate | null>(
     null
   );
+  const [quickTemplateLoading, setQuickTemplateLoading] = useState<
+    "Vacunacion" | "Desparasitacion" | null
+  >(null);
 
   const isEditing = !!record;
 
@@ -183,6 +188,57 @@ export function RecordForm({
     [getValues, setValue]
   );
 
+  async function createRecordFromQuickTemplate(
+    template: RecordTemplate,
+    openKind: "vaccine" | "deworming"
+  ) {
+    if (isEditing) return;
+    setError(null);
+
+    const current = getValues();
+    const vetId = current.vet_id;
+    if (!vetId) {
+      setError(
+        "Selecciona un veterinario antes de aplicar esta plantilla rápida."
+      );
+      return;
+    }
+
+    setQuickTemplateLoading(
+      template.name as "Vacunacion" | "Desparasitacion"
+    );
+
+    const payload: ClinicalRecordInput = {
+      pet_id: petId,
+      vet_id: vetId,
+      appointment_id: current.appointment_id || "",
+      date: current.date || new Date().toISOString().split("T")[0],
+      reason: template.reason,
+      anamnesis: "",
+      symptoms: template.symptoms,
+      diagnosis: template.diagnosis,
+      treatment: template.treatment,
+      observations: template.observations ?? "",
+    };
+
+    const result = await createRecord(
+      organization.id,
+      clinicSlug,
+      clientId,
+      payload
+    );
+
+    if (!result.success) {
+      setError(result.error);
+      setQuickTemplateLoading(null);
+      return;
+    }
+
+    router.push(
+      `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${result.data.id}?open=${openKind}`
+    );
+  }
+
   async function onSubmit(data: ClinicalRecordInput) {
     setLoading(true);
     setError(null);
@@ -246,16 +302,38 @@ export function RecordForm({
                 Plantilla rápida
               </Label>
               <div className="flex flex-wrap gap-2">
-                {RECORD_TEMPLATES.map((template) => (
-                  <button
-                    key={template.name}
-                    type="button"
-                    onClick={() => setPendingTemplate(template)}
-                    className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-                  >
-                    {template.name}
-                  </button>
-                ))}
+                {RECORD_TEMPLATES.map((template) => {
+                  const isQuickVaccine =
+                    !isEditing && template.name === "Vacunacion";
+                  const isQuickDeworming =
+                    !isEditing && template.name === "Desparasitacion";
+                  const isQuick = isQuickVaccine || isQuickDeworming;
+                  const isLoading = quickTemplateLoading === template.name;
+
+                  return (
+                    <button
+                      key={template.name}
+                      type="button"
+                      disabled={!!quickTemplateLoading}
+                      onClick={() => {
+                        if (isQuickVaccine) {
+                          createRecordFromQuickTemplate(template, "vaccine");
+                        } else if (isQuickDeworming) {
+                          createRecordFromQuickTemplate(template, "deworming");
+                        } else {
+                          setPendingTemplate(template);
+                        }
+                      }}
+                      className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading
+                        ? `${template.name}...`
+                        : isQuick
+                          ? `${template.name} →`
+                          : template.name}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -475,6 +553,8 @@ export function RecordForm({
                 />
               </div>
             </CollapsibleSection>
+
+            {extraSections}
 
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={loading}>

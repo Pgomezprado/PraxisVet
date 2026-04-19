@@ -6,6 +6,8 @@ import {
   CalendarDays,
   Stethoscope,
   LinkIcon,
+  Syringe,
+  Worm,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,16 +21,30 @@ import { VitalsDisplay } from "@/components/clinical/vitals-display";
 import { PhysicalExamDisplay } from "@/components/clinical/physical-exam-display";
 import { PrescriptionList } from "@/components/clinical/prescription-list";
 import { DownloadPdfButton } from "@/components/pdf/DownloadPdfButton";
+import { VaccinationInlineList } from "@/components/vaccinations/vaccination-inline-list";
+import { DewormingInlineList } from "@/components/dewormings/deworming-inline-list";
+import { getVaccineCatalogForPet } from "@/lib/vaccines/catalog";
+import type { Species } from "@/types";
 import { RecordDeleteButton } from "./_components/record-delete-button";
+import { AddVaccinationSheet } from "./_components/add-vaccination-sheet";
+import { AddDewormingSheet } from "./_components/add-deworming-sheet";
 import { getRecord } from "../actions";
 import { getPrescriptions } from "./prescriptions/actions";
+import {
+  getVaccinationsByRecord,
+  getVets as getVaccinationVets,
+} from "../../vaccinations/actions";
+import { getDewormingsByRecord } from "../../dewormings/actions";
 
 export default async function RecordDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clinic: string; id: string; petId: string; recordId: string }>;
+  searchParams: Promise<{ open?: string }>;
 }) {
   const { clinic, id, petId, recordId } = await params;
+  const { open: openParam } = await searchParams;
 
   const result = await getRecord(recordId);
 
@@ -38,9 +54,34 @@ export default async function RecordDetailPage({
 
   const record = result.data;
 
-  const prescriptionsResult = await getPrescriptions(recordId);
+  const speciesForCatalog = record.pet.species as Species | null;
+
+  const [
+    prescriptionsResult,
+    vaccinationsOfRecord,
+    dewormingsOfRecord,
+    vetsResult,
+    catalog,
+  ] = await Promise.all([
+    getPrescriptions(recordId),
+    getVaccinationsByRecord(recordId),
+    getDewormingsByRecord(recordId),
+    getVaccinationVets(record.org_id),
+    speciesForCatalog
+      ? getVaccineCatalogForPet(speciesForCatalog, record.org_id)
+      : Promise.resolve([]),
+  ]);
+
   const hasPrescriptions =
     prescriptionsResult.success && prescriptionsResult.data.length > 0;
+
+  const vetsForSheets = vetsResult.success ? vetsResult.data : [];
+  const vaccinationsList = vaccinationsOfRecord.success
+    ? vaccinationsOfRecord.data
+    : [];
+  const dewormingsList = dewormingsOfRecord.success
+    ? dewormingsOfRecord.data
+    : [];
 
   const vetName = [record.vet.first_name, record.vet.last_name]
     .filter(Boolean)
@@ -200,6 +241,51 @@ export default async function RecordDetailPage({
         orgId={record.org_id}
         clinicSlug={clinic}
       />
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Syringe className="size-4" />
+            Vacunas aplicadas en esta consulta
+          </CardTitle>
+          <AddVaccinationSheet
+            petId={petId}
+            clientId={id}
+            clinicSlug={clinic}
+            recordId={recordId}
+            recordDate={record.date}
+            recordVetId={record.vet_id}
+            vets={vetsForSheets}
+            catalog={catalog}
+            defaultOpen={openParam === "vaccine"}
+          />
+        </CardHeader>
+        <CardContent>
+          <VaccinationInlineList vaccinations={vaccinationsList} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Worm className="size-4" />
+            Desparasitaciones aplicadas en esta consulta
+          </CardTitle>
+          <AddDewormingSheet
+            petId={petId}
+            clientId={id}
+            clinicSlug={clinic}
+            recordId={recordId}
+            recordDate={record.date}
+            recordVetId={record.vet_id}
+            vets={vetsForSheets}
+            defaultOpen={openParam === "deworming"}
+          />
+        </CardHeader>
+        <CardContent>
+          <DewormingInlineList dewormings={dewormingsList} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

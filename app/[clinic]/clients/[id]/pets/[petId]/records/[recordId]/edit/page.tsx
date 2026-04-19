@@ -1,9 +1,26 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Syringe, Worm } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { RecordForm } from "@/components/clinical/record-form";
+import { VaccinationInlineList } from "@/components/vaccinations/vaccination-inline-list";
+import { DewormingInlineList } from "@/components/dewormings/deworming-inline-list";
+import { getVaccineCatalogForPet } from "@/lib/vaccines/catalog";
+import type { Species } from "@/types";
+import { AddVaccinationSheet } from "../_components/add-vaccination-sheet";
+import { AddDewormingSheet } from "../_components/add-deworming-sheet";
 import { getRecord, getVets } from "../../actions";
+import {
+  getVaccinationsByRecord,
+  getVets as getVaccinationVets,
+} from "../../../vaccinations/actions";
+import { getDewormingsByRecord } from "../../../dewormings/actions";
 
 export default async function EditRecordPage({
   params,
@@ -25,8 +42,32 @@ export default async function EditRecordPage({
 
   const record = result.data;
 
-  const vetsResult = await getVets(record.org_id);
+  const speciesForCatalog = record.pet.species as Species | null;
+
+  const [
+    vetsResult,
+    vaccinationsOfRecord,
+    dewormingsOfRecord,
+    sheetVetsResult,
+    catalog,
+  ] = await Promise.all([
+    getVets(record.org_id),
+    getVaccinationsByRecord(recordId),
+    getDewormingsByRecord(recordId),
+    getVaccinationVets(record.org_id),
+    speciesForCatalog
+      ? getVaccineCatalogForPet(speciesForCatalog, record.org_id)
+      : Promise.resolve([]),
+  ]);
+
   const vets = vetsResult.data ?? [];
+  const sheetVets = sheetVetsResult.success ? sheetVetsResult.data : [];
+  const vaccinationsList = vaccinationsOfRecord.success
+    ? vaccinationsOfRecord.data
+    : [];
+  const dewormingsList = dewormingsOfRecord.success
+    ? dewormingsOfRecord.data
+    : [];
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -77,6 +118,52 @@ export default async function EditRecordPage({
           skin_fold_seconds: record.skin_fold_seconds,
           physical_exam: record.physical_exam,
         }}
+        extraSections={
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Syringe className="size-4" />
+                  Vacunas aplicadas en esta consulta
+                </CardTitle>
+                <AddVaccinationSheet
+                  petId={petId}
+                  clientId={id}
+                  clinicSlug={clinic}
+                  recordId={recordId}
+                  recordDate={record.date}
+                  recordVetId={record.vet_id}
+                  vets={sheetVets}
+                  catalog={catalog}
+                />
+              </CardHeader>
+              <CardContent>
+                <VaccinationInlineList vaccinations={vaccinationsList} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Worm className="size-4" />
+                  Desparasitaciones aplicadas en esta consulta
+                </CardTitle>
+                <AddDewormingSheet
+                  petId={petId}
+                  clientId={id}
+                  clinicSlug={clinic}
+                  recordId={recordId}
+                  recordDate={record.date}
+                  recordVetId={record.vet_id}
+                  vets={sheetVets}
+                />
+              </CardHeader>
+              <CardContent>
+                <DewormingInlineList dewormings={dewormingsList} />
+              </CardContent>
+            </Card>
+          </div>
+        }
       />
     </div>
   );

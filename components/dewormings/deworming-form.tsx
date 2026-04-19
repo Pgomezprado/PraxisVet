@@ -41,6 +41,20 @@ interface DewormingFormProps {
   deworming?: Deworming;
   vets: Pick<OrganizationMember, "id" | "first_name" | "last_name">[];
   returnPath: string;
+  /**
+   * Valores iniciales opcionales para prellenar el formulario cuando se abre
+   * desde la consulta clínica (clinical_record_id, vet_id, fecha...).
+   */
+  defaultValues?: {
+    clinical_record_id?: string;
+    date_administered?: string;
+    vet_id?: string;
+  };
+  /**
+   * Si está definido, se llama después de guardar con éxito en lugar de
+   * redireccionar a `returnPath`. Útil para cerrar un Sheet inline.
+   */
+  onSuccess?: () => void;
 }
 
 function addDays(iso: string, days: number): string {
@@ -64,6 +78,8 @@ export function DewormingForm({
   deworming,
   vets,
   returnPath,
+  defaultValues,
+  onSuccess,
 }: DewormingFormProps) {
   const router = useRouter();
   const { organization } = useClinic();
@@ -82,11 +98,15 @@ export function DewormingForm({
     resolver: zodResolver(dewormingSchema),
     defaultValues: {
       pet_id: petId,
-      clinical_record_id: deworming?.clinical_record_id ?? "",
-      vet_id: deworming?.vet_id ?? "",
+      clinical_record_id:
+        deworming?.clinical_record_id ??
+        defaultValues?.clinical_record_id ??
+        "",
+      vet_id: deworming?.vet_id ?? defaultValues?.vet_id ?? "",
       type: deworming?.type ?? "interna",
       date_administered:
         deworming?.date_administered ??
+        defaultValues?.date_administered ??
         new Date().toISOString().split("T")[0],
       product: deworming?.product ?? "",
       next_due_date: deworming?.next_due_date ?? "",
@@ -123,6 +143,12 @@ export function DewormingForm({
     if (!result.success) {
       setError(result.error);
       setIsPending(false);
+      return;
+    }
+
+    if (onSuccess) {
+      onSuccess();
+      router.refresh();
       return;
     }
 

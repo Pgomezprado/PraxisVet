@@ -71,6 +71,45 @@ export async function getVaccinations(
   return { success: true, data: vaccinations };
 }
 
+export async function getVaccinationsByRecord(
+  recordId: string
+): Promise<ActionResult<VaccinationWithVet[]>> {
+  const { supabase } = await getAuthUser();
+
+  const { data, error } = await supabase
+    .from("vaccinations")
+    .select(
+      `
+      *,
+      organization_members!vaccinations_vet_id_fkey (
+        first_name,
+        last_name
+      )
+    `
+    )
+    .eq("clinical_record_id", recordId)
+    .order("date_administered", { ascending: false });
+
+  if (error) {
+    return { success: false, error: formatSupabaseError(error) };
+  }
+
+  const vaccinations = (data ?? []).map((v) => {
+    const member = v.organization_members as unknown as {
+      first_name: string | null;
+      last_name: string | null;
+    } | null;
+    const { organization_members: _, ...rest } = v;
+    return {
+      ...rest,
+      vet_first_name: member?.first_name ?? null,
+      vet_last_name: member?.last_name ?? null,
+    } as VaccinationWithVet;
+  });
+
+  return { success: true, data: vaccinations };
+}
+
 export async function createVaccination(
   orgId: string,
   input: VaccinationInput,

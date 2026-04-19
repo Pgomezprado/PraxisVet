@@ -71,6 +71,45 @@ export async function getDewormings(
   return { success: true, data: dewormings };
 }
 
+export async function getDewormingsByRecord(
+  recordId: string
+): Promise<ActionResult<DewormingWithVet[]>> {
+  const { supabase } = await getAuthUser();
+
+  const { data, error } = await supabase
+    .from("dewormings")
+    .select(
+      `
+      *,
+      organization_members!dewormings_vet_id_fkey (
+        first_name,
+        last_name
+      )
+    `
+    )
+    .eq("clinical_record_id", recordId)
+    .order("date_administered", { ascending: false });
+
+  if (error) {
+    return { success: false, error: formatSupabaseError(error) };
+  }
+
+  const dewormings = (data ?? []).map((d) => {
+    const member = d.organization_members as unknown as {
+      first_name: string | null;
+      last_name: string | null;
+    } | null;
+    const { organization_members: _omit, ...rest } = d;
+    return {
+      ...rest,
+      vet_first_name: member?.first_name ?? null,
+      vet_last_name: member?.last_name ?? null,
+    } as DewormingWithVet;
+  });
+
+  return { success: true, data: dewormings };
+}
+
 export async function createDeworming(
   orgId: string,
   input: DewormingInput,

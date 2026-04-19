@@ -35,6 +35,20 @@ interface VaccinationFormProps {
   vets: Pick<OrganizationMember, "id" | "first_name" | "last_name">[];
   catalog: CatalogVaccineGroup[];
   returnPath: string;
+  /**
+   * Valores iniciales opcionales para prellenar el formulario cuando se abre
+   * desde la consulta clínica (clinical_record_id, vet_id, fecha...).
+   */
+  defaultValues?: {
+    clinical_record_id?: string;
+    date_administered?: string;
+    vet_id?: string;
+  };
+  /**
+   * Si está definido, se llama después de guardar con éxito en lugar de
+   * redireccionar a `returnPath`. Útil para cerrar un Sheet inline.
+   */
+  onSuccess?: () => void;
 }
 
 const FREE_DOSE_VALUE = "__free__";
@@ -72,6 +86,8 @@ export function VaccinationForm({
   vets,
   catalog,
   returnPath,
+  defaultValues,
+  onSuccess,
 }: VaccinationFormProps) {
   const router = useRouter();
   const { organization } = useClinic();
@@ -108,12 +124,16 @@ export function VaccinationForm({
       lot_number: vaccination?.lot_number ?? "",
       date_administered:
         vaccination?.date_administered ??
+        defaultValues?.date_administered ??
         new Date().toISOString().split("T")[0],
       next_due_date: vaccination?.next_due_date ?? "",
-      vet_id: vaccination?.vet_id ?? "",
+      vet_id: vaccination?.vet_id ?? defaultValues?.vet_id ?? "",
       notes: vaccination?.notes ?? "",
       pet_id: petId,
-      clinical_record_id: vaccination?.clinical_record_id ?? "",
+      clinical_record_id:
+        vaccination?.clinical_record_id ??
+        defaultValues?.clinical_record_id ??
+        "",
       vaccine_catalog_id: vaccination?.vaccine_catalog_id ?? "",
       protocol_id: vaccination?.protocol_id ?? "",
       dose_id: vaccination?.dose_id ?? "",
@@ -187,6 +207,12 @@ export function VaccinationForm({
     if (!result.success) {
       setError(result.error);
       setIsPending(false);
+      return;
+    }
+
+    if (onSuccess) {
+      onSuccess();
+      router.refresh();
       return;
     }
 

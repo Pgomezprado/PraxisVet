@@ -49,6 +49,7 @@ export function RecordCard({ record, href }: RecordCardProps) {
               weight={record.weight}
               temperature={record.temperature}
               heartRate={record.heart_rate}
+              heartRateUnmeasurable={record.heart_rate_unmeasurable}
               size="sm"
             />
           </div>

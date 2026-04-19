@@ -64,6 +64,7 @@ interface RecordFormProps {
     weight: number | null;
     temperature: number | null;
     heart_rate: number | null;
+    heart_rate_unmeasurable?: boolean | null;
     respiratory_rate: number | null;
     capillary_refill_seconds: number | null;
     skin_fold_seconds: number | null;
@@ -114,6 +115,7 @@ export function RecordForm({
       weight: record?.weight ?? ("" as unknown as undefined),
       temperature: record?.temperature ?? ("" as unknown as undefined),
       heart_rate: record?.heart_rate ?? ("" as unknown as undefined),
+      heart_rate_unmeasurable: record?.heart_rate_unmeasurable ?? false,
       respiratory_rate: record?.respiratory_rate ?? ("" as unknown as undefined),
       capillary_refill_seconds:
         record?.capillary_refill_seconds ?? ("" as unknown as undefined),
@@ -130,11 +132,19 @@ export function RecordForm({
   const respiratoryRate = watch("respiratory_rate");
   const capillaryRefill = watch("capillary_refill_seconds");
   const skinFold = watch("skin_fold_seconds");
+  const weight = watch("weight");
+  const temperature = watch("temperature");
+  const heartRate = watch("heart_rate");
+  const heartRateUnmeasurable = watch("heart_rate_unmeasurable");
   const hasPhysicalContent =
     hasPhysicalExam ||
     (respiratoryRate != null && respiratoryRate !== "") ||
     (capillaryRefill != null && capillaryRefill !== "") ||
-    (skinFold != null && skinFold !== "");
+    (skinFold != null && skinFold !== "") ||
+    (weight != null && (weight as unknown as string) !== "") ||
+    (temperature != null && (temperature as unknown as string) !== "") ||
+    (heartRate != null && (heartRate as unknown as string) !== "") ||
+    !!heartRateUnmeasurable;
 
   const watchedValues = watch([
     "reason",
@@ -154,7 +164,7 @@ export function RecordForm({
     observations,
   ] = watchedValues;
 
-  const hasExam = !!(anamnesis || symptoms);
+  const hasAnamnesis = !!(anamnesis || symptoms);
   const hasDiagTreatment = !!(diagnosis || treatment);
   const hasObservations = !!observations;
 
@@ -281,59 +291,6 @@ export function RecordForm({
               </div>
             </div>
 
-            {/* Vitales clave siempre visibles: peso + temperatura son lo más usado en cada consulta */}
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Peso (kg)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="ej: 12.5"
-                    {...register("weight")}
-                  />
-                  {errors.weight && (
-                    <p className="text-sm text-destructive">
-                      {errors.weight.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="temperature">Temperatura (°C)</Label>
-                  <Input
-                    id="temperature"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="ej: 38.5"
-                    {...register("temperature")}
-                  />
-                  {errors.temperature && (
-                    <p className="text-sm text-destructive">
-                      {errors.temperature.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="heart_rate">Frec. cardiaca (bpm)</Label>
-                  <Input
-                    id="heart_rate"
-                    type="number"
-                    min="0"
-                    placeholder="ej: 120"
-                    {...register("heart_rate")}
-                  />
-                  {errors.heart_rate && (
-                    <p className="text-sm text-destructive">
-                      {errors.heart_rate.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Motivo de consulta - siempre abierta */}
             <CollapsibleSection title="Motivo de consulta" alwaysOpen hasContent={!!reason} preview={reason || ""}>
               <div className="space-y-2">
@@ -351,27 +308,11 @@ export function RecordForm({
               </div>
             </CollapsibleSection>
 
-            {/* Examen físico: constantes fisiológicas + observacionales (Excel clínica) */}
+            {/* Anamnesis: relato del propietario + síntomas reportados */}
             <CollapsibleSection
-              title="Examen físico"
-              hasContent={hasPhysicalContent}
-              preview={
-                hasPhysicalContent
-                  ? "FR, TLLC, PC, mucosas, linfonodos..."
-                  : ""
-              }
-            >
-              <PhysicalExamFields
-                register={register}
-                errors={errors}
-                earInspection={physicalExam?.ear_inspection}
-              />
-            </CollapsibleSection>
-
-            {/* Sección 3: Examen clínico - colapsada por default */}
-            <CollapsibleSection
-              title="Examen clínico"
-              hasContent={hasExam}
+              title="Anamnesis"
+              defaultOpen
+              hasContent={hasAnamnesis}
               preview={
                 anamnesis
                   ? anamnesis.slice(0, 60)
@@ -390,17 +331,103 @@ export function RecordForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="symptoms">Síntomas / Hallazgos</Label>
+                  <Label htmlFor="symptoms">Síntomas</Label>
                   <AutoTextarea
                     id="symptoms"
-                    placeholder="Hallazgos del examen físico..."
+                    placeholder="Síntomas reportados por el propietario..."
                     {...register("symptoms")}
                   />
                 </div>
               </div>
             </CollapsibleSection>
 
-            {/* Sección 4: Diagnóstico y tratamiento - expandida por default */}
+            {/* Examen físico: vitales + constantes fisiológicas + observacionales */}
+            <CollapsibleSection
+              title="Examen físico"
+              hasContent={hasPhysicalContent}
+              preview={
+                hasPhysicalContent
+                  ? "Peso, temperatura, FR, TLLC, mucosas..."
+                  : ""
+              }
+            >
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Peso (kg)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="ej: 12.5"
+                      {...register("weight")}
+                    />
+                    {errors.weight && (
+                      <p className="text-sm text-destructive">
+                        {errors.weight.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="temperature">Temperatura (°C)</Label>
+                    <Input
+                      id="temperature"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="ej: 38.5"
+                      {...register("temperature")}
+                    />
+                    {errors.temperature && (
+                      <p className="text-sm text-destructive">
+                        {errors.temperature.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="heart_rate">Frec. cardiaca (bpm)</Label>
+                    <Input
+                      id="heart_rate"
+                      type="number"
+                      min="0"
+                      placeholder="ej: 120"
+                      disabled={!!heartRateUnmeasurable}
+                      {...register("heart_rate")}
+                    />
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="size-3.5 accent-primary"
+                        {...register("heart_rate_unmeasurable", {
+                          onChange: (e) => {
+                            if (e.target.checked) {
+                              setValue(
+                                "heart_rate",
+                                "" as unknown as undefined
+                              );
+                            }
+                          },
+                        })}
+                      />
+                      No se escucha por ruidos agregados
+                    </label>
+                    {errors.heart_rate && (
+                      <p className="text-sm text-destructive">
+                        {errors.heart_rate.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <PhysicalExamFields
+                  register={register}
+                  errors={errors}
+                  earInspection={physicalExam?.ear_inspection}
+                />
+              </div>
+            </CollapsibleSection>
+
+            {/* Diagnóstico y tratamiento - expandida por default */}
             <CollapsibleSection
               title="Diagnóstico y tratamiento"
               defaultOpen

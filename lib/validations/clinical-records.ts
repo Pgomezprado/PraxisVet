@@ -51,6 +51,7 @@ export const clinicalRecordSchema = z.object({
     .positive("La frecuencia debe ser positiva")
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  heart_rate_unmeasurable: z.coerce.boolean().optional(),
   respiratory_rate: z.coerce
     .number()
     .int()

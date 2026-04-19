@@ -165,6 +165,7 @@ export default async function RecordDetailPage({
         weight={record.weight}
         temperature={record.temperature}
         heartRate={record.heart_rate}
+        heartRateUnmeasurable={record.heart_rate_unmeasurable}
       />
 
       <PhysicalExamDisplay

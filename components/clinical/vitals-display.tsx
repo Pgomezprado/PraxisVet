@@ -1,9 +1,10 @@
-import { Weight, Thermometer, Heart } from "lucide-react";
+import { Weight, Thermometer, Heart, HeartOff } from "lucide-react";
 
 interface VitalsDisplayProps {
   weight: number | null;
   temperature: number | null;
   heartRate: number | null;
+  heartRateUnmeasurable?: boolean;
   size?: "sm" | "default";
 }
 
@@ -11,9 +12,14 @@ export function VitalsDisplay({
   weight,
   temperature,
   heartRate,
+  heartRateUnmeasurable = false,
   size = "default",
 }: VitalsDisplayProps) {
-  const hasAny = weight != null || temperature != null || heartRate != null;
+  const hasAny =
+    weight != null ||
+    temperature != null ||
+    heartRate != null ||
+    heartRateUnmeasurable;
 
   if (!hasAny) return null;
 
@@ -36,12 +42,22 @@ export function VitalsDisplay({
           <span className="text-muted-foreground">°C</span>
         </div>
       )}
-      {heartRate != null && (
-        <div className={`flex items-center gap-1.5 ${textClass}`}>
-          <Heart className={`${iconClass} text-muted-foreground`} />
-          <span className="font-medium">{heartRate}</span>
-          <span className="text-muted-foreground">bpm</span>
+      {heartRateUnmeasurable ? (
+        <div
+          className={`flex items-center gap-1.5 ${textClass} text-muted-foreground italic`}
+          title="No se escucha por ruidos agregados"
+        >
+          <HeartOff className={iconClass} />
+          <span>No audible (ruidos agregados)</span>
         </div>
+      ) : (
+        heartRate != null && (
+          <div className={`flex items-center gap-1.5 ${textClass}`}>
+            <Heart className={`${iconClass} text-muted-foreground`} />
+            <span className="font-medium">{heartRate}</span>
+            <span className="text-muted-foreground">bpm</span>
+          </div>
+        )
       )}
     </div>
   );

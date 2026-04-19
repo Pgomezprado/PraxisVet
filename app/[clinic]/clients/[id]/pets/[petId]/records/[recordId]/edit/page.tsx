@@ -71,6 +71,7 @@ export default async function EditRecordPage({
           weight: record.weight,
           temperature: record.temperature,
           heart_rate: record.heart_rate,
+          heart_rate_unmeasurable: record.heart_rate_unmeasurable,
           respiratory_rate: record.respiratory_rate,
           capillary_refill_seconds: record.capillary_refill_seconds,
           skin_fold_seconds: record.skin_fold_seconds,

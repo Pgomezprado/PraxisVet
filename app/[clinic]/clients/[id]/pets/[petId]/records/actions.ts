@@ -33,6 +33,7 @@ export type RecordWithVet = {
   weight: number | null;
   temperature: number | null;
   heart_rate: number | null;
+  heart_rate_unmeasurable: boolean;
   created_at: string;
   vet: {
     id: string;
@@ -57,6 +58,7 @@ export type RecordDetail = {
   weight: number | null;
   temperature: number | null;
   heart_rate: number | null;
+  heart_rate_unmeasurable: boolean;
   respiratory_rate: number | null;
   capillary_refill_seconds: number | null;
   skin_fold_seconds: number | null;
@@ -93,7 +95,7 @@ export async function getRecords(
     .select(
       `
       id, pet_id, appointment_id, date, reason, diagnosis,
-      weight, temperature, heart_rate, created_at,
+      weight, temperature, heart_rate, heart_rate_unmeasurable, created_at,
       vet:organization_members!vet_id (id, first_name, last_name)
     `
     )
@@ -170,7 +172,10 @@ export async function createRecord(
       observations: parsed.data.observations || null,
       weight: parsed.data.weight ?? null,
       temperature: parsed.data.temperature ?? null,
-      heart_rate: parsed.data.heart_rate ?? null,
+      heart_rate: parsed.data.heart_rate_unmeasurable
+        ? null
+        : (parsed.data.heart_rate ?? null),
+      heart_rate_unmeasurable: parsed.data.heart_rate_unmeasurable ?? false,
       respiratory_rate: parsed.data.respiratory_rate ?? null,
       capillary_refill_seconds: parsed.data.capillary_refill_seconds ?? null,
       skin_fold_seconds: parsed.data.skin_fold_seconds ?? null,
@@ -236,7 +241,10 @@ export async function updateRecord(
       observations: parsed.data.observations || null,
       weight: parsed.data.weight ?? null,
       temperature: parsed.data.temperature ?? null,
-      heart_rate: parsed.data.heart_rate ?? null,
+      heart_rate: parsed.data.heart_rate_unmeasurable
+        ? null
+        : (parsed.data.heart_rate ?? null),
+      heart_rate_unmeasurable: parsed.data.heart_rate_unmeasurable ?? false,
       respiratory_rate: parsed.data.respiratory_rate ?? null,
       capillary_refill_seconds: parsed.data.capillary_refill_seconds ?? null,
       skin_fold_seconds: parsed.data.skin_fold_seconds ?? null,

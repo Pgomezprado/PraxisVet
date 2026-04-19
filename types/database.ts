@@ -158,6 +158,7 @@ export interface ClinicalRecord {
   weight: number | null;
   temperature: number | null;
   heart_rate: number | null;
+  heart_rate_unmeasurable: boolean;
   respiratory_rate: number | null;
   capillary_refill_seconds: number | null;
   skin_fold_seconds: number | null;

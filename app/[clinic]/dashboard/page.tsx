@@ -10,6 +10,7 @@ import {
   getMonthRevenue,
   getMyDayStats,
   getNextAppointment,
+  getOnboardingStatus,
   getPendingPayments,
   getRecentClients,
   getUrgentAttention,
@@ -68,7 +69,7 @@ export default async function DashboardPage({
 
   // Fetch data según rol — reusa la misma instancia de supabase.
   if (member.role === "admin") {
-    const [counts, monthRevenue, dayRevenue, agenda, recentClients, urgent, pendingPayments] =
+    const [counts, monthRevenue, dayRevenue, agenda, recentClients, urgent, pendingPayments, onboarding] =
       await Promise.all([
         getDashboardCounts(supabase, org.id),
         getMonthRevenue(supabase, org.id),
@@ -77,6 +78,7 @@ export default async function DashboardPage({
         getRecentClients(supabase, org.id, 5),
         getUrgentAttention(supabase, org.id),
         getPendingPayments(supabase, org.id, 5),
+        getOnboardingStatus(supabase, org.id),
       ]);
 
     return (
@@ -90,6 +92,7 @@ export default async function DashboardPage({
         recentClients={recentClients}
         urgent={urgent}
         pendingPayments={pendingPayments}
+        onboarding={onboarding}
       />
     );
   }

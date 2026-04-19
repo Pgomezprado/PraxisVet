@@ -113,6 +113,94 @@ export async function getDashboardCounts(
   };
 }
 
+export type OnboardingStatus = {
+  servicesWithPrice: number;
+  servicesTotal: number;
+  productsActive: number;
+  clientsTotal: number;
+  clientsWithRut: number;
+  invoicesEmitted: number;
+  appointmentsTotal: number;
+  membersTotal: number;
+  membersLinked: number;
+};
+
+export async function getOnboardingStatus(
+  supabase: Supabase,
+  orgId: string
+): Promise<OnboardingStatus> {
+  const [
+    servicesPriced,
+    servicesAll,
+    productsAct,
+    clientsAll,
+    clientsRut,
+    invoices,
+    appts,
+    membersAll,
+    membersUser,
+  ] = await Promise.all([
+    supabase
+      .from("services")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .eq("active", true)
+      .gt("price", 0),
+    supabase
+      .from("services")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .eq("active", true),
+    supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .eq("active", true),
+    supabase
+      .from("clients")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId),
+    supabase
+      .from("clients")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .not("rut", "is", null)
+      .neq("rut", ""),
+    supabase
+      .from("invoices")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .neq("status", "cancelled"),
+    supabase
+      .from("appointments")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId),
+    supabase
+      .from("organization_members")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .eq("active", true),
+    supabase
+      .from("organization_members")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .eq("active", true)
+      .not("user_id", "is", null),
+  ]);
+
+  return {
+    servicesWithPrice: servicesPriced.count ?? 0,
+    servicesTotal: servicesAll.count ?? 0,
+    productsActive: productsAct.count ?? 0,
+    clientsTotal: clientsAll.count ?? 0,
+    clientsWithRut: clientsRut.count ?? 0,
+    invoicesEmitted: invoices.count ?? 0,
+    appointmentsTotal: appts.count ?? 0,
+    membersTotal: membersAll.count ?? 0,
+    membersLinked: membersUser.count ?? 0,
+  };
+}
+
 export async function getMonthRevenue(
   supabase: Supabase,
   orgId: string

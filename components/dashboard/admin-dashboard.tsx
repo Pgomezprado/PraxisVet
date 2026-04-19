@@ -21,6 +21,7 @@ import type {
   TodayAppointment,
   UrgentAttention,
   PendingPayment,
+  OnboardingStatus,
 } from "@/app/[clinic]/dashboard/queries";
 
 export function AdminDashboard({
@@ -33,6 +34,7 @@ export function AdminDashboard({
   recentClients,
   urgent,
   pendingPayments,
+  onboarding,
 }: {
   organization: Organization;
   member: OrganizationMember;
@@ -48,6 +50,7 @@ export function AdminDashboard({
   recentClients: { id: string; first_name: string; last_name: string; created_at: string }[];
   urgent: UrgentAttention;
   pendingPayments: PendingPayment[];
+  onboarding: OnboardingStatus;
 }) {
   const clinicSlug = organization.slug;
   const greetingName = member.first_name
@@ -60,24 +63,37 @@ export function AdminDashboard({
 
   const onboardingSteps = [
     {
-      label: "Configura los servicios que ofrece tu clínica",
+      label: "Carga al menos 3 servicios con precio",
       href: `/${clinicSlug}/settings/services`,
-      completed: counts.totalServices > 0,
+      completed: onboarding.servicesWithPrice >= 3,
     },
     {
-      label: "Registra a tu primer cliente y su mascota",
+      label: "Invita a todo tu equipo",
+      href: `/${clinicSlug}/settings/team`,
+      completed:
+        onboarding.membersTotal > 0 &&
+        onboarding.membersLinked === onboarding.membersTotal,
+    },
+    {
+      label: "Agrega RUT a tus clientes",
       href: `/${clinicSlug}/clients`,
-      completed: counts.totalClients > 0,
+      completed:
+        onboarding.clientsTotal === 0 || onboarding.clientsWithRut >= 1,
+    },
+    {
+      label: "Carga tu primer producto al inventario",
+      href: `/${clinicSlug}/inventory/new`,
+      completed: onboarding.productsActive > 0,
+    },
+    {
+      label: "Emite tu primera boleta",
+      href: `/${clinicSlug}/billing/new`,
+      completed: onboarding.invoicesEmitted > 0,
     },
     {
       label: "Agenda tu primera cita",
-      href: `/${clinicSlug}/appointments`,
-      completed: counts.appointmentsToday > 0,
-    },
-    {
-      label: "Configura tu equipo y ajustes generales",
-      href: `/${clinicSlug}/settings/team`,
-      completed: false,
+      href: `/${clinicSlug}/appointments/new`,
+      completed: onboarding.appointmentsTotal > 0,
     },
   ];
 

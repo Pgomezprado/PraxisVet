@@ -193,8 +193,10 @@ function MemberList({
                   </Link>
                   <MemberStatusToggle
                     memberId={member.id}
+                    memberName={name}
                     clinicSlug={clinic}
                     active={member.active}
+                    hasLogin={canLogin}
                     canToggle={!canLogin || member.role !== "admin"}
                   />
                 </div>

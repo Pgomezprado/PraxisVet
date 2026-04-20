@@ -7,6 +7,10 @@ import {
   type TeamMemberInput,
 } from "@/lib/validations/team-members";
 import { createAndSendInvitation } from "@/lib/invitations/service";
+import {
+  revokeMemberAccess,
+  restoreMemberAccess,
+} from "@/lib/auth/revoke-member-access";
 import type { OrganizationMember } from "@/types";
 
 type ActionResult<T = void> =
@@ -168,18 +172,23 @@ export async function toggleMemberActive(
   memberId: string,
   clinicSlug: string,
   active: boolean
-): Promise<ActionResult> {
-  const { supabase } = await getAuthContext();
+): Promise<ActionResult<{ sessionClosed: boolean }>> {
+  await getAuthContext();
 
-  const { error } = await supabase
-    .from("organization_members")
-    .update({ active })
-    .eq("id", memberId);
+  if (active) {
+    const result = await restoreMemberAccess(memberId);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    revalidatePath(`/${clinicSlug}/settings/team`);
+    return { success: true, data: { sessionClosed: false } };
+  }
 
-  if (error) {
-    return { success: false, error: error.message };
+  const result = await revokeMemberAccess(memberId);
+  if (!result.success) {
+    return { success: false, error: result.error };
   }
 
   revalidatePath(`/${clinicSlug}/settings/team`);
-  return { success: true, data: undefined };
+  return { success: true, data: { sessionClosed: result.sessionClosed } };
 }

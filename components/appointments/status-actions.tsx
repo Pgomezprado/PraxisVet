@@ -98,9 +98,7 @@ export function StatusActions({
     router.push(`/${clinicSlug}/appointments`);
   }
 
-  if (available.length === 0 && currentStatus === "completed") {
-    return null;
-  }
+  const isCompleted = currentStatus === "completed";
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -126,55 +124,63 @@ export function StatusActions({
         );
       })}
 
-      {currentStatus !== "completed" && (
-        <Dialog
-          open={deleteDialogOpen}
-          onOpenChange={(open) => {
-            setDeleteDialogOpen(open);
-            if (!open) setDeleteError(null);
-          }}
-        >
-          <DialogTrigger
-            render={
-              <Button variant="destructive" size="sm" disabled={loading !== null}>
-                <Trash2 className="size-3.5" />
-                Eliminar
-              </Button>
-            }
-          />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Eliminar cita</DialogTitle>
-              <DialogDescription>
-                Esta acción no se puede deshacer. La cita será eliminada permanentemente.
-              </DialogDescription>
-            </DialogHeader>
-            {deleteError && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                {deleteError}
-              </div>
-            )}
-            <DialogFooter>
-              <DialogClose
-                render={
-                  <Button variant="outline" size="sm">
-                    Cancelar
-                  </Button>
-                }
-              />
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={loading === "delete"}
-                onClick={handleDelete}
-              >
-                {loading === "delete" && <Loader2 className="size-3.5 animate-spin" />}
-                Eliminar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setDeleteError(null);
+        }}
+      >
+        <DialogTrigger
+          render={
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={loading !== null}
+            >
+              <Trash2 className="size-3.5" />
+              Eliminar
+            </Button>
+          }
+        />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {isCompleted ? "Eliminar cita completada" : "Eliminar cita"}
+            </DialogTitle>
+            <DialogDescription>
+              {isCompleted
+                ? "Esta cita ya está completada. Si la eliminas, también desaparecerá del historial del paciente y de los reportes. La factura y la ficha clínica asociadas (si existen) NO se borran."
+                : "Esta acción no se puede deshacer. La cita será eliminada permanentemente."}
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {deleteError}
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose
+              render={
+                <Button variant="outline" size="sm">
+                  Cancelar
+                </Button>
+              }
+            />
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={loading === "delete"}
+              onClick={handleDelete}
+            >
+              {loading === "delete" && (
+                <Loader2 className="size-3.5 animate-spin" />
+              )}
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

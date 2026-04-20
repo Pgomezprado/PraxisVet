@@ -266,6 +266,43 @@ export async function getDayAgenda(
   );
 }
 
+/**
+ * Trae las citas de la semana calendario actual (lunes → domingo).
+ * Útil para dashboards que quieren contexto semanal en vez de sólo el día.
+ */
+export async function getWeekAgenda(
+  supabase: Supabase,
+  orgId: string,
+  opts: { assignedTo?: string; type?: "medical" | "grooming" } = {}
+): Promise<TodayAppointment[]> {
+  const today = new Date(todayISO() + "T12:00:00");
+  // getDay: 0=domingo, 1=lunes... Convertimos a "días desde lunes" (0..6)
+  const dayOfWeek = today.getDay();
+  const daysSinceMonday = (dayOfWeek + 6) % 7;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - daysSinceMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  let query = supabase
+    .from("appointments")
+    .select(APPOINTMENT_SELECT)
+    .eq("org_id", orgId)
+    .gte("date", fmt(monday))
+    .lte("date", fmt(sunday))
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true });
+
+  if (opts.assignedTo) query = query.eq("assigned_to", opts.assignedTo);
+  if (opts.type) query = query.eq("type", opts.type);
+
+  const { data } = await query;
+  return (data ?? []).map((row) =>
+    shapeAppointment(row as unknown as RawAppointment)
+  );
+}
+
 export async function getNextAppointment(
   supabase: Supabase,
   orgId: string,

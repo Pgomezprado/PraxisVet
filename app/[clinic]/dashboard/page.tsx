@@ -15,6 +15,7 @@ import {
   getRecentClients,
   getUrgentAttention,
   getWaitingRoom,
+  getWeekAgenda,
 } from "./queries";
 import type { Organization, OrganizationMember } from "@/types";
 
@@ -100,7 +101,7 @@ export default async function DashboardPage({
   if (member.role === "vet") {
     const [stats, agenda, nextAppointment] = await Promise.all([
       getMyDayStats(supabase, org.id, member.id),
-      getDayAgenda(supabase, org.id, {
+      getWeekAgenda(supabase, org.id, {
         assignedTo: member.id,
         type: "medical",
       }),

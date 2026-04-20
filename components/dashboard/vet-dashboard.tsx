@@ -9,7 +9,7 @@ import type { Organization, OrganizationMember } from "@/types";
 import { HeroGreeting } from "./widgets/hero-greeting";
 import { KpiCard } from "./widgets/kpi-card";
 import { QuickActions } from "./widgets/quick-actions";
-import { DayAgenda } from "./widgets/day-agenda";
+import { WeekAgenda } from "./widgets/week-agenda";
 import { NextAppointmentCard } from "./widgets/next-appointment-card";
 import type { TodayAppointment } from "@/app/[clinic]/dashboard/queries";
 import { formatCountdown, minutesUntil } from "@/lib/utils/format";
@@ -113,22 +113,21 @@ export function VetDashboard({
         emptyDescription="Tu agenda está libre. Buen momento para actualizar historias clínicas."
       />
 
-      <DayAgenda
-        title="Mi agenda del día"
+      <WeekAgenda
+        title="Mi agenda de la semana"
         description={
           agenda.length > 0
-            ? `${agenda.length} paciente${agenda.length > 1 ? "s" : ""}`
+            ? `${agenda.length} cita${agenda.length > 1 ? "s" : ""} esta semana`
             : undefined
         }
         appointments={agenda}
-        emptyTitle="Sin pacientes asignados hoy"
-        emptyDescription="No tienes citas asignadas para hoy. Si esperabas alguna, revisa la agenda completa de la clínica."
+        emptyTitle="Semana sin citas asignadas"
+        emptyDescription="No tienes pacientes asignados esta semana. Revisa la agenda completa de la clínica para ver el panorama."
         emptyAction={{
           label: "Ver agenda completa",
-          href: `/${clinicSlug}/appointments`,
+          href: `/${clinicSlug}/appointments?view=week`,
         }}
         clinicSlug={clinicSlug}
-        maxHeight
       />
     </div>
   );

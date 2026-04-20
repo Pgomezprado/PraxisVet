@@ -53,10 +53,11 @@ Si una decisión de producto contradice `CLINIC_FLOW.md`, primero se discute y s
 | Base de datos | Supabase (PostgreSQL + RLS) | @supabase/ssr v0.10 |
 | Auth | Supabase Auth | incluido en @supabase/ssr |
 | Formularios | React Hook Form + Zod | RHF v7, Zod **v4** |
-| Fechas | date-fns | **v4** |
+| Fechas / Calendario | date-fns + react-day-picker | date-fns **v4**, react-day-picker **v9** |
 | Iconos | lucide-react | **v1.8** |
-| Email | Resend | v6 |
+| Email transaccional | Resend + @react-email | resend v6, @react-email/components v1 |
 | PDF | jspdf | v4 (NO usar @react-pdf/renderer) |
+| Analytics | @vercel/analytics | v2 |
 | Deploy | Vercel + Supabase Cloud | — |
 
 **Paquetes que NO están instalados** (el plan los mencionaba, pero no existen en el proyecto):
@@ -69,17 +70,23 @@ Si una decisión de producto contradice `CLINIC_FLOW.md`, primero se discute y s
 
 ## Estado actual del proyecto
 
-| Módulo | Estado |
-|---|---|
-| Auth + Onboarding | ✅ Construido |
-| Clientes + Mascotas | ✅ Construido |
-| Citas (Appointments) | ✅ Construido |
-| Historial Clínico + Vacunas + Recetas | ✅ Construido |
-| Settings / Servicios | ✅ Construido |
-| **Facturación (SII)** | 🔲 Pendiente |
-| **Inventario** | 🔲 Pendiente |
-| **Super Admin Panel** | 🔲 Pendiente |
-| **Peluquería (grooming flow)** | ⚠️ Parcial — schema addendum pendiente de migrar |
+| Módulo | Estado | Notas |
+|---|---|---|
+| Auth + Onboarding | ✅ Construido | Login, registro, forgot-password, callback OAuth, flujo onboarding |
+| Clientes + Mascotas | ✅ Construido | CRUD completo, validación RUT, taxonomía de especies |
+| Citas (Appointments) | ✅ Construido | Estados completos incl. `ready_for_pickup`, vista semana/día |
+| Historial Clínico + Vacunas + Recetas | ✅ Construido | Examen físico, catálogo de vacunas, receta retenida con PDF |
+| Desparasitaciones | ✅ Construido | Módulo propio bajo cada mascota |
+| Peluquería (grooming flow) | ✅ Construido | Registros de grooming bajo mascota, schema migrado |
+| Settings / Servicios / Equipo | ✅ Construido | Configuración de clínica, servicios y gestión de miembros |
+| Sistema de Invitaciones | ✅ Construido | Tokens de invitación, email, flujo accept-invite |
+| Facturación (boleta/factura) | ✅ Construido | Generación PDF, estados, `document_type`, montos CLP |
+| Inventario | ✅ Construido | CRUD de productos y registro de movimientos de stock |
+| Super Admin Panel | ✅ Construido | Dashboard global, detalle de org, audit log, trial gateway |
+| Email Reminders (cron) | ✅ Construido | Recordatorios de trial via Resend + cron route |
+| **Integración SII real** | 🔲 Pendiente | MVP genera PDF; delegación a OpenFactura/Haulmer es post-MVP |
+| **Cierre de caja (cash_register UI)** | 🔲 Pendiente | Tabla `cash_registers` migrada, UI pendiente |
+| **Reportes y métricas clínica** | 🔲 Pendiente | Post-MVP |
 
 ---
 
@@ -93,24 +100,32 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 
 **Rol:** Estratega del producto. Decide qué se construye, para quién y en qué orden.
 
+> **Contexto actual (abril 2026):** El MVP está completo. Todos los módulos core están construidos. El foco ahora es (1) validar con usuarios reales, (2) completar los 3 pendientes post-MVP (integración SII real, UI de cierre de caja, reportes), y (3) convertir trials a clientes pagos.
+
 **Responsabilidades:**
 - Validar que cada feature propuesta tenga sentido para al menos uno de los 3 segmentos (vet solo / pequeña / mediana) y no rompa ninguno de los flujos E2E.
-- Priorizar el backlog con criterio de impacto/esfuerzo.
-- Definir el alcance del MVP vs. lo que va al backlog.
+- Priorizar el backlog con criterio de impacto/esfuerzo. En particular los 3 pendientes: SII real → cierre de caja UI → reportes.
 - Detectar scope creep y bloquearlo antes de que entre al sprint.
-- Evaluar decisiones de negocio: pricing, go-to-market, segmentación.
+- Evaluar decisiones de negocio: pricing, go-to-market, conversión de trials.
 - Asegurarse de que las particularidades Chile (SII, RUT, CLP) estén contempladas desde el diseño, no como parche.
+- Gestionar el trial gateway: el sistema tiene períodos de 60 días (`trial_ends_at`). Decisiones sobre qué pasa cuando expira van aquí.
+
+**Pricing actual (implementado en código):**
+- Plan **Básico** (`basico`) — $29.000 CLP/mes
+- Plan **Pro** (`pro`) — $79.000 CLP/mes
+- Plan **Enterprise** (`enterprise`) — $149.000 CLP/mes
+- Estados de suscripción: `trial` → `active` | `past_due` | `expired` | `cancelled`
 
 **No hace:**
 - Escribir código ni SQL.
 - Diseñar pantallas.
-- Decir "sí" a features que están explícitamente fuera del MVP (ver `CLINIC_FLOW.md` sección 8).
+- Aprobar features de la sección 8 de `CLINIC_FLOW.md` sin análisis explícito.
 
 **Señales de alarma que debe detectar:**
 - Propuesta de multi-sucursal → fuera de MVP.
 - Propuesta de telemedicina → fuera de MVP.
 - Feature que solo sirve a un segmento pero rompe la UX de los otros dos.
-- Decisión de schema que no contempla la separación médico/peluquería.
+- Propuesta de cambiar precios sin evaluar impacto en trials activos y clientes existentes.
 
 ---
 
@@ -138,6 +153,11 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 - Feedback visual inmediato en cambios de estado de citas.
 - Errores de formulario con mensajes accionables (ver UXWriter).
 
+**Datos de dominio que afectan diseño:**
+- Taxonomía de especies: `canino` / `felino` / `exótico` — así se muestran en selectores y fichas, nunca "perro/gato".
+- El trial banner (`components/billing/trial-banner.tsx`) ya existe; cualquier cambio de UX de trial coordinar con él.
+- Los 4 dashboards por rol (`admin-dashboard`, `vet-dashboard`, `receptionist-dashboard`, `groomer-dashboard`) ya están construidos en `components/dashboard/`. Los cambios deben ser consistentes con los widgets existentes en `components/dashboard/widgets/`.
+
 ---
 
 ### ✍️ UXWriter
@@ -156,6 +176,11 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 - Mensajes de error descriptivos y accionables: qué salió mal + qué hacer.
 - Textos de estado de citas consistentes con `CLINIC_FLOW.md` sección 3.
 - Placeholders con ejemplos reales chilenos: `Ej: 12.345.678-9`, `Ej: Luna`, `Ej: +56 9 1234 5678`.
+
+**Vocabulario clínico fijo (no inventar sinónimos):**
+- Especies: `canino`, `felino`, `exótico` — no "perro", "gato", "otros".
+- Planes: `Básico`, `Pro`, `Enterprise` — capitalización exacta, no traducir "Enterprise".
+- Estados de suscripción en UI: `En prueba`, `Activo`, `Pago pendiente`, `Expirado`, `Cancelado`.
 
 **No hace:**
 - Inventar terminología médica veterinaria — consultar fuentes o al CoFounder.
@@ -185,16 +210,27 @@ app/[clinic]/[modulo]/
   [id]/page.tsx     → Server Component, vista detalle
   _components/      → Client Components específicos del módulo
   actions.ts        → Server Actions del módulo
-  
+
 components/
   ui/               → shadcn/ui (no modificar)
-  [modulo]/         → componentes reutilizables del módulo
-  shared/           → componentes genéricos (DataTable, SearchInput, etc.)
+  [modulo]/         → componentes reutilizables del módulo (appointments/, clients/, clinical/, etc.)
 ```
+> ⚠️ No existe carpeta `components/shared/`. Los componentes genéricos van en el módulo más cercano o en `components/layout/`. No crearla sin discutirlo primero.
+
+**Rutas API legítimas (excepciones a Server Actions):**
+Los Server Actions no pueden retornar streams ni blobs. Las siguientes Route Handlers son excepciones aprobadas:
+- `app/api/[clinic]/invoices/[invoiceId]/pdf/route.ts` — generación de PDF de factura
+- `app/api/[clinic]/prescriptions/[recordId]/pdf/route.ts` — generación de PDF de receta
+- `app/api/cron/trial-reminders/route.ts` — cron job de Vercel (no puede ser Server Action)
+
+Toda Route Handler aplica el mismo aislamiento de `org_id` y verificación de rol que un Server Action.
+
+**Dato de dominio crítico — Taxonomía de especies:**
+`pets.species` usa valores clínicos: `'canino' | 'felino' | 'exotico'` (sin acento en el check constraint). Nunca usar `'dog'`, `'cat'`, `'bird'`, etc. — esos valores fueron migrados en `20260415000001_species_clinical_taxonomy.sql`.
 
 **No hace:**
 - Usar `fetch` en Client Components para datos que pueden cargarse en el Server.
-- Construir rutas API cuando un Server Action es suficiente.
+- Construir rutas API cuando un Server Action es suficiente (ver excepción de archivos arriba).
 - Hardcodear strings de rol — usar las constantes definidas en `types/`.
 - Mostrar datos protegidos basándose solo en condiciones de UI (`if role === 'admin'`). La RLS en Supabase es la barrera real; la UI es UX, no seguridad.
 
@@ -214,14 +250,45 @@ components/
 - La separación médico/peluquería se aplica a nivel de RLS, no solo en UI:
   - `clinical_records`: visible a `admin` y `vet`. El peluquero nunca.
   - `grooming_records`: visible a `admin` y `groomer`. El recepcionista solo sabe que existe (para cobrar), no su contenido.
-- Usar el esquema del **addendum** (`SCHEMA_ADDENDUM.md`), no el del `PLAN_PRAXISVET.md` cuando haya diferencia. Las brechas clave:
+- Usar el esquema del **addendum** (`SCHEMA_ADDENDUM.md`), no el del `PLAN_PRAXISVET.md` cuando haya diferencia. Las brechas clave (ya implementadas):
   - `organization_members.role` incluye `'groomer'`.
   - `appointments.vet_id` → `appointments.assigned_to` + `appointments.type ('medical' | 'grooming')`.
   - `appointments.status` incluye `'ready_for_pickup'`.
   - `invoices` usa `document_type ('boleta' | 'factura')`, montos en `numeric(12,0)` (CLP sin decimales).
   - `prescriptions` tiene `is_retained boolean` y `retained_copy_url text`.
-  - Existe tabla `cash_registers` para cierre de caja.
+  - Existe tabla `cash_registers` para cierre de caja (UI pendiente).
   - `clients` tiene campo `rut text` con validación de dígito verificador.
+  - `pets.species` usa taxonomía clínica: `'canino' | 'felino' | 'exotico'` — NO los valores ingleses originales.
+
+**Tablas adicionales ya migradas (no estaban en el addendum original):**
+
+| Tabla | Descripción | RLS |
+|---|---|---|
+| `platform_admins` | Superadmins de PraxisVet (role: `'owner'\|'staff'`). Solo mutable vía `service_role`. Requiere `mfa_enrolled_at NOT NULL`. | Solo la propia fila; no INSERT/UPDATE/DELETE para `authenticated`. |
+| `invitations` | Tokens SHA-256 de invitación de equipo. Un activo por miembro. Tienen `expires_at`. | Solo admins de la misma org. |
+| `vaccines_catalog` | Catálogo **global** de vacunas (sin `org_id`). Lectura pública para todos los orgs. | Solo lectura para `authenticated`. |
+| `vaccine_protocols` / `vaccine_doses` | Protocolos y dosis ordenadas asociadas al catálogo. Sin `org_id`. | Solo lectura. |
+| `organization_vaccine_preferences` | Opt-out de vacunas del catálogo por organización. | `org_isolation` estándar. |
+| `dewormings` | Desparasitaciones por mascota. RLS igual que `clinical_records` (admin + vet; groomer NO). | `vet_or_admin_only`. |
+| `reminders` | Recordatorios automáticos generados por triggers (vacunas, controles). | `org_isolation` estándar. |
+
+**Columnas nuevas en `organizations` (trial gateway):**
+```sql
+organizations (
+  -- columnas existentes...
+  plan                  text  -- 'basico' | 'pro' | 'enterprise'  (antes: 'free')
+  trial_started_at      timestamptz,
+  trial_ends_at         timestamptz,
+  subscription_status   text  -- 'trial' | 'active' | 'past_due' | 'expired' | 'cancelled'
+)
+```
+
+**Función de DB disponible:**
+```sql
+is_platform_admin()  -- retorna boolean; exige fila activa en platform_admins
+                     -- con mfa_enrolled_at NOT NULL y revoked_at IS NULL
+```
+Úsala en guards del superadmin. Nunca confiar solo en el JWT para acceso al panel.
 - Las migraciones van en `supabase/migrations/` con nombre `YYYYMMDDHHMMSS_descripcion.sql`.
 - Toda Server Action valida con Zod v4 antes de tocar la DB.
 - Toda Server Action verifica que el `org_id` del usuario coincida con el recurso que está modificando.
@@ -288,12 +355,32 @@ function validarRut(rut: string): boolean {
 
 **Casos de prueba de seguridad obligatorios:**
 ```
-[ ] Peluquero intenta GET /api/clinical_records/:id → debe recibir 403 o vacío (RLS).
+Permisos por rol:
+[ ] Peluquero intenta acceder a clinical_records/:id → RLS devuelve vacío o 403.
+[ ] Peluquero intenta acceder a dewormings/:id → RLS devuelve vacío o 403.
 [ ] Recepcionista intenta ver anamnesis de una consulta → campo no debe aparecer.
 [ ] Usuario de org A intenta acceder a datos de org B → RLS debe bloquear.
+[ ] Cita de tipo 'medical' asignada a un groomer → debe ser bloqueada.
+
+Datos Chile:
 [ ] RUT inválido en formulario de cliente → debe rechazar antes de submit.
 [ ] Monto con decimales en factura → debe rechazar o redondear a CLP entero.
-[ ] Cita de tipo 'medical' asignada a un groomer → debe ser bloqueada.
+[ ] Campo species con valor 'dog' o 'cat' → debe rechazar (solo canino/felino/exotico).
+
+Invitaciones:
+[ ] Token de invitación expirado → debe rechazar el accept-invite.
+[ ] Token ya usado (accepted_at IS NOT NULL) → debe rechazar.
+[ ] Intentar crear segunda invitación activa para el mismo miembro → constraint debe bloquearlo.
+[ ] Admin de org A intenta revocar invitación de org B → RLS debe bloquear.
+
+Trial gateway:
+[ ] Org con subscription_status = 'expired' intenta acceder a [clinic] → debe mostrar pantalla de upgrade.
+[ ] Cron de trial-reminders solo procesa orgs con trial_ends_at próximo → no afecta orgs 'active'.
+
+Superadmin:
+[ ] Usuario sin fila en platform_admins intenta acceder a /superadmin → must redirect.
+[ ] is_platform_admin() devuelve false si mfa_enrolled_at IS NULL → MFA obligatorio.
+[ ] platform_admins: INSERT vía app autenticada → debe ser rechazado (solo service_role escribe).
 ```
 
 **No hace:**
@@ -345,4 +432,4 @@ Estas reglas no se negocian. Si una propuesta las rompe, se rechaza.
 
 ---
 
-*Versión 2.0 — Abril 2026. Actualizado para reflejar stack real, addendum de schema, rol groomer y mandato CI-160.*
+*Versión 2.2 — 19 Abril 2026. Revisión completa de roles: CoFounder actualizado a fase post-MVP con pricing real (Básico/Pro/Enterprise) y trial gateway. Frontend corregido — `components/shared/` no existe, documentadas 3 rutas API legítimas, taxonomía de especies clínica. Backend documentado con tablas adicionales (platform_admins, invitations, vaccines_catalog, dewormings, reminders) y columnas de trial en organizations. QA ampliado con 12 nuevos casos de prueba (invitaciones, trial, superadmin). UXDesigner y UXWriter actualizados con taxonomía de especies y nombres de planes.*

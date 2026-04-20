@@ -9,13 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { RecordForm } from "@/components/clinical/record-form";
+import { PatientNotesBanner } from "@/components/clinical/patient-notes-banner";
 import { VaccinationInlineList } from "@/components/vaccinations/vaccination-inline-list";
 import { DewormingInlineList } from "@/components/dewormings/deworming-inline-list";
 import { getVaccineCatalogForPet } from "@/lib/vaccines/catalog";
 import type { Species } from "@/types";
 import { AddVaccinationSheet } from "../_components/add-vaccination-sheet";
 import { AddDewormingSheet } from "../_components/add-deworming-sheet";
-import { getRecord, getVets } from "../../actions";
+import { getRecord, getVets, getPetNotes } from "../../actions";
 import {
   getVaccinationsByRecord,
   getVets as getVaccinationVets,
@@ -50,6 +51,7 @@ export default async function EditRecordPage({
     dewormingsOfRecord,
     sheetVetsResult,
     catalog,
+    petNotes,
   ] = await Promise.all([
     getVets(record.org_id),
     getVaccinationsByRecord(recordId),
@@ -58,6 +60,7 @@ export default async function EditRecordPage({
     speciesForCatalog
       ? getVaccineCatalogForPet(speciesForCatalog, record.org_id)
       : Promise.resolve([]),
+    getPetNotes(petId),
   ]);
 
   const vets = vetsResult.data ?? [];
@@ -81,11 +84,11 @@ export default async function EditRecordPage({
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Editar registro clínico
+            Editar ficha clínica
           </h1>
           <p className="text-sm text-muted-foreground">
             {record.pet.name} -{" "}
-            {new Date(record.date + "T12:00:00").toLocaleDateString("es-MX", {
+            {new Date(record.date + "T12:00:00").toLocaleDateString("es-CL", {
               day: "numeric",
               month: "long",
               year: "numeric",
@@ -93,6 +96,8 @@ export default async function EditRecordPage({
           </p>
         </div>
       </div>
+
+      <PatientNotesBanner notes={petNotes} />
 
       <RecordForm
         petId={petId}

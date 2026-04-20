@@ -134,7 +134,7 @@ export async function getRecord(
     .single();
 
   if (error || !data) {
-    return { success: false, error: "Registro clinico no encontrado" };
+    return { success: false, error: "Ficha clínica no encontrada" };
   }
 
   return { success: true, data: data as unknown as RecordDetail };
@@ -234,7 +234,7 @@ export async function updateRecord(
     .maybeSingle();
 
   if (!existing) {
-    return { success: false, error: "Registro clinico no encontrado" };
+    return { success: false, error: "Ficha clínica no encontrada" };
   }
 
   const memberCheck = await validateMemberInOrg(
@@ -356,7 +356,7 @@ export async function getPetWithClient(petId: string) {
     .from("pets")
     .select(
       `
-      id, name, species, breed, sex, birthdate, client_id,
+      id, name, species, breed, sex, birthdate, notes, client_id,
       client:clients!client_id (id, first_name, last_name)
     `
     )
@@ -374,9 +374,110 @@ export async function getPetWithClient(petId: string) {
     breed: string | null;
     sex: string | null;
     birthdate: string | null;
+    notes: string | null;
     client_id: string;
     client: { id: string; first_name: string; last_name: string };
   }, error: null };
+}
+
+export type PatientContext = {
+  lastRecord: {
+    id: string;
+    date: string;
+    reason: string | null;
+    diagnosis: string | null;
+    weight: number | null;
+    vet_name: string;
+  } | null;
+  lastPrescriptions: Array<{
+    id: string;
+    medication: string;
+    dose: string | null;
+    frequency: string | null;
+    duration: string | null;
+  }>;
+};
+
+export async function getPatientContext(
+  petId: string,
+  excludeRecordId?: string
+): Promise<PatientContext> {
+  const supabase = await createSupabaseClient();
+
+  let query = supabase
+    .from("clinical_records")
+    .select(
+      `
+      id, date, reason, diagnosis, weight,
+      vet:organization_members!vet_id (first_name, last_name)
+    `
+    )
+    .eq("pet_id", petId)
+    .order("date", { ascending: false })
+    .limit(1);
+
+  if (excludeRecordId) {
+    query = query.neq("id", excludeRecordId);
+  }
+
+  const { data: lastRecordData } = await query.maybeSingle();
+
+  if (!lastRecordData) {
+    return { lastRecord: null, lastPrescriptions: [] };
+  }
+
+  const vetRel = (lastRecordData as unknown as {
+    vet: { first_name: string | null; last_name: string | null } | null;
+  }).vet;
+  const vetName =
+    [vetRel?.first_name, vetRel?.last_name].filter(Boolean).join(" ") ||
+    "Sin asignar";
+
+  const { data: prescriptionsData } = await supabase
+    .from("prescriptions")
+    .select("id, medication, dose, frequency, duration")
+    .eq("clinical_record_id", lastRecordData.id)
+    .order("created_at", { ascending: true });
+
+  return {
+    lastRecord: {
+      id: lastRecordData.id,
+      date: lastRecordData.date,
+      reason: lastRecordData.reason,
+      diagnosis: lastRecordData.diagnosis,
+      weight: lastRecordData.weight,
+      vet_name: vetName,
+    },
+    lastPrescriptions: prescriptionsData ?? [],
+  };
+}
+
+export async function getTodayRecord(
+  petId: string
+): Promise<{ id: string; date: string } | null> {
+  const supabase = await createSupabaseClient();
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data } = await supabase
+    .from("clinical_records")
+    .select("id, date")
+    .eq("pet_id", petId)
+    .eq("date", today)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
+export async function getPetNotes(petId: string): Promise<string | null> {
+  const supabase = await createSupabaseClient();
+  const { data } = await supabase
+    .from("pets")
+    .select("notes")
+    .eq("id", petId)
+    .maybeSingle();
+  return data?.notes ?? null;
 }
 
 export async function getLinkedRecord(appointmentId: string) {

@@ -2,7 +2,15 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RecordForm } from "@/components/clinical/record-form";
-import { getVets, getPetWithClient } from "../actions";
+import { PatientNotesBanner } from "@/components/clinical/patient-notes-banner";
+import { PatientContextCard } from "@/components/clinical/patient-context-card";
+import { DuplicateRecordAlert } from "@/components/clinical/duplicate-record-alert";
+import {
+  getVets,
+  getPetWithClient,
+  getPatientContext,
+  getTodayRecord,
+} from "../actions";
 import { getAppointment } from "@/app/[clinic]/appointments/actions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -53,17 +61,28 @@ export default async function NewRecordPage({
     );
   }
 
-  const vetsResult = await getVets(org.id);
+  const [vetsResult, patientContext, todayRecord] = await Promise.all([
+    getVets(org.id),
+    getPatientContext(petId),
+    getTodayRecord(petId),
+  ]);
   const vets = vetsResult.data ?? [];
 
   let defaultVetId: string | undefined;
   let defaultAppointmentId: string | undefined;
+  let defaultReason: string | undefined;
 
   if (appointmentId) {
     const appointmentResult = await getAppointment(appointmentId);
     if (appointmentResult.data) {
       defaultAppointmentId = appointmentResult.data.id;
       defaultVetId = appointmentResult.data.assigned_to;
+      const appt = appointmentResult.data as unknown as {
+        service?: { name?: string | null } | null;
+        notes?: string | null;
+      };
+      defaultReason =
+        appt.notes?.trim() || appt.service?.name?.trim() || undefined;
     }
   }
 
@@ -93,7 +112,7 @@ export default async function NewRecordPage({
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Nuevo registro clínico
+            Nueva ficha clínica
           </h1>
           <p className="text-sm text-muted-foreground">
             {petResult.data.name} - {petResult.data.client.first_name}{" "}
@@ -102,12 +121,28 @@ export default async function NewRecordPage({
         </div>
       </div>
 
+      {todayRecord && (
+        <DuplicateRecordAlert
+          existingRecordHref={`/${clinic}/clients/${id}/pets/${petId}/records/${todayRecord.id}`}
+        />
+      )}
+
+      <PatientNotesBanner notes={petResult.data.notes} />
+
+      <PatientContextCard
+        context={patientContext}
+        clinicSlug={clinic}
+        clientId={id}
+        petId={petId}
+      />
+
       <RecordForm
         petId={petId}
         clientId={id}
         vets={vets}
         defaultAppointmentId={defaultAppointmentId}
         defaultVetId={defaultVetId}
+        defaultReason={defaultReason}
       />
     </div>
   );

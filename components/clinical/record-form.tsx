@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { CalendarPlus } from "lucide-react";
@@ -48,6 +48,23 @@ interface Vet {
   specialty: string | null;
 }
 
+const DRAFT_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const DRAFT_DEBOUNCE_MS = 10_000;
+
+interface DraftPayload {
+  savedAt: number;
+  data: Partial<ClinicalRecordInput>;
+}
+
+function formatDraftAge(savedAt: number): string {
+  const diffMin = Math.floor((Date.now() - savedAt) / 60_000);
+  if (diffMin < 1) return "hace menos de un minuto";
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return diffH === 1 ? "hace 1 hora" : `hace ${diffH} horas`;
+  return "hace más de un día";
+}
+
 interface RecordFormProps {
   petId: string;
   clientId: string;
@@ -80,6 +97,7 @@ interface RecordFormProps {
   };
   defaultAppointmentId?: string;
   defaultVetId?: string;
+  defaultReason?: string;
   extraSections?: ReactNode;
 }
 
@@ -90,6 +108,7 @@ export function RecordForm({
   record,
   defaultAppointmentId,
   defaultVetId,
+  defaultReason,
   extraSections,
 }: RecordFormProps) {
   const router = useRouter();
@@ -104,6 +123,11 @@ export function RecordForm({
   >(null);
 
   const isEditing = !!record;
+  const draftKey = `praxisvet:draft:record:${organization.id}:${petId}`;
+  const [recoverableDraft, setRecoverableDraft] = useState<DraftPayload | null>(
+    null
+  );
+  const draftTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     register,
@@ -111,6 +135,7 @@ export function RecordForm({
     watch,
     setValue,
     getValues,
+    reset,
     control,
     formState: { errors },
   } = useForm<ClinicalRecordInput>({
@@ -120,7 +145,7 @@ export function RecordForm({
       vet_id: record?.vet_id ?? defaultVetId ?? "",
       appointment_id: record?.appointment_id ?? defaultAppointmentId ?? "",
       date: record?.date ?? new Date().toISOString().split("T")[0],
-      reason: record?.reason ?? "",
+      reason: record?.reason ?? defaultReason ?? "",
       anamnesis: record?.anamnesis ?? "",
       symptoms: record?.symptoms ?? "",
       diagnosis: record?.diagnosis ?? "",
@@ -148,6 +173,73 @@ export function RecordForm({
     },
   });
 
+  useEffect(() => {
+    if (isEditing || typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(draftKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as DraftPayload;
+      if (!parsed?.savedAt || Date.now() - parsed.savedAt > DRAFT_EXPIRY_MS) {
+        window.localStorage.removeItem(draftKey);
+        return;
+      }
+      setRecoverableDraft(parsed);
+    } catch {
+      window.localStorage.removeItem(draftKey);
+    }
+  }, [draftKey, isEditing]);
+
+  useEffect(() => {
+    if (isEditing || typeof window === "undefined") return;
+    const subscription = watch((values) => {
+      if (draftTimeoutRef.current) clearTimeout(draftTimeoutRef.current);
+      draftTimeoutRef.current = setTimeout(() => {
+        const hasContent =
+          !!values.reason?.trim() ||
+          !!values.anamnesis?.trim() ||
+          !!values.symptoms?.trim() ||
+          !!values.diagnosis?.trim() ||
+          !!values.treatment?.trim() ||
+          !!values.observations?.trim();
+        if (!hasContent) return;
+        try {
+          const payload: DraftPayload = {
+            savedAt: Date.now(),
+            data: values as Partial<ClinicalRecordInput>,
+          };
+          window.localStorage.setItem(draftKey, JSON.stringify(payload));
+        } catch {
+          // localStorage lleno o deshabilitado: silencioso.
+        }
+      }, DRAFT_DEBOUNCE_MS);
+    });
+    return () => {
+      subscription.unsubscribe();
+      if (draftTimeoutRef.current) clearTimeout(draftTimeoutRef.current);
+    };
+  }, [watch, draftKey, isEditing]);
+
+  const recoverDraft = useCallback(() => {
+    if (!recoverableDraft) return;
+    reset({
+      ...getValues(),
+      ...recoverableDraft.data,
+      pet_id: petId,
+    } as ClinicalRecordInput);
+    setRecoverableDraft(null);
+  }, [recoverableDraft, reset, getValues, petId]);
+
+  const discardDraft = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(draftKey);
+    }
+    setRecoverableDraft(null);
+  }, [draftKey]);
+
+  const heartAuscultationFindings = watch("heart_auscultation_findings");
+  const respiratoryAuscultationFindings = watch(
+    "respiratory_auscultation_findings"
+  );
   const physicalExam = watch("physical_exam");
   const hasPhysicalExam =
     !!physicalExam &&
@@ -161,8 +253,10 @@ export function RecordForm({
   const heartRateUnmeasurable = watch("heart_rate_unmeasurable");
   const heartAuscultationStatus = watch("heart_auscultation_status");
   const respiratoryAuscultationStatus = watch("respiratory_auscultation_status");
+  const symptomsValue = watch("symptoms");
   const hasPhysicalContent =
     hasPhysicalExam ||
+    !!symptomsValue?.trim() ||
     (respiratoryRate != null && respiratoryRate !== "") ||
     (capillaryRefill != null && capillaryRefill !== "") ||
     (skinFold != null && skinFold !== "") ||
@@ -174,22 +268,13 @@ export function RecordForm({
   const watchedValues = watch([
     "reason",
     "anamnesis",
-    "symptoms",
     "diagnosis",
     "treatment",
     "observations",
   ]);
 
-  const [
-    reason,
-    anamnesis,
-    symptoms,
-    diagnosis,
-    treatment,
-    observations,
-  ] = watchedValues;
+  const [reason, anamnesis, diagnosis, treatment, observations] = watchedValues;
 
-  const hasAnamnesis = !!(anamnesis || symptoms);
   const hasDiagTreatment = !!(diagnosis || treatment);
   const hasObservations = !!observations;
 
@@ -254,8 +339,12 @@ export function RecordForm({
       return;
     }
 
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(draftKey);
+    }
+
     router.push(
-      `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${result.data.id}?open=${openKind}`
+      `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${result.data.id}?open=${openKind}&created=1`
     );
   }
 
@@ -287,6 +376,10 @@ export function RecordForm({
       return;
     }
 
+    if (!isEditing && typeof window !== "undefined") {
+      window.localStorage.removeItem(draftKey);
+    }
+
     router.push(
       `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${result.data.id}`
     );
@@ -297,16 +390,39 @@ export function RecordForm({
       <Card>
         <CardHeader>
           <CardTitle>
-            {isEditing ? "Editar registro clínico" : "Nuevo registro clínico"}
+            {isEditing ? "Editar ficha clínica" : "Nueva ficha clínica"}
           </CardTitle>
           <CardDescription>
             {isEditing
-              ? "Modifica la información del registro clínico."
+              ? "Modifica la información de la ficha clínica."
               : "Registra una nueva consulta clínica para esta mascota."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {recoverableDraft && (
+              <div className="flex flex-col gap-3 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium">Tienes un borrador sin guardar</p>
+                  <p className="text-xs text-muted-foreground">
+                    Autoguardado {formatDraftAge(recoverableDraft.savedAt)}.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={discardDraft}
+                  >
+                    Descartar
+                  </Button>
+                  <Button type="button" size="sm" onClick={recoverDraft}>
+                    Recuperar
+                  </Button>
+                </div>
+              </div>
+            )}
             {error && (
               <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
@@ -348,9 +464,11 @@ export function RecordForm({
                     >
                       {isLoading
                         ? `${template.name}...`
-                        : isQuick
-                          ? `${template.name} →`
-                          : template.name}
+                        : isQuickVaccine
+                          ? "Crear ficha + Vacuna"
+                          : isQuickDeworming
+                            ? "Crear ficha + Desparasitación"
+                            : template.name}
                     </button>
                   );
                 })}
@@ -389,10 +507,15 @@ export function RecordForm({
               </div>
             </div>
 
-            {/* Motivo de consulta - siempre abierta */}
+            {/* Motivo de consulta - siempre abierta, opcional pero recomendado */}
             <CollapsibleSection title="Motivo de consulta" alwaysOpen hasContent={!!reason} preview={reason || ""}>
               <div className="space-y-2">
-                <Label htmlFor="reason">Motivo</Label>
+                <Label htmlFor="reason">
+                  Motivo{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (recomendado)
+                  </span>
+                </Label>
                 <AutoTextarea
                   id="reason"
                   placeholder="ej: Control general, vacunación, malestar digestivo..."
@@ -406,42 +529,29 @@ export function RecordForm({
               </div>
             </CollapsibleSection>
 
-            {/* Anamnesis: relato del propietario + síntomas reportados */}
+            {/* Anamnesis: relato del propietario */}
             <CollapsibleSection
               title="Anamnesis"
               defaultOpen
-              hasContent={hasAnamnesis}
-              preview={
-                anamnesis
-                  ? anamnesis.slice(0, 60)
-                  : symptoms
-                    ? symptoms.slice(0, 60)
-                    : ""
-              }
+              hasContent={!!anamnesis}
+              preview={anamnesis ? anamnesis.slice(0, 60) : ""}
             >
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="anamnesis">Anamnesis</Label>
-                  <AutoTextarea
-                    id="anamnesis"
-                    placeholder="Historia referida por el propietario..."
-                    {...register("anamnesis")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="symptoms">Síntomas</Label>
-                  <AutoTextarea
-                    id="symptoms"
-                    placeholder="Síntomas reportados por el propietario..."
-                    {...register("symptoms")}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="anamnesis">
+                  Relato del propietario
+                </Label>
+                <AutoTextarea
+                  id="anamnesis"
+                  placeholder="Historia referida por el propietario..."
+                  {...register("anamnesis")}
+                />
               </div>
             </CollapsibleSection>
 
             {/* Examen físico: vitales + constantes fisiológicas + observacionales */}
             <CollapsibleSection
               title="Examen físico"
+              defaultOpen
               hasContent={hasPhysicalContent}
               preview={
                 hasPhysicalContent
@@ -450,7 +560,10 @@ export function RecordForm({
               }
             >
               <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-3">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Vitales
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <div className="space-y-2">
                     <Label htmlFor="weight">Peso (kg)</Label>
                     <Input
@@ -484,7 +597,7 @@ export function RecordForm({
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="heart_rate">Frec. cardiaca (bpm)</Label>
+                    <Label htmlFor="heart_rate">FC (bpm)</Label>
                     <Input
                       id="heart_rate"
                       type="number"
@@ -508,11 +621,26 @@ export function RecordForm({
                           },
                         })}
                       />
-                      No se escucha por ruidos agregados
+                      No se escucha
                     </label>
                     {errors.heart_rate && (
                       <p className="text-sm text-destructive">
                         {errors.heart_rate.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="respiratory_rate">FR (resp/min)</Label>
+                    <Input
+                      id="respiratory_rate"
+                      type="number"
+                      min="0"
+                      placeholder="ej: 24"
+                      {...register("respiratory_rate")}
+                    />
+                    {errors.respiratory_rate && (
+                      <p className="text-sm text-destructive">
+                        {errors.respiratory_rate.message}
                       </p>
                     )}
                   </div>
@@ -550,7 +678,10 @@ export function RecordForm({
                         htmlFor="heart_auscultation_findings"
                         className="text-xs"
                       >
-                        Describe el hallazgo
+                        Describe el hallazgo{" "}
+                        <span className="font-normal text-muted-foreground">
+                          (recomendado)
+                        </span>
                       </Label>
                       <textarea
                         id="heart_auscultation_findings"
@@ -558,6 +689,12 @@ export function RecordForm({
                         placeholder="ej: soplo sistólico grado II/VI en foco mitral..."
                         {...register("heart_auscultation_findings")}
                       />
+                      {!heartAuscultationFindings?.trim() && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Puedes guardar la ficha y describir el hallazgo más
+                          tarde.
+                        </p>
+                      )}
                       {errors.heart_auscultation_findings && (
                         <p className="text-sm text-destructive">
                           {errors.heart_auscultation_findings.message}
@@ -573,7 +710,19 @@ export function RecordForm({
                   setValue={setValue}
                   earInspection={physicalExam?.ear_inspection}
                   respiratoryAuscultationStatus={respiratoryAuscultationStatus}
+                  respiratoryAuscultationFindings={
+                    respiratoryAuscultationFindings
+                  }
                 />
+
+                <div className="space-y-2">
+                  <Label htmlFor="symptoms">Signos observados</Label>
+                  <AutoTextarea
+                    id="symptoms"
+                    placeholder="Hallazgos relevantes al examen clínico..."
+                    {...register("symptoms")}
+                  />
+                </div>
               </div>
             </CollapsibleSection>
 
@@ -678,7 +827,7 @@ export function RecordForm({
                     : "Creando..."
                   : isEditing
                     ? "Guardar cambios"
-                    : "Crear registro"}
+                    : "Crear ficha"}
               </Button>
               <Button
                 type="button"

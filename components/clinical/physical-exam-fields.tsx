@@ -25,6 +25,7 @@ interface PhysicalExamFieldsProps {
   setValue?: UseFormSetValue<ClinicalRecordInput>;
   earInspection?: string;
   respiratoryAuscultationStatus?: string;
+  respiratoryAuscultationFindings?: string;
 }
 
 const SELECT_PLACEHOLDER = "";
@@ -39,88 +40,72 @@ export function PhysicalExamFields({
   setValue,
   earInspection,
   respiratoryAuscultationStatus,
+  respiratoryAuscultationFindings,
 }: PhysicalExamFieldsProps) {
   return (
     <div className="space-y-5">
-      {/* Numéricos */}
+      {/* Auscultación respiratoria */}
+      <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
+        <p className="text-xs font-medium text-muted-foreground">
+          Auscultación respiratoria
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              value="sin_hallazgos"
+              {...register("respiratory_auscultation_status", {
+                onChange: () =>
+                  setValue?.("respiratory_auscultation_findings", ""),
+              })}
+            />
+            Sin hallazgos patológicos
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              value="con_hallazgos"
+              {...register("respiratory_auscultation_status")}
+            />
+            Hallazgos patológicos
+          </label>
+        </div>
+        {respiratoryAuscultationStatus === "con_hallazgos" && (
+          <div className="space-y-1 pt-1">
+            <Label
+              htmlFor="respiratory_auscultation_findings"
+              className="text-xs"
+            >
+              Describe el hallazgo{" "}
+              <span className="font-normal text-muted-foreground">
+                (recomendado)
+              </span>
+            </Label>
+            <Textarea
+              id="respiratory_auscultation_findings"
+              placeholder="ej: crepitantes en lóbulo caudal derecho..."
+              {...register("respiratory_auscultation_findings")}
+            />
+            {!respiratoryAuscultationFindings?.trim() && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Puedes guardar la ficha y describir el hallazgo más tarde.
+              </p>
+            )}
+            {errors.respiratory_auscultation_findings && (
+              <p className="text-sm text-destructive">
+                {errors.respiratory_auscultation_findings.message}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Constantes fisiológicas complementarias */}
       <div>
         <p className="mb-2 text-xs font-medium text-muted-foreground">
           Constantes fisiológicas
         </p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2 sm:col-span-3">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="respiratory_rate">
-                  FR{" "}
-                  <span className="text-xs text-muted-foreground">
-                    (resp/min)
-                  </span>
-                </Label>
-                <Input
-                  id="respiratory_rate"
-                  type="number"
-                  min="0"
-                  placeholder="ej: 24"
-                  {...register("respiratory_rate")}
-                />
-                {errors.respiratory_rate && (
-                  <p className="text-sm text-destructive">
-                    {errors.respiratory_rate.message}
-                  </p>
-                )}
-              </div>
-              <div className="sm:col-span-2 space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Auscultación respiratoria
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      value="sin_hallazgos"
-                      {...register("respiratory_auscultation_status", {
-                        onChange: () =>
-                          setValue?.(
-                            "respiratory_auscultation_findings",
-                            ""
-                          ),
-                      })}
-                    />
-                    Sin hallazgos patológicos
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      value="con_hallazgos"
-                      {...register("respiratory_auscultation_status")}
-                    />
-                    Hallazgos patológicos
-                  </label>
-                </div>
-                {respiratoryAuscultationStatus === "con_hallazgos" && (
-                  <div className="space-y-1 pt-1">
-                    <Label
-                      htmlFor="respiratory_auscultation_findings"
-                      className="text-xs"
-                    >
-                      Describe el hallazgo
-                    </Label>
-                    <Textarea
-                      id="respiratory_auscultation_findings"
-                      placeholder="ej: crepitantes en lóbulo caudal derecho..."
-                      {...register("respiratory_auscultation_findings")}
-                    />
-                    {errors.respiratory_auscultation_findings && (
-                      <p className="text-sm text-destructive">
-                        {errors.respiratory_auscultation_findings.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="capillary_refill_seconds">
               TLLC <span className="text-xs text-muted-foreground">(seg)</span>

@@ -20,6 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { VitalsDisplay } from "@/components/clinical/vitals-display";
 import { PhysicalExamDisplay } from "@/components/clinical/physical-exam-display";
+import { PatientNotesBanner } from "@/components/clinical/patient-notes-banner";
 import { PrescriptionList } from "@/components/clinical/prescription-list";
 import { DownloadPdfButton } from "@/components/pdf/DownloadPdfButton";
 import { VaccinationInlineList } from "@/components/vaccinations/vaccination-inline-list";
@@ -29,7 +30,7 @@ import type { Species } from "@/types";
 import { RecordDeleteButton } from "./_components/record-delete-button";
 import { AddVaccinationSheet } from "./_components/add-vaccination-sheet";
 import { AddDewormingSheet } from "./_components/add-deworming-sheet";
-import { getRecord } from "../actions";
+import { getRecord, getPetNotes } from "../actions";
 import { getPrescriptions } from "./prescriptions/actions";
 import {
   getVaccinationsByRecord,
@@ -42,10 +43,11 @@ export default async function RecordDetailPage({
   searchParams,
 }: {
   params: Promise<{ clinic: string; id: string; petId: string; recordId: string }>;
-  searchParams: Promise<{ open?: string }>;
+  searchParams: Promise<{ open?: string; created?: string }>;
 }) {
   const { clinic, id, petId, recordId } = await params;
-  const { open: openParam } = await searchParams;
+  const { open: openParam, created: createdParam } = await searchParams;
+  const justCreated = createdParam === "1";
 
   const result = await getRecord(recordId);
 
@@ -63,6 +65,7 @@ export default async function RecordDetailPage({
     dewormingsOfRecord,
     vetsResult,
     catalog,
+    petNotes,
   ] = await Promise.all([
     getPrescriptions(recordId),
     getVaccinationsByRecord(recordId),
@@ -71,6 +74,7 @@ export default async function RecordDetailPage({
     speciesForCatalog
       ? getVaccineCatalogForPet(speciesForCatalog, record.org_id)
       : Promise.resolve([]),
+    getPetNotes(petId),
   ]);
 
   const hasPrescriptions =
@@ -89,14 +93,14 @@ export default async function RecordDetailPage({
     .join(" ") || "Sin asignar";
 
   const dateLabel = new Date(record.date + "T12:00:00").toLocaleDateString(
-    "es-MX",
+    "es-CL",
     { weekday: "long", day: "numeric", month: "long", year: "numeric" }
   );
 
   const sections = [
     { title: "Motivo de consulta", content: record.reason },
     { title: "Anamnesis", content: record.anamnesis },
-    { title: "Síntomas / Examen físico", content: record.symptoms },
+    { title: "Signos observados", content: record.symptoms },
     { title: "Diagnóstico", content: record.diagnosis },
     { title: "Tratamiento", content: record.treatment },
     { title: "Observaciones", content: record.observations },
@@ -112,7 +116,7 @@ export default async function RecordDetailPage({
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            Registro clínico
+            Ficha clínica
           </h1>
           <p className="text-sm text-muted-foreground capitalize">{dateLabel}</p>
         </div>
@@ -144,6 +148,24 @@ export default async function RecordDetailPage({
           />
         </div>
       </div>
+
+      <PatientNotesBanner notes={petNotes} />
+
+      {justCreated && (
+        <div className="flex items-start gap-3 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm">
+          <div className="size-2 rounded-full bg-primary mt-2 shrink-0" />
+          <div>
+            <p className="font-medium">Ficha creada</p>
+            <p className="text-muted-foreground">
+              {openParam === "vaccine"
+                ? "Ahora registra la vacuna aplicada más abajo."
+                : openParam === "deworming"
+                  ? "Ahora registra la desparasitación aplicada más abajo."
+                  : "Revisa la información y edítala si necesitas."}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
@@ -185,7 +207,7 @@ export default async function RecordDetailPage({
                 <p className="text-sm font-medium">
                   {new Date(
                     record.appointment.date + "T12:00:00"
-                  ).toLocaleDateString("es-MX", {
+                  ).toLocaleDateString("es-CL", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",

@@ -66,7 +66,7 @@ export default async function PetRecordsPage({
           }
         >
           <Plus className="size-4" data-icon="inline-start" />
-          Nuevo registro
+          Nueva ficha
         </Button>
       </div>
 
@@ -82,7 +82,7 @@ export default async function PetRecordsPage({
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <ClipboardList className="size-10 text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground">
-            No hay registros clínicos para esta mascota.
+            No hay fichas clínicas para esta mascota.
           </p>
           <Button
             variant="outline"
@@ -95,7 +95,7 @@ export default async function PetRecordsPage({
             }
           >
             <Plus className="size-4" data-icon="inline-start" />
-            Crear primer registro
+            Crear primera ficha
           </Button>
         </div>
       ) : (

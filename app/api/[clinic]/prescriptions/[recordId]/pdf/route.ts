@@ -66,7 +66,7 @@ export async function GET(
     .single();
 
   if (!record) {
-    return NextResponse.json({ error: "Registro clinico no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Ficha clínica no encontrada" }, { status: 404 });
   }
 
   const { data: prescriptions } = await supabase

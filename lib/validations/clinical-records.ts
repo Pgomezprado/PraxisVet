@@ -8,8 +8,9 @@ export const clinicalRecordSchema = z.object({
   date: z.string().min(1, "La fecha es obligatoria"),
   reason: z
     .string()
-    .min(1, "El motivo de consulta es obligatorio")
-    .max(2000, "Máximo 2000 caracteres"),
+    .max(2000, "Máximo 2000 caracteres")
+    .optional()
+    .or(z.literal("")),
   anamnesis: z
     .string()
     .max(2000, "Máximo 2000 caracteres")
@@ -96,27 +97,7 @@ export const clinicalRecordSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   physical_exam: physicalExamSchema.optional(),
-})
-  .refine(
-    (data) =>
-      data.heart_auscultation_status !== "con_hallazgos" ||
-      (typeof data.heart_auscultation_findings === "string" &&
-        data.heart_auscultation_findings.trim().length > 0),
-    {
-      message: "Describe el hallazgo en la auscultación cardiaca",
-      path: ["heart_auscultation_findings"],
-    }
-  )
-  .refine(
-    (data) =>
-      data.respiratory_auscultation_status !== "con_hallazgos" ||
-      (typeof data.respiratory_auscultation_findings === "string" &&
-        data.respiratory_auscultation_findings.trim().length > 0),
-    {
-      message: "Describe el hallazgo en la auscultación respiratoria",
-      path: ["respiratory_auscultation_findings"],
-    }
-  );
+});
 
 export type ClinicalRecordInput = z.input<typeof clinicalRecordSchema>;
 export type ClinicalRecordParsed = z.output<typeof clinicalRecordSchema>;

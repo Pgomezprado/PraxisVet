@@ -15,7 +15,7 @@ export function RecordCard({ record, href }: RecordCardProps) {
     .join(" ") || "Sin asignar";
 
   const dateLabel = new Date(record.date + "T12:00:00").toLocaleDateString(
-    "es-MX",
+    "es-CL",
     { day: "numeric", month: "long", year: "numeric" }
   );
 

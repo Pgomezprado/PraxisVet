@@ -102,10 +102,10 @@ export default async function AppointmentDetailPage({
             <div className="flex items-center gap-3">
               <ClipboardList className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Registro clínico</p>
+                <p className="text-sm font-medium">Ficha clínica</p>
                 <p className="text-xs text-muted-foreground">
                   {linkedRecord
-                    ? "Este registro está vinculado a esta cita."
+                    ? "Esta ficha está vinculada a la cita."
                     : "Registra los hallazgos clínicos de esta consulta."}
                 </p>
               </div>
@@ -116,7 +116,7 @@ export default async function AppointmentDetailPage({
               >
                 <Button variant="outline" size="sm">
                   <ClipboardList className="size-3.5" data-icon="inline-start" />
-                  Ver registro
+                  Ver ficha
                 </Button>
               </Link>
             ) : (
@@ -125,7 +125,7 @@ export default async function AppointmentDetailPage({
               >
                 <Button size="sm">
                   <Plus className="size-3.5" data-icon="inline-start" />
-                  Crear registro
+                  Crear ficha
                 </Button>
               </Link>
             )}

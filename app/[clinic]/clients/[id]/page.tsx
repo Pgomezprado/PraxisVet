@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  ArrowLeft,
   Mail,
   Phone,
   MapPin,
@@ -44,19 +45,26 @@ export default async function ClientDetailPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {client.first_name} {client.last_name}
-          </h1>
-          <p className="text-muted-foreground">
-            Cliente registrado el{" "}
-            {new Date(client.created_at).toLocaleDateString("es-MX", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <Link href={`/${clinic}/clients`}>
+            <Button variant="ghost" size="icon-sm" aria-label="Volver a clientes">
+              <ArrowLeft className="size-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {client.first_name} {client.last_name}
+            </h1>
+            <p className="text-muted-foreground">
+              Cliente registrado el{" "}
+              {new Date(client.created_at).toLocaleDateString("es-MX", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button

@@ -43,7 +43,7 @@ export default async function GroomingRecordDetailPage({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link href={`/${clinic}/clients/${id}/pets/${petId}`}>
+        <Link href={`/${clinic}/clients/${id}/pets/${petId}/grooming`}>
           <Button variant="ghost" size="icon-sm">
             <ArrowLeft className="size-4" />
           </Button>

@@ -33,6 +33,8 @@ export function VetDashboard({
   nextAppointment: TodayAppointment | null;
 }) {
   const clinicSlug = organization.slug;
+  const today = new Date().toISOString().split("T")[0];
+  const todayHref = `/${clinicSlug}/appointments?view=day&date=${today}`;
   const title = member.first_name
     ? `Hola, ${member.first_name}`
     : "Tu jornada";
@@ -81,6 +83,8 @@ export function VetDashboard({
           description="Asignadas a mí"
           icon={CalendarDays}
           tone="teal"
+          href={todayHref}
+          ariaLabel="Ver agenda del día"
         />
         <KpiCard
           title="En curso"
@@ -88,6 +92,8 @@ export function VetDashboard({
           description="Atendiendo ahora"
           icon={Stethoscope}
           tone="amber"
+          href={`${todayHref}&status=in_progress`}
+          ariaLabel="Ver citas en curso"
         />
         <KpiCard
           title="Completadas"
@@ -95,6 +101,8 @@ export function VetDashboard({
           description="Cerradas hoy"
           icon={CheckCircle2}
           tone="emerald"
+          href={`${todayHref}&status=completed`}
+          ariaLabel="Ver citas completadas hoy"
         />
       </div>
 

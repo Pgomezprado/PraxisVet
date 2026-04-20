@@ -20,11 +20,13 @@ const statusOptions: { value: string; label: string }[] = [
 export function AppointmentList({
   appointments,
   clinicSlug,
+  defaultStatus = "all",
 }: {
   appointments: AppointmentWithRelations[];
   clinicSlug: string;
+  defaultStatus?: string;
 }) {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>(defaultStatus);
 
   const filtered =
     statusFilter === "all"

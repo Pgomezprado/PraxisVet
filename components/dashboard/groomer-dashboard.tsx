@@ -32,6 +32,8 @@ export function GroomerDashboard({
   nextAppointment: TodayAppointment | null;
 }) {
   const clinicSlug = organization.slug;
+  const todayDate = new Date().toISOString().split("T")[0];
+  const todayHref = `/${clinicSlug}/appointments?view=day&date=${todayDate}`;
   const title = member.first_name
     ? `Hola, ${member.first_name}`
     : "Mis servicios de hoy";
@@ -70,6 +72,8 @@ export function GroomerDashboard({
           description="Asignados a mí"
           icon={CalendarDays}
           tone="teal"
+          href={todayHref}
+          ariaLabel="Ver agenda del día"
         />
         <KpiCard
           title="En proceso"
@@ -77,6 +81,8 @@ export function GroomerDashboard({
           description="Atendiendo ahora"
           icon={Scissors}
           tone="amber"
+          href={`${todayHref}&status=in_progress`}
+          ariaLabel="Ver servicios en proceso"
         />
         <KpiCard
           title="Completados"
@@ -84,6 +90,8 @@ export function GroomerDashboard({
           description="Cerrados hoy"
           icon={CheckCircle2}
           tone="emerald"
+          href={`${todayHref}&status=completed`}
+          ariaLabel="Ver servicios completados hoy"
         />
       </div>
 

@@ -45,6 +45,8 @@ export function ReceptionistDashboard({
   pendingPayments: PendingPayment[];
 }) {
   const clinicSlug = organization.slug;
+  const todayDate = new Date().toISOString().split("T")[0];
+  const todayHref = `/${clinicSlug}/appointments?view=day&date=${todayDate}`;
   const pendingTotal = pendingPayments.reduce((s, p) => s + p.total, 0);
 
   const highlights = `${counts.appointmentsToday} cita${
@@ -89,6 +91,8 @@ export function ReceptionistDashboard({
           description="Total del día"
           icon={CalendarDays}
           tone="teal"
+          href={todayHref}
+          ariaLabel="Ver agenda del día"
         />
         <KpiCard
           title="En sala"
@@ -96,6 +100,8 @@ export function ReceptionistDashboard({
           description="Atendiéndose"
           icon={Bell}
           tone="amber"
+          href={`${todayHref}&status=in_progress`}
+          ariaLabel="Ver pacientes en sala"
         />
         <KpiCard
           title="Cobros hoy"
@@ -103,6 +109,8 @@ export function ReceptionistDashboard({
           description="Ingresado"
           icon={DollarSign}
           tone="emerald"
+          href={`/${clinicSlug}/billing`}
+          ariaLabel="Ver cobros"
         />
         <KpiCard
           title="Clientes"
@@ -110,6 +118,8 @@ export function ReceptionistDashboard({
           description="Total registrados"
           icon={Users}
           tone="rose"
+          href={`/${clinicSlug}/clients`}
+          ariaLabel="Ver clientes"
         />
       </div>
 

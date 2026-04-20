@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import type { LucideIcon } from "lucide-react";
+import { ArrowUpRight, type LucideIcon } from "lucide-react";
 
 export type KpiTone = "teal" | "amber" | "sky" | "rose" | "emerald";
 
@@ -33,16 +34,27 @@ export function KpiCard({
   description,
   icon: Icon,
   tone = "teal",
+  href,
+  ariaLabel,
 }: {
   title: string;
   value: string | number;
   description?: string;
   icon: LucideIcon;
   tone?: KpiTone;
+  href?: string;
+  ariaLabel?: string;
 }) {
   const styles = toneStyles[tone];
-  return (
-    <Card className={`border-l-4 ${styles.border}`}>
+
+  const card = (
+    <Card
+      className={`border-l-4 ${styles.border} ${
+        href
+          ? "transition-colors hover:bg-muted/40 cursor-pointer group"
+          : ""
+      }`}
+    >
       <CardContent className="flex items-center gap-4 py-5">
         <div
           className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${styles.bg}`}
@@ -58,7 +70,24 @@ export function KpiCard({
             </p>
           )}
         </div>
+        {href && (
+          <ArrowUpRight className="size-4 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-foreground" />
+        )}
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={ariaLabel ?? `Ver ${title}`}
+        className="block focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+      >
+        {card}
+      </Link>
+    );
+  }
+
+  return card;
 }

@@ -53,6 +53,7 @@ export function AdminDashboard({
   onboarding: OnboardingStatus;
 }) {
   const clinicSlug = organization.slug;
+  const todayDate = new Date().toISOString().split("T")[0];
   const greetingName = member.first_name
     ? `${organization.name}`
     : organization.name;
@@ -135,6 +136,8 @@ export function AdminDashboard({
           description="Cobrado en el día"
           icon={DollarSign}
           tone="emerald"
+          href={`/${clinicSlug}/billing`}
+          ariaLabel="Ver cobros"
         />
         <KpiCard
           title="Ingresos del mes"
@@ -142,6 +145,8 @@ export function AdminDashboard({
           description="Acumulado"
           icon={DollarSign}
           tone="sky"
+          href={`/${clinicSlug}/billing`}
+          ariaLabel="Ver cobros del mes"
         />
         <KpiCard
           title="Citas hoy"
@@ -149,6 +154,8 @@ export function AdminDashboard({
           description="Agenda completa"
           icon={CalendarDays}
           tone="teal"
+          href={`/${clinicSlug}/appointments?view=day&date=${todayDate}`}
+          ariaLabel="Ver agenda del día"
         />
         <KpiCard
           title="Clientes"
@@ -156,6 +163,8 @@ export function AdminDashboard({
           description={`${counts.totalPets} mascotas`}
           icon={Users}
           tone="amber"
+          href={`/${clinicSlug}/clients`}
+          ariaLabel="Ver clientes"
         />
       </div>
 
@@ -199,6 +208,8 @@ export function AdminDashboard({
           description="Total registradas"
           icon={PawPrint}
           tone="rose"
+          href={`/${clinicSlug}/clients`}
+          ariaLabel="Ver clientes y mascotas"
         />
       </div>
 

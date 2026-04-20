@@ -14,10 +14,14 @@ export default async function AppointmentsPage({
   searchParams,
 }: {
   params: Promise<{ clinic: string }>;
-  searchParams: Promise<{ date?: string; view?: string }>;
+  searchParams: Promise<{ date?: string; view?: string; status?: string }>;
 }) {
   const { clinic } = await params;
-  const { date: dateParam, view: viewParam } = await searchParams;
+  const {
+    date: dateParam,
+    view: viewParam,
+    status: statusParam,
+  } = await searchParams;
 
   const supabase = await createClient();
   const { data: org } = await supabase
@@ -86,6 +90,7 @@ export default async function AppointmentsPage({
           selectedDate={selectedDate}
           dateObj={dateObj}
           today={today}
+          defaultStatus={statusParam}
         />
       ) : (
         <WeekViewSection
@@ -105,12 +110,14 @@ async function DayView({
   selectedDate,
   dateObj,
   today,
+  defaultStatus,
 }: {
   clinic: string;
   orgId: string;
   selectedDate: string;
   dateObj: Date;
   today: string;
+  defaultStatus?: string;
 }) {
   const prevDate = format(subDays(dateObj, 1), "yyyy-MM-dd");
   const nextDate = format(addDays(dateObj, 1), "yyyy-MM-dd");
@@ -149,6 +156,7 @@ async function DayView({
       <AppointmentList
         appointments={appointments ?? []}
         clinicSlug={clinic}
+        defaultStatus={defaultStatus}
       />
     </>
   );

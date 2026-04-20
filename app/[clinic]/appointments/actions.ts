@@ -43,7 +43,11 @@ const SELECT_WITH_RELATIONS = `
       service:services!service_id (id, name, duration_minutes, price)
     `;
 
-export async function getAppointments(orgId: string, date?: string) {
+export async function getAppointments(
+  orgId: string,
+  date?: string,
+  opts: { assignedTo?: string } = {}
+) {
   const supabase = await createClient();
 
   let query = supabase
@@ -54,6 +58,9 @@ export async function getAppointments(orgId: string, date?: string) {
 
   if (date) {
     query = query.eq("date", date);
+  }
+  if (opts.assignedTo) {
+    query = query.eq("assigned_to", opts.assignedTo);
   }
 
   const { data, error } = await query;
@@ -266,7 +273,11 @@ export async function deleteAppointment(appointmentId: string) {
   return { error: null };
 }
 
-export async function getWeekAppointments(orgId: string, weekStartDate: string) {
+export async function getWeekAppointments(
+  orgId: string,
+  weekStartDate: string,
+  opts: { assignedTo?: string } = {}
+) {
   const supabase = await createClient();
 
   const startDate = new Date(weekStartDate + "T12:00:00");
@@ -274,13 +285,19 @@ export async function getWeekAppointments(orgId: string, weekStartDate: string) 
   endDate.setDate(endDate.getDate() + 6);
   const endDateStr = endDate.toISOString().split("T")[0];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("appointments")
     .select(SELECT_WITH_RELATIONS)
     .eq("org_id", orgId)
     .gte("date", weekStartDate)
     .lte("date", endDateStr)
     .order("start_time", { ascending: true });
+
+  if (opts.assignedTo) {
+    query = query.eq("assigned_to", opts.assignedTo);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return { data: null, error: error.message };

@@ -3,6 +3,7 @@ import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addDays, subDays, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentMember } from "@/lib/auth/current-member";
 import { Button } from "@/components/ui/button";
 import { AppointmentList } from "@/components/appointments/appointment-list";
 import { WeekView } from "@/components/appointments/week-view";
@@ -14,13 +15,19 @@ export default async function AppointmentsPage({
   searchParams,
 }: {
   params: Promise<{ clinic: string }>;
-  searchParams: Promise<{ date?: string; view?: string; status?: string }>;
+  searchParams: Promise<{
+    date?: string;
+    view?: string;
+    status?: string;
+    mine?: string;
+  }>;
 }) {
   const { clinic } = await params;
   const {
     date: dateParam,
     view: viewParam,
     status: statusParam,
+    mine: mineParam,
   } = await searchParams;
 
   const supabase = await createClient();
@@ -34,10 +41,31 @@ export default async function AppointmentsPage({
     return <p className="text-sm text-muted-foreground">Organizacion no encontrada.</p>;
   }
 
+  const currentMember = await getCurrentMember(clinic);
+  // vet y groomer ven solo lo suyo por defecto; admin/recepcionista ven todo.
+  // El usuario puede sobreescribir con ?mine=0 (todas) o ?mine=1 (mías).
+  const defaultMine =
+    currentMember?.role === "vet" || currentMember?.role === "groomer";
+  const showMine =
+    mineParam === "1"
+      ? true
+      : mineParam === "0"
+        ? false
+        : defaultMine;
+  const assignedTo =
+    showMine && currentMember ? currentMember.id : undefined;
+  const canToggle = !!currentMember;
+
   const today = new Date().toISOString().split("T")[0];
   const selectedDate = dateParam || today;
   const view = viewParam === "week" ? "week" : "day";
   const dateObj = new Date(selectedDate + "T12:00:00");
+
+  const baseQuery = `view=${view}&date=${selectedDate}${
+    statusParam ? `&status=${statusParam}` : ""
+  }`;
+  const mineHref = `/${clinic}/appointments?${baseQuery}&mine=1`;
+  const allHref = `/${clinic}/appointments?${baseQuery}&mine=0`;
 
   return (
     <div className="space-y-6">
@@ -56,7 +84,7 @@ export default async function AppointmentsPage({
         </Link>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex rounded-lg border p-0.5">
           <Link href={`/${clinic}/appointments?view=day&date=${selectedDate}`}>
             <Button
@@ -76,6 +104,27 @@ export default async function AppointmentsPage({
           </Link>
         </div>
 
+        {canToggle && (
+          <div className="flex rounded-lg border p-0.5">
+            <Link href={mineHref}>
+              <Button
+                variant={showMine ? "default" : "ghost"}
+                size="xs"
+              >
+                Mías
+              </Button>
+            </Link>
+            <Link href={allHref}>
+              <Button
+                variant={!showMine ? "default" : "ghost"}
+                size="xs"
+              >
+                Todas
+              </Button>
+            </Link>
+          </div>
+        )}
+
         <DaySelector
           clinicSlug={clinic}
           selectedDate={selectedDate}
@@ -91,6 +140,7 @@ export default async function AppointmentsPage({
           dateObj={dateObj}
           today={today}
           defaultStatus={statusParam}
+          assignedTo={assignedTo}
         />
       ) : (
         <WeekViewSection
@@ -98,6 +148,7 @@ export default async function AppointmentsPage({
           orgId={org.id}
           selectedDate={selectedDate}
           dateObj={dateObj}
+          assignedTo={assignedTo}
         />
       )}
     </div>
@@ -111,6 +162,7 @@ async function DayView({
   dateObj,
   today,
   defaultStatus,
+  assignedTo,
 }: {
   clinic: string;
   orgId: string;
@@ -118,13 +170,16 @@ async function DayView({
   dateObj: Date;
   today: string;
   defaultStatus?: string;
+  assignedTo?: string;
 }) {
   const prevDate = format(subDays(dateObj, 1), "yyyy-MM-dd");
   const nextDate = format(addDays(dateObj, 1), "yyyy-MM-dd");
   const isToday = selectedDate === today;
   const dateLabel = format(dateObj, "EEEE d 'de' MMMM, yyyy", { locale: es });
 
-  const { data: appointments } = await getAppointments(orgId, selectedDate);
+  const { data: appointments } = await getAppointments(orgId, selectedDate, {
+    assignedTo,
+  });
 
   return (
     <>
@@ -167,16 +222,22 @@ async function WeekViewSection({
   orgId,
   selectedDate,
   dateObj,
+  assignedTo,
 }: {
   clinic: string;
   orgId: string;
   selectedDate: string;
   dateObj: Date;
+  assignedTo?: string;
 }) {
   const weekStart = startOfWeek(dateObj, { weekStartsOn: 1 });
   const weekStartStr = format(weekStart, "yyyy-MM-dd");
 
-  const { data: appointments } = await getWeekAppointments(orgId, weekStartStr);
+  const { data: appointments } = await getWeekAppointments(
+    orgId,
+    weekStartStr,
+    { assignedTo }
+  );
 
   return (
     <WeekView

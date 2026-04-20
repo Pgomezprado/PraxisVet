@@ -39,3 +39,7 @@ export async function getCurrentMember(
 export function canViewClinical(role: MemberRole): boolean {
   return role === "admin" || role === "vet";
 }
+
+export function canViewGrooming(role: MemberRole): boolean {
+  return role === "admin" || role === "groomer";
+}

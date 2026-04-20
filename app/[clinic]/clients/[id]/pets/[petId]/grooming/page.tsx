@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Plus, ArrowLeft, PawPrint, Scissors } from "lucide-react";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentMember, canViewGrooming } from "@/lib/auth/current-member";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +31,12 @@ export default async function GroomingPage({
   params: Promise<{ clinic: string; id: string; petId: string }>;
 }) {
   const { clinic, id, petId } = await params;
+
+  const member = await getCurrentMember(clinic);
+  if (!member || !canViewGrooming(member.role)) {
+    notFound();
+  }
+
   const supabase = await createClient();
 
   const { data: pet } = await supabase

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GroomingRecordForm } from "@/components/grooming/grooming-record-form";
@@ -6,6 +7,7 @@ import { getGroomers } from "../actions";
 import { getPetWithClient } from "../../records/actions";
 import { getAppointment } from "@/app/[clinic]/appointments/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentMember, canViewGrooming } from "@/lib/auth/current-member";
 
 export default async function NewGroomingRecordPage({
   params,
@@ -16,6 +18,11 @@ export default async function NewGroomingRecordPage({
 }) {
   const { clinic, id, petId } = await params;
   const { appointment: appointmentId } = await searchParams;
+
+  const member = await getCurrentMember(clinic);
+  if (!member || !canViewGrooming(member.role)) {
+    notFound();
+  }
 
   const supabase = await createClient();
   const {

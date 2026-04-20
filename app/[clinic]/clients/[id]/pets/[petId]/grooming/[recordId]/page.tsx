@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Scissors, User, PawPrint, FileText, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { getCurrentMember, canViewGrooming } from "@/lib/auth/current-member";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +24,11 @@ export default async function GroomingRecordDetailPage({
   }>;
 }) {
   const { clinic, id, petId, recordId } = await params;
+
+  const member = await getCurrentMember(clinic);
+  if (!member || !canViewGrooming(member.role)) {
+    notFound();
+  }
 
   const result = await getGroomingRecord(recordId);
 

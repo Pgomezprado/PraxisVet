@@ -4,6 +4,8 @@ import type { PhysicalExam } from "@/types";
 
 interface PhysicalExamDisplayProps {
   respiratoryRate: number | null;
+  respiratoryAuscultationStatus?: "sin_hallazgos" | "con_hallazgos" | null;
+  respiratoryAuscultationFindings?: string | null;
   capillaryRefill: number | null;
   skinFold: number | null;
   physicalExam: PhysicalExam | null;
@@ -19,6 +21,7 @@ const FIELD_LABELS: Record<keyof PhysicalExam, string> = {
   abdominal_palpation: "Palpación abdominal",
   abdominal_palpation_notes: "Notas palpación",
   consciousness: "Conciencia",
+  general_findings: "Hallazgos en examen físico",
 };
 
 function formatValue(v: string) {
@@ -27,6 +30,8 @@ function formatValue(v: string) {
 
 export function PhysicalExamDisplay({
   respiratoryRate,
+  respiratoryAuscultationStatus = null,
+  respiratoryAuscultationFindings = null,
   capillaryRefill,
   skinFold,
   physicalExam,
@@ -36,8 +41,9 @@ export function PhysicalExamDisplay({
   const hasObs =
     physicalExam &&
     Object.values(physicalExam).some((v) => v != null && v !== "");
+  const hasAuscultation = !!respiratoryAuscultationStatus;
 
-  if (!hasNumeric && !hasObs) return null;
+  if (!hasNumeric && !hasObs && !hasAuscultation) return null;
 
   const entries = physicalExam
     ? (Object.entries(physicalExam) as [keyof PhysicalExam, string][]).filter(
@@ -71,6 +77,16 @@ export function PhysicalExamDisplay({
                 <span className="font-medium">{skinFold} s</span>
               </div>
             )}
+          </div>
+        )}
+        {hasAuscultation && (
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              Auscultación respiratoria:
+            </span>{" "}
+            {respiratoryAuscultationStatus === "sin_hallazgos"
+              ? "Sin hallazgos patológicos"
+              : `Hallazgos: ${respiratoryAuscultationFindings ?? ""}`}
           </div>
         )}
         {entries.length > 0 && (

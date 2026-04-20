@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Pencil,
   CalendarDays,
+  CalendarPlus,
   Stethoscope,
   LinkIcon,
   Syringe,
@@ -207,14 +208,46 @@ export default async function RecordDetailPage({
         temperature={record.temperature}
         heartRate={record.heart_rate}
         heartRateUnmeasurable={record.heart_rate_unmeasurable}
+        heartAuscultationStatus={record.heart_auscultation_status}
+        heartAuscultationFindings={record.heart_auscultation_findings}
       />
 
       <PhysicalExamDisplay
         respiratoryRate={record.respiratory_rate}
+        respiratoryAuscultationStatus={record.respiratory_auscultation_status}
+        respiratoryAuscultationFindings={
+          record.respiratory_auscultation_findings
+        }
         capillaryRefill={record.capillary_refill_seconds}
         skinFold={record.skin_fold_seconds}
         physicalExam={record.physical_exam}
       />
+
+      {record.next_consultation_date && (
+        <Card>
+          <CardContent className="py-4 flex items-center gap-3">
+            <CalendarPlus className="size-5 text-primary shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground">Próxima consulta</p>
+              <p className="text-sm font-medium">
+                {new Date(
+                  record.next_consultation_date + "T12:00:00"
+                ).toLocaleDateString("es-CL", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+                {record.next_consultation_note && (
+                  <span className="text-muted-foreground font-normal">
+                    {" — "}
+                    {record.next_consultation_note}
+                  </span>
+                )}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {sections.length > 0 && (
         <Card>

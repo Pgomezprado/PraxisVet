@@ -55,6 +55,10 @@ export const physicalExamSchema = z
       .max(2000, "Máximo 2000 caracteres")
       .optional(),
     consciousness: z.enum(CONSCIOUSNESS_LEVELS).optional(),
+    general_findings: z
+      .string()
+      .max(2000, "Máximo 2000 caracteres")
+      .optional(),
   })
   .strict();
 

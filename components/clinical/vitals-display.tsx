@@ -5,6 +5,8 @@ interface VitalsDisplayProps {
   temperature: number | null;
   heartRate: number | null;
   heartRateUnmeasurable?: boolean;
+  heartAuscultationStatus?: "sin_hallazgos" | "con_hallazgos" | null;
+  heartAuscultationFindings?: string | null;
   size?: "sm" | "default";
 }
 
@@ -13,13 +15,16 @@ export function VitalsDisplay({
   temperature,
   heartRate,
   heartRateUnmeasurable = false,
+  heartAuscultationStatus = null,
+  heartAuscultationFindings = null,
   size = "default",
 }: VitalsDisplayProps) {
   const hasAny =
     weight != null ||
     temperature != null ||
     heartRate != null ||
-    heartRateUnmeasurable;
+    heartRateUnmeasurable ||
+    !!heartAuscultationStatus;
 
   if (!hasAny) return null;
 
@@ -27,7 +32,8 @@ export function VitalsDisplay({
   const iconClass = size === "sm" ? "size-3.5" : "size-4";
 
   return (
-    <div className="flex flex-wrap gap-4">
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-4">
       {weight != null && (
         <div className={`flex items-center gap-1.5 ${textClass}`}>
           <Weight className={`${iconClass} text-muted-foreground`} />
@@ -58,6 +64,17 @@ export function VitalsDisplay({
             <span className="text-muted-foreground">bpm</span>
           </div>
         )
+      )}
+      </div>
+      {heartAuscultationStatus && (
+        <div className={`${textClass} text-muted-foreground`}>
+          <span className="font-medium text-foreground">
+            Auscultación cardiaca:
+          </span>{" "}
+          {heartAuscultationStatus === "sin_hallazgos"
+            ? "Sin hallazgos patológicos"
+            : `Hallazgos: ${heartAuscultationFindings ?? ""}`}
+        </div>
       )}
     </div>
   );

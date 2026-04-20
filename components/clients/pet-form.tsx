@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,7 +14,11 @@ import {
 } from "@/lib/validations/clients";
 import { getBreedSuggestions } from "@/lib/constants/breeds";
 import { useClinic } from "@/lib/context/clinic-context";
-import { createPet, updatePet } from "@/app/[clinic]/clients/actions";
+import {
+  createPet,
+  updatePet,
+  checkPetNameExists,
+} from "@/app/[clinic]/clients/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,6 +52,10 @@ export function PetForm({ clientId, pet }: PetFormProps) {
   const { organization, clinicSlug } = useClinic();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [duplicateMatch, setDuplicateMatch] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const isEditing = !!pet;
 
@@ -78,6 +87,23 @@ export function PetForm({ clientId, pet }: PetFormProps) {
   const watchedPhotoUrl = watch("photo_url");
   const breedSuggestions = getBreedSuggestions(watchedSpecies);
   const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
+
+  async function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const name = e.target.value.trim();
+    if (!name) {
+      setDuplicateMatch(null);
+      return;
+    }
+    const result = await checkPetNameExists(
+      organization.id,
+      clientId,
+      name,
+      pet?.id
+    );
+    if (result.success) {
+      setDuplicateMatch(result.data.pet);
+    }
+  }
 
   async function onSubmit(data: PetInput) {
     setLoading(true);
@@ -142,10 +168,24 @@ export function PetForm({ clientId, pet }: PetFormProps) {
             <Input
               id="name"
               placeholder="ej: Luna"
-              {...register("name")}
+              {...register("name", { onBlur: handleNameBlur })}
               aria-invalid={!!errors.name}
             />
             <FieldError message={errors.name?.message} />
+            {duplicateMatch && (
+              <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+                Ya existe un paciente llamado{" "}
+                <strong>{duplicateMatch.name}</strong> para este tutor.{" "}
+                <Link
+                  href={`/${clinicSlug}/clients/${clientId}/pets/${duplicateMatch.id}`}
+                  className="underline font-medium"
+                >
+                  Ver ficha existente
+                </Link>
+                . Si vas a crear un paciente distinto con el mismo nombre,
+                considera diferenciarlo (ej: &quot;Luna II&quot;).
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

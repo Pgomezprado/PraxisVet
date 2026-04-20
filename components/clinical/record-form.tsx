@@ -2,7 +2,9 @@
 
 import { useState, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
+import { CalendarPlus } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   clinicalRecordSchema,
@@ -65,10 +67,16 @@ interface RecordFormProps {
     temperature: number | null;
     heart_rate: number | null;
     heart_rate_unmeasurable?: boolean | null;
+    heart_auscultation_status?: "sin_hallazgos" | "con_hallazgos" | null;
+    heart_auscultation_findings?: string | null;
     respiratory_rate: number | null;
+    respiratory_auscultation_status?: "sin_hallazgos" | "con_hallazgos" | null;
+    respiratory_auscultation_findings?: string | null;
     capillary_refill_seconds: number | null;
     skin_fold_seconds: number | null;
     physical_exam: PhysicalExam | null;
+    next_consultation_date?: string | null;
+    next_consultation_note?: string | null;
   };
   defaultAppointmentId?: string;
   defaultVetId?: string;
@@ -103,6 +111,7 @@ export function RecordForm({
     watch,
     setValue,
     getValues,
+    control,
     formState: { errors },
   } = useForm<ClinicalRecordInput>({
     resolver: zodResolver(clinicalRecordSchema),
@@ -121,12 +130,21 @@ export function RecordForm({
       temperature: record?.temperature ?? ("" as unknown as undefined),
       heart_rate: record?.heart_rate ?? ("" as unknown as undefined),
       heart_rate_unmeasurable: record?.heart_rate_unmeasurable ?? false,
+      heart_auscultation_status:
+        record?.heart_auscultation_status ?? ("" as unknown as undefined),
+      heart_auscultation_findings: record?.heart_auscultation_findings ?? "",
       respiratory_rate: record?.respiratory_rate ?? ("" as unknown as undefined),
+      respiratory_auscultation_status:
+        record?.respiratory_auscultation_status ?? ("" as unknown as undefined),
+      respiratory_auscultation_findings:
+        record?.respiratory_auscultation_findings ?? "",
       capillary_refill_seconds:
         record?.capillary_refill_seconds ?? ("" as unknown as undefined),
       skin_fold_seconds:
         record?.skin_fold_seconds ?? ("" as unknown as undefined),
       physical_exam: record?.physical_exam ?? {},
+      next_consultation_date: record?.next_consultation_date ?? "",
+      next_consultation_note: record?.next_consultation_note ?? "",
     },
   });
 
@@ -141,6 +159,8 @@ export function RecordForm({
   const temperature = watch("temperature");
   const heartRate = watch("heart_rate");
   const heartRateUnmeasurable = watch("heart_rate_unmeasurable");
+  const heartAuscultationStatus = watch("heart_auscultation_status");
+  const respiratoryAuscultationStatus = watch("respiratory_auscultation_status");
   const hasPhysicalContent =
     hasPhysicalExam ||
     (respiratoryRate != null && respiratoryRate !== "") ||
@@ -497,10 +517,62 @@ export function RecordForm({
                     )}
                   </div>
                 </div>
+
+                {/* Auscultación cardiaca: sin / con hallazgos */}
+                <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Auscultación cardiaca
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        value="sin_hallazgos"
+                        {...register("heart_auscultation_status", {
+                          onChange: () =>
+                            setValue("heart_auscultation_findings", ""),
+                        })}
+                      />
+                      Sin hallazgos patológicos a la auscultación
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        value="con_hallazgos"
+                        {...register("heart_auscultation_status")}
+                      />
+                      Hallazgos patológicos a la auscultación
+                    </label>
+                  </div>
+                  {heartAuscultationStatus === "con_hallazgos" && (
+                    <div className="space-y-1 pt-1">
+                      <Label
+                        htmlFor="heart_auscultation_findings"
+                        className="text-xs"
+                      >
+                        Describe el hallazgo
+                      </Label>
+                      <textarea
+                        id="heart_auscultation_findings"
+                        className="flex min-h-15 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                        placeholder="ej: soplo sistólico grado II/VI en foco mitral..."
+                        {...register("heart_auscultation_findings")}
+                      />
+                      {errors.heart_auscultation_findings && (
+                        <p className="text-sm text-destructive">
+                          {errors.heart_auscultation_findings.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <PhysicalExamFields
                   register={register}
                   errors={errors}
+                  setValue={setValue}
                   earInspection={physicalExam?.ear_inspection}
+                  respiratoryAuscultationStatus={respiratoryAuscultationStatus}
                 />
               </div>
             </CollapsibleSection>
@@ -555,6 +627,48 @@ export function RecordForm({
             </CollapsibleSection>
 
             {extraSections}
+
+            {/* Próxima consulta sugerida (no agenda cita aún, solo deja la fecha registrada) */}
+            <div className="rounded-md border border-border/60 bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <CalendarPlus className="size-4 text-primary" />
+                <Label className="text-sm font-medium">
+                  Próxima consulta (opcional)
+                </Label>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
+                <div className="space-y-1">
+                  <Controller
+                    control={control}
+                    name="next_consultation_date"
+                    render={({ field }) => (
+                      <DatePicker
+                        id="next_consultation_date"
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="Fecha sugerida"
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Input
+                    id="next_consultation_note"
+                    placeholder="Motivo (ej: control vacuna sextuple)"
+                    {...register("next_consultation_note")}
+                  />
+                  {errors.next_consultation_note && (
+                    <p className="text-sm text-destructive">
+                      {errors.next_consultation_note.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Queda guardada en la ficha. La recepcionista podrá agendarla
+                cuando confirmes con el tutor.
+              </p>
+            </div>
 
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={loading}>

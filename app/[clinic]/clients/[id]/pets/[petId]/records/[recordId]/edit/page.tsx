@@ -113,10 +113,18 @@ export default async function EditRecordPage({
           temperature: record.temperature,
           heart_rate: record.heart_rate,
           heart_rate_unmeasurable: record.heart_rate_unmeasurable,
+          heart_auscultation_status: record.heart_auscultation_status,
+          heart_auscultation_findings: record.heart_auscultation_findings,
           respiratory_rate: record.respiratory_rate,
+          respiratory_auscultation_status:
+            record.respiratory_auscultation_status,
+          respiratory_auscultation_findings:
+            record.respiratory_auscultation_findings,
           capillary_refill_seconds: record.capillary_refill_seconds,
           skin_fold_seconds: record.skin_fold_seconds,
           physical_exam: record.physical_exam,
+          next_consultation_date: record.next_consultation_date,
+          next_consultation_note: record.next_consultation_note,
         }}
         extraSections={
           <div className="space-y-6">

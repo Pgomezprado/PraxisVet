@@ -66,6 +66,7 @@ export function StatusActions({
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const available = transitions[currentStatus] ?? [];
 
@@ -84,14 +85,16 @@ export function StatusActions({
 
   async function handleDelete() {
     setLoading("delete");
+    setDeleteError(null);
     const result = await deleteAppointment(appointmentId);
     setLoading(null);
 
     if (result.error) {
-      alert(result.error);
+      setDeleteError(result.error);
       return;
     }
 
+    setDeleteDialogOpen(false);
     router.push(`/${clinicSlug}/appointments`);
   }
 
@@ -124,7 +127,13 @@ export function StatusActions({
       })}
 
       {currentStatus !== "completed" && (
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <Dialog
+          open={deleteDialogOpen}
+          onOpenChange={(open) => {
+            setDeleteDialogOpen(open);
+            if (!open) setDeleteError(null);
+          }}
+        >
           <DialogTrigger
             render={
               <Button variant="destructive" size="sm" disabled={loading !== null}>
@@ -140,6 +149,11 @@ export function StatusActions({
                 Esta acción no se puede deshacer. La cita será eliminada permanentemente.
               </DialogDescription>
             </DialogHeader>
+            {deleteError && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {deleteError}
+              </div>
+            )}
             <DialogFooter>
               <DialogClose
                 render={

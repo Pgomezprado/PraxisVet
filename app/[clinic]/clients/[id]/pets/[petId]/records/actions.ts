@@ -59,10 +59,16 @@ export type RecordDetail = {
   temperature: number | null;
   heart_rate: number | null;
   heart_rate_unmeasurable: boolean;
+  heart_auscultation_status: "sin_hallazgos" | "con_hallazgos" | null;
+  heart_auscultation_findings: string | null;
   respiratory_rate: number | null;
+  respiratory_auscultation_status: "sin_hallazgos" | "con_hallazgos" | null;
+  respiratory_auscultation_findings: string | null;
   capillary_refill_seconds: number | null;
   skin_fold_seconds: number | null;
   physical_exam: PhysicalExam | null;
+  next_consultation_date: string | null;
+  next_consultation_note: string | null;
   created_at: string;
   vet: {
     id: string;
@@ -176,10 +182,23 @@ export async function createRecord(
         ? null
         : (parsed.data.heart_rate ?? null),
       heart_rate_unmeasurable: parsed.data.heart_rate_unmeasurable ?? false,
+      heart_auscultation_status: parsed.data.heart_auscultation_status ?? null,
+      heart_auscultation_findings:
+        parsed.data.heart_auscultation_status === "con_hallazgos"
+          ? (parsed.data.heart_auscultation_findings ?? null)
+          : null,
       respiratory_rate: parsed.data.respiratory_rate ?? null,
+      respiratory_auscultation_status:
+        parsed.data.respiratory_auscultation_status ?? null,
+      respiratory_auscultation_findings:
+        parsed.data.respiratory_auscultation_status === "con_hallazgos"
+          ? (parsed.data.respiratory_auscultation_findings ?? null)
+          : null,
       capillary_refill_seconds: parsed.data.capillary_refill_seconds ?? null,
       skin_fold_seconds: parsed.data.skin_fold_seconds ?? null,
       physical_exam: parsed.data.physical_exam ?? null,
+      next_consultation_date: parsed.data.next_consultation_date || null,
+      next_consultation_note: parsed.data.next_consultation_note || null,
     })
     .select("id")
     .single();
@@ -245,10 +264,23 @@ export async function updateRecord(
         ? null
         : (parsed.data.heart_rate ?? null),
       heart_rate_unmeasurable: parsed.data.heart_rate_unmeasurable ?? false,
+      heart_auscultation_status: parsed.data.heart_auscultation_status ?? null,
+      heart_auscultation_findings:
+        parsed.data.heart_auscultation_status === "con_hallazgos"
+          ? (parsed.data.heart_auscultation_findings ?? null)
+          : null,
       respiratory_rate: parsed.data.respiratory_rate ?? null,
+      respiratory_auscultation_status:
+        parsed.data.respiratory_auscultation_status ?? null,
+      respiratory_auscultation_findings:
+        parsed.data.respiratory_auscultation_status === "con_hallazgos"
+          ? (parsed.data.respiratory_auscultation_findings ?? null)
+          : null,
       capillary_refill_seconds: parsed.data.capillary_refill_seconds ?? null,
       skin_fold_seconds: parsed.data.skin_fold_seconds ?? null,
       physical_exam: parsed.data.physical_exam ?? null,
+      next_consultation_date: parsed.data.next_consultation_date || null,
+      next_consultation_note: parsed.data.next_consultation_note || null,
     })
     .eq("id", recordId)
     .select("id")
@@ -275,13 +307,22 @@ export async function deleteRecord(
 ): Promise<ActionResult> {
   const { supabase } = await getAuthUser();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("clinical_records")
     .delete()
-    .eq("id", recordId);
+    .eq("id", recordId)
+    .select("id");
 
   if (error) {
     return { success: false, error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      success: false,
+      error:
+        "No se pudo eliminar el registro. Es posible que ya haya sido eliminado o que tu rol no tenga permisos.",
+    };
   }
 
   revalidatePath(

@@ -140,6 +140,7 @@ export interface PhysicalExam {
   abdominal_palpation?: "normal" | "dolor" | "masa" | "otro";
   abdominal_palpation_notes?: string;
   consciousness?: "alerta" | "deprimido" | "estuporoso" | "comatoso";
+  general_findings?: string;
 }
 
 export interface ClinicalRecord {
@@ -159,10 +160,16 @@ export interface ClinicalRecord {
   temperature: number | null;
   heart_rate: number | null;
   heart_rate_unmeasurable: boolean;
+  heart_auscultation_status: "sin_hallazgos" | "con_hallazgos" | null;
+  heart_auscultation_findings: string | null;
   respiratory_rate: number | null;
+  respiratory_auscultation_status: "sin_hallazgos" | "con_hallazgos" | null;
+  respiratory_auscultation_findings: string | null;
   capillary_refill_seconds: number | null;
   skin_fold_seconds: number | null;
   physical_exam: PhysicalExam | null;
+  next_consultation_date: string | null;
+  next_consultation_note: string | null;
   created_at: string;
 }
 

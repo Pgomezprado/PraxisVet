@@ -245,13 +245,21 @@ export async function deleteAppointment(appointmentId: string) {
     return { error: "No autenticado" };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .delete()
-    .eq("id", appointmentId);
+    .eq("id", appointmentId)
+    .select("id");
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      error:
+        "No se pudo eliminar la cita. Es posible que ya haya sido eliminada o que tu rol no tenga permisos para eliminarla.",
+    };
   }
 
   revalidatePath(`/[clinic]/appointments`, "page");

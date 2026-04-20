@@ -299,13 +299,22 @@ export async function deleteClient(
 ): Promise<ActionResult> {
   const { supabase } = await getAuthUser();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("clients")
     .delete()
-    .eq("id", clientId);
+    .eq("id", clientId)
+    .select("id");
 
   if (error) {
     return { success: false, error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      success: false,
+      error:
+        "No se pudo eliminar el cliente. Solo administradores pueden eliminar clientes (borra mascotas y todo su historial).",
+    };
   }
 
   revalidatePath(`/${clinicSlug}/clients`);
@@ -355,6 +364,12 @@ export async function createPet(
     .single();
 
   if (error) {
+    if (error.code === "23505") {
+      return {
+        success: false,
+        error: `Ya existe un paciente llamado "${parsed.data.name}" para este tutor.`,
+      };
+    }
     return { success: false, error: error.message };
   }
 
@@ -410,11 +425,52 @@ export async function updatePet(
     .single();
 
   if (error) {
+    if (error.code === "23505") {
+      return {
+        success: false,
+        error: `Ya existe un paciente llamado "${parsed.data.name}" para este tutor.`,
+      };
+    }
     return { success: false, error: error.message };
   }
 
   revalidatePath(`/${clinicSlug}/clients/${clientId}`);
   return { success: true, data: data as Pet };
+}
+
+export async function checkPetNameExists(
+  orgId: string,
+  clientId: string,
+  name: string,
+  excludePetId?: string
+): Promise<ActionResult<{ pet: { id: string; name: string } | null }>> {
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    return { success: true, data: { pet: null } };
+  }
+
+  const { supabase } = await getAuthUser();
+
+  let query = supabase
+    .from("pets")
+    .select("id, name")
+    .eq("org_id", orgId)
+    .eq("client_id", clientId)
+    .eq("active", true)
+    .ilike("name", trimmed)
+    .limit(1);
+
+  if (excludePetId) {
+    query = query.neq("id", excludePetId);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: { pet: data ?? null } };
 }
 
 export async function deletePet(

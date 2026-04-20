@@ -208,7 +208,8 @@ export async function createRecord(
   }
 
   revalidatePath(
-    `/${clinicSlug}/clients/${clientId}/pets/${parsed.data.pet_id}/records`
+    `/${clinicSlug}/clients/${clientId}/pets/${parsed.data.pet_id}`,
+    "layout"
   );
   return { success: true, data: { id: data.id } };
 }
@@ -291,10 +292,8 @@ export async function updateRecord(
   }
 
   revalidatePath(
-    `/${clinicSlug}/clients/${clientId}/pets/${petId}/records`
-  );
-  revalidatePath(
-    `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${recordId}`
+    `/${clinicSlug}/clients/${clientId}/pets/${petId}`,
+    "layout"
   );
   return { success: true, data: { id: data.id } };
 }
@@ -326,7 +325,8 @@ export async function deleteRecord(
   }
 
   revalidatePath(
-    `/${clinicSlug}/clients/${clientId}/pets/${petId}/records`
+    `/${clinicSlug}/clients/${clientId}/pets/${petId}`,
+    "layout"
   );
   return { success: true, data: undefined };
 }

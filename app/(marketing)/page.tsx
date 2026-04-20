@@ -72,9 +72,9 @@ const bigFeatures = [
 const smallFeatures = [
   {
     icon: Receipt,
-    title: "Boleta y factura SII",
+    title: "Boleta y factura en PDF",
     description:
-      "Emite boleta electrónica (B2C) o factura (B2B con RUT) desde la consulta. Receta retenida lista para medicamentos controlados.",
+      "Genera boleta o factura en PDF desde la consulta, con RUT del cliente y totales en CLP. Receta retenida lista para medicamentos controlados. Emisión SII nativa llega pronto vía partner autorizado.",
   },
   {
     icon: Package,
@@ -118,10 +118,10 @@ const dayInClinic = [
   {
     icon: Headset,
     who: "Recepcionista",
-    headline: "Agendas, cobras con boleta SII, recibes al dueño.",
+    headline: "Agendas, registras el cobro, entregas la boleta en PDF al dueño.",
     bullets: [
       "Búsqueda rápida por RUT o nombre de mascota.",
-      "Cobro en 3 clics, entrega de boleta por correo.",
+      "Cobro en 3 clics, boleta en PDF lista para enviar por correo.",
     ],
   },
   {
@@ -149,7 +149,7 @@ const pricingTiers = [
       "1 veterinario",
       "Hasta 50 pacientes",
       "Agenda y ficha clínica",
-      "Boleta SII básica",
+      "Boleta y factura en PDF",
       "Soporte por correo",
     ],
   },
@@ -166,7 +166,7 @@ const pricingTiers = [
       "Hasta 5 miembros del equipo",
       "Pacientes ilimitados",
       "Peluquería integrada",
-      "Facturación SII",
+      "Boleta y factura en PDF (SII vía partner próximamente)",
       "Inventario + alertas",
       "Recordatorios automáticos",
       "Exporta a PDF",
@@ -198,8 +198,8 @@ const faqs = [
     a: "Los planes Básico y Pro vienen con 2 meses de prueba sin tarjeta de crédito. Usas todas las funcionalidades del plan. Antes de que termine, te avisamos por correo y WhatsApp para que elijas seguir o darte de baja — sin cargos sorpresa.",
   },
   {
-    q: "¿Funciona con el SII?",
-    a: "Sí. Emites boleta electrónica (B2C) y factura electrónica (B2B con RUT) desde la misma pantalla de cobro. También soportamos receta retenida para medicamentos controlados.",
+    q: "¿Emite boletas electrónicas con el SII?",
+    a: "Hoy PraxisVet genera boleta y factura en PDF con RUT, montos en CLP y receta retenida. La emisión SII nativa (folio y timbre electrónico) llega en v1.1 vía partner autorizado (OpenFactura o Haulmer). Mientras tanto, puedes seguir usando tu emisor actual (mepymes SII, Bsale, Defontana) y exportar los cobros para evitar doble digitación.",
   },
   {
     q: "¿Qué pasa con mis datos si cancelo?",
@@ -484,7 +484,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="animate-fade-in-up animation-delay-400 mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                Agenda, ficha clínica, peluquería, facturación SII e inventario
+                Agenda, ficha clínica, peluquería, boletas en PDF e inventario
                 en una sola plataforma. Pensada para clínicas veterinarias en
                 Chile que quieren enfocarse en sus pacientes, no en planillas.
               </p>
@@ -541,7 +541,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2">
                   <Receipt className="size-4 text-primary" />
                   <span className="text-sm text-muted-foreground">
-                    Cumple con SII
+                    RUT y CLP nativos
                   </span>
                 </div>
               </div>
@@ -571,7 +571,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-muted-foreground">
             <span>4 roles integrados</span>
             <span className="hidden sm:inline">·</span>
-            <span>100% SII Chile</span>
+            <span>Hecho en Chile</span>
             <span className="hidden sm:inline">·</span>
             <span>RUT nativo</span>
             <span className="hidden sm:inline">·</span>

@@ -3,7 +3,6 @@ import {
   CheckCircle2,
   Stethoscope,
   Plus,
-  ClipboardList,
 } from "lucide-react";
 import type { Organization, OrganizationMember } from "@/types";
 import { HeroGreeting } from "./widgets/hero-greeting";
@@ -61,15 +60,9 @@ export function VetDashboard({
           <QuickActions
             actions={[
               {
-                label: "Cita",
+                label: "Nueva cita",
                 href: `/${clinicSlug}/appointments/new`,
                 icon: Plus,
-              },
-              {
-                label: "Consulta walk-in",
-                href: `/${clinicSlug}/appointments/new?walkin=1`,
-                icon: ClipboardList,
-                variant: "outline",
               },
             ]}
           />

@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -37,6 +38,8 @@ export function ClientForm({ client }: ClientFormProps) {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<ClientInput>({
     resolver: zodResolver(clientSchema),
@@ -45,9 +48,13 @@ export function ClientForm({ client }: ClientFormProps) {
       last_name: client?.last_name ?? "",
       email: client?.email ?? "",
       phone: client?.phone ?? "",
+      whatsapp_opt_in: client?.whatsapp_opt_in ?? true,
       address: client?.address ?? "",
     },
   });
+
+  const phoneValue = watch("phone") ?? "";
+  const whatsappOptIn = watch("whatsapp_opt_in") ?? true;
 
   async function onSubmit(data: ClientInput) {
     setLoading(true);
@@ -132,11 +139,40 @@ export function ClientForm({ client }: ClientFormProps) {
               <Label htmlFor="phone">Teléfono (opcional)</Label>
               <Input
                 id="phone"
-                placeholder="ej: +52 55 1234 5678"
+                placeholder="ej: +56 9 1234 5678"
                 {...register("phone")}
               />
+              {errors.phone && (
+                <p className="text-sm text-destructive">
+                  {errors.phone.message}
+                </p>
+              )}
             </div>
           </div>
+
+          {phoneValue.trim().length > 0 && !errors.phone && (
+            <div className="flex items-start gap-3 rounded-md border bg-muted/30 p-3">
+              <Switch
+                id="whatsapp_opt_in"
+                checked={whatsappOptIn}
+                onCheckedChange={(value) =>
+                  setValue("whatsapp_opt_in", value, { shouldDirty: true })
+                }
+              />
+              <div className="flex-1 space-y-0.5">
+                <Label
+                  htmlFor="whatsapp_opt_in"
+                  className="cursor-pointer text-sm font-medium"
+                >
+                  Recibir recordatorios por WhatsApp
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Enviaremos recordatorios de citas y vacunaciones al número
+                  registrado. Puedes desactivarlo en cualquier momento.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="address">Dirección (opcional)</Label>

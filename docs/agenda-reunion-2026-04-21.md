@@ -8,10 +8,25 @@
 
 ## Objetivos de la reunión
 
+0. **Demostrar 3 funcionalidades nuevas** (análisis competitivo) — 10 min al inicio.
 1. **Cerrar el vocabulario oficial** del producto (tema principal).
 2. **Descubrir cómo emiten boletas hoy** para dimensionar la integración SII de v1.1.
 3. **Recoger feedback rápido** de las últimas mejoras del MVP (ficha clínica ronda 2).
 4. **Alinear próximos hitos** del piloto (los $80.000 CLP fijos empiezan cuando termine el trial de 2 meses).
+
+---
+
+## Bloque 0 · Demo de nuevas funcionalidades (10 min)
+
+Detalle paso a paso en **[demo-reunion-2026-04-21.md](demo-reunion-2026-04-21.md)**.
+
+Tras un análisis competitivo se detectaron 3 brechas vs otro SaaS veterinario. Las tres están implementadas y en producción local:
+
+1. **Panel de Analytics para el admin** — gráficos de ingresos, citas, productividad por vet/peluquero, top servicios.
+2. **Recordatorios por WhatsApp** — código listo; falta aprobación de Meta de 3 templates (24-72h, gestión en paralelo con Twilio).
+3. **Portal del tutor** — el dueño de la mascota entra con magic link y ve sus mascotas, vacunas, desparasitaciones, peluquería (con costo y quién atendió) e historial de citas. Puede solicitar cita nueva.
+
+**Entregable al cierre:** 2-3 frases de feedback por feature (qué resuena, qué falta, qué sobra).
 
 ---
 

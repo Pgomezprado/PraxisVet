@@ -27,5 +27,25 @@ export default async function OnboardingPage() {
     redirect(`/${org.slug}/dashboard`);
   }
 
+  // Si el usuario es tutor del portal, redirigir al portal — onboarding es
+  // solo para crear una clínica nueva, no aplica al dueño de una mascota.
+  const { data: tutorLinks } = await supabase
+    .from("client_auth_links")
+    .select("organizations!inner(slug)")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .not("linked_at", "is", null);
+
+  const tutorClinics = ((tutorLinks ?? []) as unknown as Array<{
+    organizations: { slug: string };
+  }>).map((l) => l.organizations.slug);
+
+  if (tutorClinics.length === 1) {
+    redirect(`/tutor/${tutorClinics[0]}`);
+  }
+  if (tutorClinics.length > 1) {
+    redirect("/tutor");
+  }
+
   return <OnboardingForm />;
 }

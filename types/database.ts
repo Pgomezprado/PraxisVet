@@ -42,6 +42,7 @@ export interface Organization {
   trial_started_at: string | null;
   trial_ends_at: string | null;
   subscription_status: SubscriptionStatus;
+  whatsapp_reminders_enabled: boolean;
 }
 
 export interface OrganizationMember {
@@ -64,6 +65,8 @@ export interface Client {
   rut: string | null;
   email: string | null;
   phone: string | null;
+  phone_e164: string | null;
+  whatsapp_opt_in: boolean;
   address: string | null;
   notes: string | null;
   created_at: string;

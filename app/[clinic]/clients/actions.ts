@@ -12,6 +12,12 @@ import {
 } from "@/lib/validations/clients";
 import type { Client, Pet } from "@/types";
 import { escapePostgrestSearch } from "@/lib/utils/search";
+import {
+  invitePortalAccess,
+  revokePortalAccess,
+  getPortalLinkStatus,
+  type ClientAuthLinkStatus,
+} from "@/lib/invitations/portal";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -172,6 +178,7 @@ export async function createClient(
       last_name: parsed.data.last_name,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
+      whatsapp_opt_in: parsed.data.whatsapp_opt_in ?? true,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
     })
@@ -211,6 +218,7 @@ export async function createTutorWithPet(
       last_name: parsed.data.last_name,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
+      whatsapp_opt_in: parsed.data.whatsapp_opt_in ?? true,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
     })
@@ -277,6 +285,7 @@ export async function updateClient(
       last_name: parsed.data.last_name,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
+      whatsapp_opt_in: parsed.data.whatsapp_opt_in ?? true,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
     })
@@ -471,6 +480,141 @@ export async function checkPetNameExists(
   }
 
   return { success: true, data: { pet: data ?? null } };
+}
+
+// ============================================
+// Portal Tutor — invitación y revocación
+// ============================================
+
+export type PortalStatusResult =
+  | { success: true; data: ClientAuthLinkStatus }
+  | { success: false; error: string };
+
+export async function getClientPortalStatus(
+  clientId: string,
+  clinicSlug: string
+): Promise<PortalStatusResult> {
+  const { supabase, user } = await getAuthUser();
+
+  const { data: membership } = await supabase
+    .from("organization_members")
+    .select("id, org_id, role, organizations!inner(slug)")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .eq("organizations.slug", clinicSlug)
+    .single();
+
+  if (!membership) return { success: false, error: "Clínica no encontrada" };
+  if (membership.role !== "admin" && membership.role !== "receptionist") {
+    return {
+      success: false,
+      error: "Solo admin o recepción puede consultar el estado del portal.",
+    };
+  }
+
+  const status = await getPortalLinkStatus({
+    clientId,
+    orgId: membership.org_id,
+  });
+
+  return { success: true, data: status };
+}
+
+export async function sendPortalInvitation(
+  clientId: string,
+  clinicSlug: string
+): Promise<ActionResult> {
+  const { supabase, user } = await getAuthUser();
+
+  const { data: membership } = await supabase
+    .from("organization_members")
+    .select(
+      "id, org_id, role, organizations!inner(id, slug, name)"
+    )
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .eq("organizations.slug", clinicSlug)
+    .single();
+
+  if (!membership) return { success: false, error: "Clínica no encontrada" };
+  if (membership.role !== "admin") {
+    return {
+      success: false,
+      error: "Solo los administradores pueden invitar al portal.",
+    };
+  }
+
+  const org = (membership.organizations as unknown) as {
+    id: string;
+    slug: string;
+    name: string;
+  };
+
+  // Cliente pertenece a la misma org (doble check: RLS ya lo filtra).
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id, first_name, email, org_id")
+    .eq("id", clientId)
+    .eq("org_id", org.id)
+    .maybeSingle();
+
+  if (!client) {
+    return { success: false, error: "Cliente no encontrado en esta clínica." };
+  }
+  if (!client.email) {
+    return {
+      success: false,
+      error:
+        "El cliente no tiene email registrado. Agrégalo antes de invitar al portal.",
+    };
+  }
+
+  const result = await invitePortalAccess({
+    clientId: client.id,
+    orgId: org.id,
+    orgName: org.name,
+    orgSlug: org.slug,
+    email: client.email,
+    tutorFirstName: client.first_name,
+    invitedByMemberId: membership.id,
+  });
+
+  if (!result.success) return result;
+
+  revalidatePath(`/${clinicSlug}/clients/${clientId}`);
+  return { success: true, data: undefined };
+}
+
+export async function revokeClientPortalAccess(
+  clientId: string,
+  clinicSlug: string
+): Promise<ActionResult> {
+  const { supabase, user } = await getAuthUser();
+
+  const { data: membership } = await supabase
+    .from("organization_members")
+    .select("id, org_id, role, organizations!inner(slug)")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .eq("organizations.slug", clinicSlug)
+    .single();
+
+  if (!membership) return { success: false, error: "Clínica no encontrada" };
+  if (membership.role !== "admin") {
+    return {
+      success: false,
+      error: "Solo los administradores pueden revocar el acceso al portal.",
+    };
+  }
+
+  const result = await revokePortalAccess({
+    clientId,
+    orgId: membership.org_id,
+  });
+  if (!result.success) return result;
+
+  revalidatePath(`/${clinicSlug}/clients/${clientId}`);
+  return { success: true, data: undefined };
 }
 
 export async function deletePet(

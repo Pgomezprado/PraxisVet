@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Stethoscope, Users, Building2 } from "lucide-react";
+import { Stethoscope, Users, Building2, MessageCircle } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -25,6 +25,12 @@ const sections = [
     description: "Información general, horarios y datos de contacto.",
     href: "clinic",
     icon: Building2,
+  },
+  {
+    title: "Notificaciones",
+    description: "Recordatorios automáticos por WhatsApp a tus clientes.",
+    href: "notifications",
+    icon: MessageCircle,
   },
 ];
 

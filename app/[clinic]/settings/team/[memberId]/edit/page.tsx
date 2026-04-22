@@ -3,7 +3,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeamMemberForm } from "@/components/team/team-member-form";
-import { getTeamMember } from "../../actions";
+import { ScheduleEditor } from "@/components/team/schedule-editor";
+import { createClient } from "@/lib/supabase/server";
+import {
+  getTeamMember,
+  getMemberCapabilities,
+  getMemberSchedule,
+} from "../../actions";
 
 export default async function EditTeamMemberPage({
   params,
@@ -12,6 +18,23 @@ export default async function EditTeamMemberPage({
 }) {
   const { clinic, memberId } = await params;
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) notFound();
+
+  const { data: caller } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (caller?.role !== "admin") {
+    notFound();
+  }
+
   const result = await getTeamMember(memberId);
 
   if (!result.success) {
@@ -19,6 +42,14 @@ export default async function EditTeamMemberPage({
   }
 
   const member = result.data;
+  const [capsResult, schedResult] = await Promise.all([
+    getMemberCapabilities(memberId),
+    getMemberSchedule(memberId),
+  ]);
+  const capabilities = capsResult.success ? capsResult.data : [];
+  const schedule = schedResult.success
+    ? schedResult.data
+    : { weekly: [], blocks: [] };
   const name =
     [member.first_name, member.last_name].filter(Boolean).join(" ") ||
     "Miembro";
@@ -39,7 +70,13 @@ export default async function EditTeamMemberPage({
         </div>
       </div>
 
-      <TeamMemberForm member={member} />
+      <TeamMemberForm member={member} initialCapabilities={capabilities} />
+
+      <ScheduleEditor
+        memberId={memberId}
+        initialWeekly={schedule.weekly}
+        initialBlocks={schedule.blocks}
+      />
     </div>
   );
 }

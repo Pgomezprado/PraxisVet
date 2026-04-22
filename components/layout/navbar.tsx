@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Menu, X, PawPrint, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
@@ -47,14 +47,15 @@ export function Navbar() {
         <nav
           className={cn(
             "mx-auto flex max-w-7xl items-center justify-between px-4 transition-all duration-300 sm:px-6 lg:px-8",
-            scrolled ? "h-14" : "h-16"
+            scrolled ? "h-24" : "h-32"
           )}
         >
-          <Link href="/" className="flex items-center gap-2">
-            <PawPrint className="size-7 text-primary" />
-            <span className="text-xl font-bold tracking-tight text-foreground">
-              Praxis<span className="text-primary">Vet</span>
-            </span>
+          <Link href="/" className="flex items-center" aria-label="PraxisVet">
+            <img
+              src="/brand/logo-praxisvet-transparent.svg"
+              alt="PraxisVet"
+              className="h-12 w-auto sm:h-16 md:h-24 lg:h-28"
+            />
           </Link>
 
           <div className="hidden items-center gap-8 md:flex">

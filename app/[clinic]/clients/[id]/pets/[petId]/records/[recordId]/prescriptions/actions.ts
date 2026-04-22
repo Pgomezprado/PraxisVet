@@ -61,6 +61,7 @@ export async function createPrescription(
       frequency: parsed.data.frequency || null,
       duration: parsed.data.duration || null,
       notes: parsed.data.notes || null,
+      is_retained: parsed.data.is_retained ?? false,
     })
     .select()
     .single();
@@ -94,6 +95,7 @@ export async function updatePrescription(
       frequency: parsed.data.frequency || null,
       duration: parsed.data.duration || null,
       notes: parsed.data.notes || null,
+      is_retained: parsed.data.is_retained ?? false,
     })
     .eq("id", prescriptionId)
     .select()

@@ -404,6 +404,7 @@ Estas reglas no se negocian. Si una propuesta las rompe, se rechaza.
 8. **MVP primero.** Nada de lo listado en `CLINIC_FLOW.md` sección 8 entra al código hasta que el CoFounder lo apruebe explícitamente.
 9. **No `any` sin comentario.** Si TypeScript requiere `any`, documenta por qué. `@ts-ignore` está prohibido.
 10. **Server Components por defecto.** `"use client"` solo cuando la interactividad lo exige.
+11. **Capabilities solo afectan agendamiento.** La tabla `member_capabilities` (`can_vet`, `can_groom`) se usa exclusivamente para decidir a qué **tipo de cita** puede asignarse un profesional. **Nunca debe aparecer en políticas RLS de datos clínicos** (`clinical_records`, `grooming_records`, `prescriptions`, `vaccinations`, `dewormings`). La separación médico/peluquería sigue basándose en `organization_members.role` singular. Ver `lib/auth/capabilities.ts`.
 
 ---
 

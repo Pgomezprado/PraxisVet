@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { PawPrint } from "lucide-react";
 
 export default function AuthLayout({
   children,
@@ -11,10 +10,14 @@ export default function AuthLayout({
       <div className="w-full max-w-[440px]">
         <Link
           href="/"
-          className="mb-8 flex items-center justify-center gap-2 text-2xl font-bold text-foreground"
+          className="mb-8 flex items-center justify-center"
+          aria-label="Volver al inicio"
         >
-          <PawPrint className="size-7 text-primary" />
-          PraxisVet
+          <img
+            src="/brand/logo-praxisvet-transparent.svg"
+            alt="PraxisVet"
+            className="h-16 w-auto max-w-full sm:h-24"
+          />
         </Link>
         {children}
         <p className="mt-6 text-center text-sm text-muted-foreground">

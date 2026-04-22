@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PawPrint, Globe, Mail, Lock } from "lucide-react";
+import { Globe, Mail, Lock } from "lucide-react";
 
 const footerLinks = {
   Producto: [
@@ -20,11 +20,12 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-5">
-            <Link href="/" className="flex items-center gap-2">
-              <PawPrint className="size-6 text-primary" />
-              <span className="text-lg font-bold tracking-tight">
-                Praxis<span className="text-primary">Vet</span>
-              </span>
+            <Link href="/" className="flex items-center" aria-label="PraxisVet">
+              <img
+                src="/brand/logo-praxisvet-transparent.svg"
+                alt="PraxisVet"
+                className="h-16 w-auto max-w-full sm:h-20"
+              />
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
               La plataforma integral para clínicas veterinarias en Chile:

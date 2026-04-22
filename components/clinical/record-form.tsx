@@ -28,18 +28,39 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { RECORD_TEMPLATES, type RecordTemplate } from "./record-templates";
 import { PhysicalExamFields } from "./physical-exam-fields";
 import type { PhysicalExam } from "@/types";
+import { createVaccination } from "@/app/[clinic]/clients/[id]/pets/[petId]/vaccinations/actions";
+import { createDeworming } from "@/app/[clinic]/clients/[id]/pets/[petId]/dewormings/actions";
+import { DEWORMING_TYPES } from "@/lib/validations/dewormings";
+import { createPrescription } from "@/app/[clinic]/clients/[id]/pets/[petId]/records/[recordId]/prescriptions/actions";
+import {
+  MEDICATION_SUGGESTIONS,
+  FREQUENCY_OPTIONS,
+  DURATION_OPTIONS,
+} from "@/lib/validations/prescriptions";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Trash2, Printer } from "lucide-react";
+
+interface InlinePrescriptionRow {
+  medication: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  notes: string;
+  is_retained: boolean;
+}
+
+function emptyPrescriptionRow(): InlinePrescriptionRow {
+  return {
+    medication: "",
+    dose: "",
+    frequency: "",
+    duration: "",
+    notes: "",
+    is_retained: false,
+  };
+}
 
 interface Vet {
   id: string;
@@ -115,15 +136,42 @@ export function RecordForm({
   const { organization, clinicSlug } = useClinic();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [pendingTemplate, setPendingTemplate] = useState<RecordTemplate | null>(
-    null
-  );
-  const [quickTemplateLoading, setQuickTemplateLoading] = useState<
-    "Vacunacion" | "Desparasitacion" | null
+  const [postSaveWarning, setPostSaveWarning] = useState<string | null>(null);
+
+  const [vaccineName, setVaccineName] = useState("");
+  const [vaccineLot, setVaccineLot] = useState("");
+  const [vaccineNextDueDate, setVaccineNextDueDate] = useState("");
+
+  const [dewormingType, setDewormingType] =
+    useState<(typeof DEWORMING_TYPES)[number]>("interna");
+  const [dewormingProduct, setDewormingProduct] = useState("");
+  const [dewormingNextDueDate, setDewormingNextDueDate] = useState("");
+
+  const [inlinePrescriptions, setInlinePrescriptions] = useState<
+    InlinePrescriptionRow[]
+  >([]);
+  const [medAutocompleteOpenIdx, setMedAutocompleteOpenIdx] = useState<
+    number | null
   >(null);
 
+  function updatePrescriptionRow(
+    index: number,
+    patch: Partial<InlinePrescriptionRow>
+  ) {
+    setInlinePrescriptions((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row))
+    );
+  }
+  function addPrescriptionRow() {
+    setInlinePrescriptions((prev) => [...prev, emptyPrescriptionRow()]);
+  }
+  function removePrescriptionRow(index: number) {
+    setInlinePrescriptions((prev) => prev.filter((_, i) => i !== index));
+    if (medAutocompleteOpenIdx === index) setMedAutocompleteOpenIdx(null);
+  }
+
   const isEditing = !!record;
-  const draftKey = `praxisvet:draft:record:${organization.id}:${petId}`;
+  const draftKey = `praxisvet:draft:record:v2:${organization.id}:${petId}`;
   const [recoverableDraft, setRecoverableDraft] = useState<DraftPayload | null>(
     null
   );
@@ -278,79 +326,10 @@ export function RecordForm({
   const hasDiagTreatment = !!(diagnosis || treatment);
   const hasObservations = !!observations;
 
-  const applyTemplate = useCallback(
-    (template: RecordTemplate) => {
-      const current = getValues();
-      if (!current.reason) setValue("reason", template.reason);
-      if (!current.symptoms) setValue("symptoms", template.symptoms);
-      if (!current.diagnosis) setValue("diagnosis", template.diagnosis);
-      if (!current.treatment) setValue("treatment", template.treatment);
-      if (template.observations && !current.observations) {
-        setValue("observations", template.observations);
-      }
-      setPendingTemplate(null);
-    },
-    [getValues, setValue]
-  );
-
-  async function createRecordFromQuickTemplate(
-    template: RecordTemplate,
-    openKind: "vaccine" | "deworming"
-  ) {
-    if (isEditing) return;
-    setError(null);
-
-    const current = getValues();
-    const vetId = current.vet_id;
-    if (!vetId) {
-      setError(
-        "Selecciona un veterinario antes de aplicar esta plantilla rápida."
-      );
-      return;
-    }
-
-    setQuickTemplateLoading(
-      template.name as "Vacunacion" | "Desparasitacion"
-    );
-
-    const payload: ClinicalRecordInput = {
-      pet_id: petId,
-      vet_id: vetId,
-      appointment_id: current.appointment_id || "",
-      date: current.date || new Date().toISOString().split("T")[0],
-      reason: template.reason,
-      anamnesis: "",
-      symptoms: template.symptoms,
-      diagnosis: template.diagnosis,
-      treatment: template.treatment,
-      observations: template.observations ?? "",
-    };
-
-    const result = await createRecord(
-      organization.id,
-      clinicSlug,
-      clientId,
-      payload
-    );
-
-    if (!result.success) {
-      setError(result.error);
-      setQuickTemplateLoading(null);
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(draftKey);
-    }
-
-    router.push(
-      `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${result.data.id}?open=${openKind}&created=1`
-    );
-  }
-
   async function onSubmit(data: ClinicalRecordInput) {
     setLoading(true);
     setError(null);
+    setPostSaveWarning(null);
 
     // Sanea strings vacíos de physical_exam que Zod enum rechaza.
     if (data.physical_exam) {
@@ -366,6 +345,13 @@ export function RecordForm({
       };
     }
 
+    // Detección por intención: si el vet llenó el campo clave, se registra.
+    const wantsVaccine = !isEditing && vaccineName.trim().length > 0;
+    const wantsDeworming = !isEditing && dewormingProduct.trim().length > 0;
+    const pendingPrescriptions = isEditing
+      ? []
+      : inlinePrescriptions.filter((row) => row.medication.trim().length > 0);
+
     const result = isEditing
       ? await updateRecord(record!.id, clinicSlug, clientId, petId, data)
       : await createRecord(organization.id, clinicSlug, clientId, data);
@@ -380,9 +366,79 @@ export function RecordForm({
       window.localStorage.removeItem(draftKey);
     }
 
-    router.push(
-      `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${result.data.id}`
-    );
+    const recordId = result.data.id;
+    const warnings: string[] = [];
+
+    if (wantsVaccine) {
+      const vaxResult = await createVaccination(organization.id, {
+        pet_id: petId,
+        clinical_record_id: recordId,
+        vet_id: data.vet_id,
+        vaccine_name: vaccineName.trim(),
+        lot_number: vaccineLot.trim(),
+        date_administered: data.date,
+        next_due_date: vaccineNextDueDate,
+        notes: "",
+      });
+      if (!vaxResult.success) {
+        warnings.push(`Vacuna no registrada: ${vaxResult.error}`);
+      }
+    }
+
+    if (wantsDeworming) {
+      const dwResult = await createDeworming(organization.id, {
+        pet_id: petId,
+        clinical_record_id: recordId,
+        vet_id: data.vet_id,
+        type: dewormingType,
+        date_administered: data.date,
+        product: dewormingProduct.trim(),
+        next_due_date: dewormingNextDueDate,
+        pregnant_cohabitation: false,
+        notes: "",
+      });
+      if (!dwResult.success) {
+        warnings.push(`Desparasitación no registrada: ${dwResult.error}`);
+      }
+    }
+
+    let createdPrescriptions = 0;
+    for (const row of pendingPrescriptions) {
+      const rxResult = await createPrescription(organization.id, clinicSlug, {
+        clinical_record_id: recordId,
+        medication: row.medication.trim(),
+        dose: row.dose.trim(),
+        frequency: row.frequency,
+        duration: row.duration,
+        notes: row.notes.trim(),
+        is_retained: row.is_retained,
+      });
+      if (!rxResult.success) {
+        warnings.push(
+          `Receta "${row.medication}" no registrada: ${rxResult.error}`
+        );
+      } else {
+        createdPrescriptions += 1;
+      }
+    }
+
+    if (warnings.length > 0) {
+      setPostSaveWarning(
+        `${warnings.join(" ")} La ficha sí se guardó; registra estos datos manualmente.`
+      );
+      setLoading(false);
+      return;
+    }
+
+    if (createdPrescriptions > 0 && typeof window !== "undefined") {
+      window.open(
+        `/api/${clinicSlug}/prescriptions/${recordId}/pdf`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
+
+    router.push(`/${clinicSlug}/appointments`);
   }
 
   return (
@@ -432,48 +488,11 @@ export function RecordForm({
             <input type="hidden" {...register("pet_id")} />
             <input type="hidden" {...register("appointment_id")} />
 
-            {/* Plantillas rapidas */}
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">
-                Plantilla rápida
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {RECORD_TEMPLATES.map((template) => {
-                  const isQuickVaccine =
-                    !isEditing && template.name === "Vacunacion";
-                  const isQuickDeworming =
-                    !isEditing && template.name === "Desparasitacion";
-                  const isQuick = isQuickVaccine || isQuickDeworming;
-                  const isLoading = quickTemplateLoading === template.name;
-
-                  return (
-                    <button
-                      key={template.name}
-                      type="button"
-                      disabled={!!quickTemplateLoading}
-                      onClick={() => {
-                        if (isQuickVaccine) {
-                          createRecordFromQuickTemplate(template, "vaccine");
-                        } else if (isQuickDeworming) {
-                          createRecordFromQuickTemplate(template, "deworming");
-                        } else {
-                          setPendingTemplate(template);
-                        }
-                      }}
-                      className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoading
-                        ? `${template.name}...`
-                        : isQuickVaccine
-                          ? "Crear ficha + Vacuna"
-                          : isQuickDeworming
-                            ? "Crear ficha + Desparasitación"
-                            : template.name}
-                    </button>
-                  );
-                })}
+            {postSaveWarning && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+                {postSaveWarning}
               </div>
-            </div>
+            )}
 
             {/* Fecha y veterinario */}
             <div className="grid gap-4 sm:grid-cols-2">
@@ -775,6 +794,331 @@ export function RecordForm({
               </div>
             </CollapsibleSection>
 
+            {!isEditing && (
+              <CollapsibleSection
+                title="Vacuna aplicada (opcional)"
+                hasContent={vaccineName.trim().length > 0}
+                preview={vaccineName}
+              >
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Si aplicas una vacuna en esta consulta, completa estos
+                    datos. Se registrará automáticamente al guardar la ficha.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="inline_vaccine_name">
+                        Nombre de la vacuna
+                      </Label>
+                      <Input
+                        id="inline_vaccine_name"
+                        placeholder="Ej: Sextuple canina"
+                        value={vaccineName}
+                        onChange={(e) => setVaccineName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="inline_vaccine_lot">
+                        N° de lote (opcional)
+                      </Label>
+                      <Input
+                        id="inline_vaccine_lot"
+                        placeholder="Ej: LT-2026-A01"
+                        value={vaccineLot}
+                        onChange={(e) => setVaccineLot(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="inline_vaccine_next">
+                      Próxima dosis (opcional)
+                    </Label>
+                    <DatePicker
+                      id="inline_vaccine_next"
+                      value={vaccineNextDueDate}
+                      onChange={setVaccineNextDueDate}
+                      placeholder="Fecha próxima dosis"
+                    />
+                  </div>
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {!isEditing && (
+              <CollapsibleSection
+                title="Desparasitación aplicada (opcional)"
+                hasContent={dewormingProduct.trim().length > 0}
+                preview={dewormingProduct}
+              >
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Si desparasitas en esta consulta, completa estos datos.
+                    Se registrará automáticamente al guardar la ficha.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="inline_deworming_type">Tipo</Label>
+                      <Select
+                        id="inline_deworming_type"
+                        value={dewormingType}
+                        onChange={(e) =>
+                          setDewormingType(
+                            e.target.value as (typeof DEWORMING_TYPES)[number]
+                          )
+                        }
+                      >
+                        <option value="interna">Interna</option>
+                        <option value="externa">Externa</option>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="inline_deworming_product">
+                        Producto
+                      </Label>
+                      <Input
+                        id="inline_deworming_product"
+                        placeholder="Ej: Drontal Plus"
+                        value={dewormingProduct}
+                        onChange={(e) => setDewormingProduct(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="inline_deworming_next">
+                      Próxima dosis (opcional)
+                    </Label>
+                    <DatePicker
+                      id="inline_deworming_next"
+                      value={dewormingNextDueDate}
+                      onChange={setDewormingNextDueDate}
+                      placeholder="Fecha próxima desparasitación"
+                    />
+                  </div>
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {!isEditing && (
+              <CollapsibleSection
+                title="Receta (opcional)"
+                hasContent={inlinePrescriptions.some(
+                  (r) => r.medication.trim().length > 0
+                )}
+                preview={
+                  inlinePrescriptions
+                    .filter((r) => r.medication.trim().length > 0)
+                    .map((r) => r.medication)
+                    .join(", ") || ""
+                }
+              >
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Agrega los medicamentos que estás recetando. Usa el botón{" "}
+                    <strong>Imprimir receta</strong> al final para guardar la
+                    ficha y abrir el PDF listo para imprimir.
+                  </p>
+
+                  {inlinePrescriptions.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic">
+                      Todavía no hay medicamentos en esta receta.
+                    </p>
+                  )}
+
+                  {inlinePrescriptions.map((row, index) => {
+                    const filteredMeds = row.medication
+                      ? MEDICATION_SUGGESTIONS.filter((m) =>
+                          m
+                            .toLowerCase()
+                            .includes(row.medication.toLowerCase())
+                        )
+                      : [...MEDICATION_SUGGESTIONS];
+                    const isOpen = medAutocompleteOpenIdx === index;
+
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-md border border-border/60 bg-background/50 p-3 space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            Medicamento #{index + 1}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removePrescriptionRow(index)}
+                            className="h-7 px-2 text-destructive hover:text-destructive"
+                            aria-label={`Eliminar medicamento ${index + 1}`}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor={`rx_med_${index}`}>
+                            Medicamento
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id={`rx_med_${index}`}
+                              placeholder="Ej: Amoxicilina"
+                              autoComplete="off"
+                              value={row.medication}
+                              onFocus={() => setMedAutocompleteOpenIdx(index)}
+                              onBlur={() =>
+                                setTimeout(
+                                  () => setMedAutocompleteOpenIdx(null),
+                                  150
+                                )
+                              }
+                              onChange={(e) =>
+                                updatePrescriptionRow(index, {
+                                  medication: e.target.value,
+                                })
+                              }
+                            />
+                            {isOpen && filteredMeds.length > 0 && (
+                              <div className="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-md max-h-40 overflow-y-auto">
+                                {filteredMeds.map((med) => (
+                                  <button
+                                    key={med}
+                                    type="button"
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      updatePrescriptionRow(index, {
+                                        medication: med,
+                                      });
+                                      setMedAutocompleteOpenIdx(null);
+                                    }}
+                                  >
+                                    {med}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <div className="space-y-1">
+                            <Label htmlFor={`rx_dose_${index}`}>Dosis</Label>
+                            <Input
+                              id={`rx_dose_${index}`}
+                              placeholder="Ej: 10mg/kg"
+                              value={row.dose}
+                              onChange={(e) =>
+                                updatePrescriptionRow(index, {
+                                  dose: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`rx_freq_${index}`}>
+                              Frecuencia
+                            </Label>
+                            <Select
+                              id={`rx_freq_${index}`}
+                              value={row.frequency}
+                              onChange={(e) =>
+                                updatePrescriptionRow(index, {
+                                  frequency: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">Seleccionar...</option>
+                              {FREQUENCY_OPTIONS.map((f) => (
+                                <option key={f} value={f}>
+                                  {f}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`rx_dur_${index}`}>Duración</Label>
+                            <Select
+                              id={`rx_dur_${index}`}
+                              value={row.duration}
+                              onChange={(e) =>
+                                updatePrescriptionRow(index, {
+                                  duration: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">Seleccionar...</option>
+                              {DURATION_OPTIONS.map((d) => (
+                                <option key={d} value={d}>
+                                  {d}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor={`rx_notes_${index}`}>
+                            Indicaciones (opcional)
+                          </Label>
+                          <Textarea
+                            id={`rx_notes_${index}`}
+                            rows={2}
+                            placeholder="Ej: Administrar con alimento"
+                            value={row.notes}
+                            onChange={(e) =>
+                              updatePrescriptionRow(index, {
+                                notes: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="size-4 rounded border-border"
+                            checked={row.is_retained}
+                            onChange={(e) =>
+                              updatePrescriptionRow(index, {
+                                is_retained: e.target.checked,
+                              })
+                            }
+                          />
+                          <span>Receta retenida (psicotrópico/regulado)</span>
+                        </label>
+                      </div>
+                    );
+                  })}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addPrescriptionRow}
+                    >
+                      <Plus className="size-4" />
+                      Agregar medicamento
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={
+                        loading ||
+                        !inlinePrescriptions.some(
+                          (r) => r.medication.trim().length > 0
+                        )
+                      }
+                    >
+                      <Printer className="size-4" />
+                      {loading ? "Guardando..." : "Imprimir receta"}
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleSection>
+            )}
+
             {extraSections}
 
             {/* Próxima consulta sugerida (no agenda cita aún, solo deja la fecha registrada) */}
@@ -832,11 +1176,7 @@ export function RecordForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() =>
-                router.push(
-                  `/${clinicSlug}/clients/${clientId}/pets/${petId}/records`
-                )
-              }
+                onClick={() => router.push(`/${clinicSlug}/appointments`)}
               >
                 Cancelar
               </Button>
@@ -844,37 +1184,6 @@ export function RecordForm({
           </form>
         </CardContent>
       </Card>
-
-      {/* Dialog de confirmación de plantilla */}
-      <Dialog
-        open={!!pendingTemplate}
-        onOpenChange={(open) => {
-          if (!open) setPendingTemplate(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Aplicar plantilla</DialogTitle>
-            <DialogDescription>
-              Se aplicará la plantilla &quot;{pendingTemplate?.name}&quot;. Solo
-              se rellenarán los campos que estén vacíos, no se sobreescribirá lo
-              que ya hayas escrito.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose
-              render={
-                <Button variant="outline">
-                  Cancelar
-                </Button>
-              }
-            />
-            <Button onClick={() => pendingTemplate && applyTemplate(pendingTemplate)}>
-              Aplicar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

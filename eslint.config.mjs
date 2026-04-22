@@ -27,6 +27,10 @@ const superadminAllowlist = [
   // Cron jobs corren como procesos de Vercel (auth via CRON_SECRET), no como
   // usuarios; necesitan service-role para recorrer todas las orgs.
   "app/api/cron/**",
+  // Portal del tutor: el vínculo client_auth_links se completa ANTES de que
+  // el usuario tenga permisos RLS (membership o linked_at). Service-role
+  // solo se usa para ese upsert puntual.
+  "app/auth/portal-bootstrap/**",
 ];
 
 const restrictedSuperadmin = {

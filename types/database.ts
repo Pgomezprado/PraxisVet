@@ -42,6 +42,44 @@ export interface Organization {
   trial_started_at: string | null;
   trial_ends_at: string | null;
   subscription_status: SubscriptionStatus;
+  whatsapp_reminders_enabled: boolean;
+  pet_birthday_reminders_enabled: boolean;
+}
+
+export type MemberCapability = "can_vet" | "can_groom";
+
+export interface MemberWeeklySchedule {
+  id: string;
+  org_id: string;
+  member_id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  created_at: string;
+}
+
+export interface MemberScheduleBlock {
+  id: string;
+  org_id: string;
+  member_id: string;
+  start_date: string;
+  end_date: string;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface MemberCapabilityRow {
+  member_id: string;
+  org_id: string;
+  capability: MemberCapability;
+  created_at: string;
+}
+
+export interface SentBirthdayLog {
+  pet_id: string;
+  org_id: string;
+  sent_on: string;
+  created_at: string;
 }
 
 export interface OrganizationMember {
@@ -64,6 +102,8 @@ export interface Client {
   rut: string | null;
   email: string | null;
   phone: string | null;
+  phone_e164: string | null;
+  whatsapp_opt_in: boolean;
   address: string | null;
   notes: string | null;
   created_at: string;

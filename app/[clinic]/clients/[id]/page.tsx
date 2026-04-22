@@ -9,7 +9,9 @@ import {
   PawPrint,
   StickyNote,
 } from "lucide-react";
-import { getClient } from "../actions";
+import { getClient, getClientPortalStatus } from "../actions";
+import { createClient as createServerSupabase } from "@/lib/supabase/server";
+import { PortalAccessCard } from "./_components/portal-access-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -42,6 +44,28 @@ export default async function ClientDetailPage({
   }
 
   const client = result.data;
+
+  // Rol actual para decidir si mostrar controles del portal
+  const supabase = await createServerSupabase();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+  const { data: currentMember } = currentUser
+    ? await supabase
+        .from("organization_members")
+        .select("role")
+        .eq("user_id", currentUser.id)
+        .eq("org_id", client.org_id)
+        .eq("active", true)
+        .maybeSingle()
+    : { data: null };
+
+  const canSeePortalCard =
+    currentMember?.role === "admin" || currentMember?.role === "receptionist";
+
+  const portalStatusResult = canSeePortalCard
+    ? await getClientPortalStatus(id, clinic)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -109,6 +133,16 @@ export default async function ClientDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {canSeePortalCard && portalStatusResult?.success && (
+        <PortalAccessCard
+          clientId={id}
+          clinicSlug={clinic}
+          hasEmail={Boolean(client.email)}
+          canManage={currentMember?.role === "admin"}
+          initialStatus={portalStatusResult.data}
+        />
+      )}
 
       <Card>
         <CardHeader>

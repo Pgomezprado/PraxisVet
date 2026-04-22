@@ -76,7 +76,10 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/brand/logo-icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/brand/apple-icon.svg",
   },
 };
 
@@ -89,7 +92,7 @@ const jsonLd = {
       name: "PraxisVet",
       legalName: "PRAXIS SpA",
       url: SITE_URL,
-      logo: `${SITE_URL}/favicon.ico`,
+      logo: `${SITE_URL}/brand/logo-praxisvet.svg`,
       areaServed: { "@type": "Country", name: "Chile" },
       contactPoint: {
         "@type": "ContactPoint",

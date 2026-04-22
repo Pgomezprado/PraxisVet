@@ -189,6 +189,7 @@ async function wipeTable(table, filter = { org_id: org.id }) {
 }
 
 console.log("⟳ Limpiando datos demo previos…");
+await wipeTable("grooming_records");
 await wipeTable("invoices");
 await wipeTable("appointments");
 await wipeTable("pets");
@@ -392,6 +393,70 @@ if (stkErr) die("stock", stkErr);
 console.log("✓ Products:", products.length, "(2 con stock bajo)");
 
 // ---------------------------------------------------------------
+// 8.5) Grooming records históricos (para poblar el portal del tutor)
+// ---------------------------------------------------------------
+const lastMonth = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+const twoMonthsAgo = new Date(Date.now() - 60 * 86400000).toISOString().split("T")[0];
+
+const { error: grErr } = await s.from("grooming_records").insert([
+  {
+    org_id: org.id,
+    pet_id: petByName.Firulais.id,
+    groomer_id: memberIds.groomer,
+    date: lastMonth,
+    service_performed: "Baño completo con shampoo hipoalergénico",
+    observations: "Pelaje en buen estado. Uñas cortadas.",
+  },
+  {
+    org_id: org.id,
+    pet_id: petByName.Firulais.id,
+    groomer_id: memberIds.groomer,
+    date: twoMonthsAgo,
+    service_performed: "Baño completo",
+    observations: null,
+  },
+  {
+    org_id: org.id,
+    pet_id: petByName.Coco.id,
+    groomer_id: memberIds.groomer,
+    date: lastMonth,
+    service_performed: "Corte de pelo + baño",
+    observations: "Corte tipo teddy bear. Oídos limpiados.",
+  },
+]);
+if (grErr) die("grooming_records", grErr);
+console.log("✓ Grooming records: 3 históricos");
+
+// ---------------------------------------------------------------
+// 9) Tutor demo — vínculo al portal del tutor
+// ---------------------------------------------------------------
+const TUTOR_EMAIL = "tutor@praxisvet.dev";
+const tutorUserId = await ensureAuthUser(TUTOR_EMAIL);
+
+// Asocia el tutor al primer cliente (Ana Muñoz) para que pueda ver sus mascotas.
+const tutorClient = clients[0];
+
+// Si había un link previo con ese user en esta org, bórralo antes de insertar
+// (el client fue regenerado, los IDs son nuevos).
+await s
+  .from("client_auth_links")
+  .delete()
+  .eq("user_id", tutorUserId)
+  .eq("org_id", org.id);
+
+const { error: linkErr } = await s.from("client_auth_links").insert({
+  client_id: tutorClient.id,
+  org_id: org.id,
+  user_id: tutorUserId,
+  email: TUTOR_EMAIL,
+  invited_at: new Date().toISOString(),
+  linked_at: new Date().toISOString(),
+  active: true,
+});
+if (linkErr) die("client_auth_links tutor demo", linkErr);
+console.log(`✓ Tutor demo: ${TUTOR_EMAIL} → ${tutorClient.first_name} ${tutorClient.last_name}`);
+
+// ---------------------------------------------------------------
 // Resumen
 // ---------------------------------------------------------------
 console.log("\n╔════════════════════════════════════════════════════╗");
@@ -399,8 +464,9 @@ console.log("║  ✅ SEED DEMO COMPLETADO                            ║");
 console.log("╚════════════════════════════════════════════════════╝");
 console.log("\nAccede a: http://localhost:3000/auth/login");
 console.log(`Contraseña (todos): ${PASSWORD}\n`);
-console.log("Usuarios:");
+console.log("Usuarios staff:");
 for (const m of members) {
   console.log(`  • ${m.role.padEnd(13)} → ${m.email}`);
 }
+console.log(`  • tutor         → ${TUTOR_EMAIL}  (portal del tutor)`);
 console.log("\nPrueba primero admin, luego cambia rápido entre roles.\n");

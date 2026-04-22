@@ -67,7 +67,25 @@ export default async function ClinicLayout({
     .eq("organizations.slug", clinic)
     .single();
 
+  // Si no hay membership de staff, verificar si el usuario es tutor
+  // (dueño de mascota con acceso al portal). En ese caso, el usuario debe
+  // aterrizar en /tutor/[clinic], nunca en el dashboard interno.
   if (!membership) {
+    const { data: tutorLink } = await supabase
+      .from("client_auth_links")
+      .select(
+        "id, organizations!inner(slug)"
+      )
+      .eq("user_id", user.id)
+      .eq("active", true)
+      .not("linked_at", "is", null)
+      .eq("organizations.slug", clinic)
+      .maybeSingle();
+
+    if (tutorLink) {
+      redirect(`/tutor/${clinic}`);
+    }
+
     redirect("/onboarding");
   }
 

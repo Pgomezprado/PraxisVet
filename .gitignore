@@ -45,3 +45,11 @@ supabase/.branches
 next-env.d.ts
 Plan de Negocios*.docx
 supabase/.temp/
+
+# Archivos personales / marketing / diseño (no ir al repo)
+*.pptx
+*.pdf
+/brand-guidelines.html
+/logo-concepts.html
+/logo-praxisvet*.svg
+

@@ -1,10 +1,33 @@
 import { z } from "zod";
 
+/**
+ * Valida que el teléfono sea un móvil chileno normalizable a E.164.
+ * Acepta cualquier combinación de separadores (espacios, guiones, paréntesis, +).
+ * Requisito real: al quitar todo lo no-numérico quedan
+ *   - 11 dígitos que empiezan con "569" (ej: "+56 9 1234 5678"), o
+ *   - 9 dígitos que empiezan con "9"  (ej: "9 1234 5678")
+ */
+export function isValidChileanMobile(input: string): boolean {
+  const digits = input.replace(/[^0-9]/g, "");
+  if (digits.length === 11 && digits.startsWith("569")) return true;
+  if (digits.length === 9 && digits.startsWith("9")) return true;
+  return false;
+}
+
+const optionalPhoneField = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .refine((val) => !val || isValidChileanMobile(val), {
+    message: "Ingresa un móvil chileno válido (+56 9 XXXX XXXX)",
+  });
+
 export const clientSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio"),
   last_name: z.string().min(1, "El apellido es obligatorio"),
   email: z.string().email("Email invalido").optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
+  phone: optionalPhoneField,
+  whatsapp_opt_in: z.boolean().optional(),
   address: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
 });

@@ -10,6 +10,8 @@ import {
   updateAppointment,
   checkConflicts,
   getProfessionalDayAppointments,
+  getMemberDayAvailability,
+  getProfessionals,
 } from "@/app/[clinic]/appointments/actions";
 import type { AppointmentWithRelations } from "@/app/[clinic]/appointments/actions";
 import type { MemberRole } from "@/types";
@@ -91,6 +93,10 @@ export function AppointmentForm({
   const [checkingConflicts, setCheckingConflicts] = useState(false);
   const [dayAppointments, setDayAppointments] = useState<ProfessionalDayAppointment[]>([]);
   const [loadingDay, setLoadingDay] = useState(false);
+  const [dayAvailability, setDayAvailability] = useState<{
+    tramos: { start_time: string; end_time: string }[];
+    blocks: { start_date: string; end_date: string; reason: string | null }[];
+  } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEditing = !!appointmentId;
 
@@ -127,12 +133,35 @@ export function AppointmentForm({
   const watchedStartTime = watch("start_time");
   const watchedEndTime = watch("end_time");
 
+  // Lista de profesionales filtrada por tipo de cita. Inicialmente filtra por
+  // rol base (fallback sincrónico). En cada cambio de tipo, refresca desde el
+  // servidor que respeta también las capabilities explícitas (un vet con
+  // can_groom debe aparecer al elegir grooming).
+  const [capabilityProfessionals, setCapabilityProfessionals] = useState<
+    Professional[] | null
+  >(null);
+
   const filteredProfessionals = useMemo(() => {
+    if (capabilityProfessionals) return capabilityProfessionals;
     if (watchedType === "grooming") {
       return professionals.filter((p) => p.role === "groomer" || p.role === "admin");
     }
     return professionals.filter((p) => p.role === "vet" || p.role === "admin");
-  }, [professionals, watchedType]);
+  }, [capabilityProfessionals, professionals, watchedType]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCapabilityProfessionals(null);
+    getProfessionals(orgId, watchedType).then((res) => {
+      if (cancelled) return;
+      if (!res.error && res.data) {
+        setCapabilityProfessionals(res.data as Professional[]);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId, watchedType]);
 
   const filteredServices = useMemo(() => {
     if (watchedType === "grooming") {
@@ -231,6 +260,20 @@ export function AppointmentForm({
       cancelled = true;
     };
   }, [watchedAssignedTo, watchedDate, orgId, appointmentId]);
+
+  useEffect(() => {
+    if (!watchedAssignedTo || !watchedDate) {
+      setDayAvailability(null);
+      return;
+    }
+    let cancelled = false;
+    getMemberDayAvailability(watchedAssignedTo, watchedDate).then((res) => {
+      if (!cancelled) setDayAvailability(res);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [watchedAssignedTo, watchedDate]);
 
   async function onSubmit(data: AppointmentInput) {
     setServerError(null);
@@ -464,6 +507,33 @@ export function AppointmentForm({
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="size-3 animate-spin" />
               Verificando disponibilidad...
+            </div>
+          )}
+
+          {watchedAssignedTo && watchedDate && dayAvailability && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm space-y-1">
+              {dayAvailability.tramos.length === 0 ? (
+                <p className="text-amber-700 dark:text-amber-400">
+                  ⚠️ Este profesional no atiende ese día. La cita será
+                  rechazada.
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  <strong>Atiende ese día:</strong>{" "}
+                  {dayAvailability.tramos
+                    .map(
+                      (t) =>
+                        `${t.start_time.slice(0, 5)}-${t.end_time.slice(0, 5)}`
+                    )
+                    .join(", ")}
+                </p>
+              )}
+              {dayAvailability.blocks.length > 0 && (
+                <p className="text-destructive">
+                  🚫 Bloqueado:{" "}
+                  {dayAvailability.blocks[0].reason || "sin motivo"}
+                </p>
+              )}
             </div>
           )}
 

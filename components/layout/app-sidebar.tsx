@@ -8,8 +8,8 @@ import {
   Users,
   Receipt,
   Package,
+  BarChart3,
   Settings,
-  PawPrint,
 } from "lucide-react";
 import { useClinic } from "@/lib/context/clinic-context";
 import { roleLabels } from "@/lib/validations/team-members";
@@ -69,6 +69,12 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
+    title: "Analytics",
+    href: "/analytics",
+    icon: BarChart3,
+    roles: ["admin"],
+  },
+  {
     title: "Configuración",
     href: "/settings",
     icon: Settings,
@@ -100,9 +106,11 @@ export function AppSidebar({
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <PawPrint className="size-5" />
-          </div>
+          <img
+            src="/brand/logo-icon.svg"
+            alt="PraxisVet"
+            className="size-10 shrink-0"
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold leading-tight">
               {organization.name}

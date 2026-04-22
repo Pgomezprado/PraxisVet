@@ -6,6 +6,12 @@ import { appointmentSchema, updateStatusSchema } from "@/lib/validations/appoint
 import type { AppointmentInput } from "@/lib/validations/appointments";
 import type { AppointmentStatus, AppointmentType, MemberRole } from "@/types";
 import { validateMemberInOrg } from "@/lib/auth/validate-member";
+import {
+  canAssignMemberToAppointment,
+  filterMembersByCapability,
+  capabilityForAppointmentType,
+} from "@/lib/auth/capabilities";
+import { checkMemberAvailability } from "@/lib/auth/check-availability";
 
 export type AppointmentWithRelations = {
   id: string;
@@ -103,6 +109,21 @@ export async function createAppointment(orgId: string, formData: AppointmentInpu
     return { data: null, error: parsed.error.issues[0].message };
   }
 
+  // No se permiten citas en el pasado. Backfill debe ir por script/SQL, no UI.
+  // Usamos TZ Chile (no UTC) para que el corte de día coincida con la realidad
+  // del usuario: sin esto, entre las 20:00 y 23:59 Chile el sistema piensa
+  // que ya es "mañana" y rechaza citas válidas del mismo día.
+  // Intl.DateTimeFormat con locale "sv-SE" produce formato yyyy-MM-dd nativo.
+  const todayIso = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Santiago",
+  }).format(new Date());
+  if (parsed.data.date < todayIso) {
+    return {
+      data: null,
+      error: "No se pueden agendar citas en fechas pasadas.",
+    };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -119,6 +140,31 @@ export async function createAppointment(orgId: string, formData: AppointmentInpu
   );
   if (!memberCheck.ok) {
     return { data: null, error: memberCheck.error };
+  }
+
+  const canAssign = await canAssignMemberToAppointment(
+    supabase,
+    parsed.data.assigned_to,
+    parsed.data.type
+  );
+  if (!canAssign) {
+    return {
+      data: null,
+      error:
+        parsed.data.type === "medical"
+          ? "Este profesional no puede atender consultas médicas."
+          : "Este profesional no puede atender peluquería.",
+    };
+  }
+
+  const availability = await checkMemberAvailability(supabase, {
+    memberId: parsed.data.assigned_to,
+    date: parsed.data.date,
+    startTime: parsed.data.start_time,
+    endTime: parsed.data.end_time,
+  });
+  if (!availability.ok) {
+    return { data: null, error: availability.error };
   }
 
   const { data, error } = await supabase
@@ -141,6 +187,12 @@ export async function createAppointment(orgId: string, formData: AppointmentInpu
     .single();
 
   if (error) {
+    if (error.code === "23P01") {
+      return {
+        data: null,
+        error: "Ya existe una cita solapada para este profesional en ese horario.",
+      };
+    }
     return { data: null, error: error.message };
   }
 
@@ -183,6 +235,32 @@ export async function updateAppointment(appointmentId: string, formData: Appoint
     return { data: null, error: memberCheck.error };
   }
 
+  const canAssign = await canAssignMemberToAppointment(
+    supabase,
+    parsed.data.assigned_to,
+    parsed.data.type
+  );
+  if (!canAssign) {
+    return {
+      data: null,
+      error:
+        parsed.data.type === "medical"
+          ? "Este profesional no puede atender consultas médicas."
+          : "Este profesional no puede atender peluquería.",
+    };
+  }
+
+  const availability = await checkMemberAvailability(supabase, {
+    memberId: parsed.data.assigned_to,
+    date: parsed.data.date,
+    startTime: parsed.data.start_time,
+    endTime: parsed.data.end_time,
+    excludeAppointmentId: appointmentId,
+  });
+  if (!availability.ok) {
+    return { data: null, error: availability.error };
+  }
+
   const { data, error } = await supabase
     .from("appointments")
     .update({
@@ -202,6 +280,12 @@ export async function updateAppointment(appointmentId: string, formData: Appoint
     .single();
 
   if (error) {
+    if (error.code === "23P01") {
+      return {
+        data: null,
+        error: "Ya existe una cita solapada para este profesional en ese horario.",
+      };
+    }
     return { data: null, error: error.message };
   }
 
@@ -341,6 +425,66 @@ export async function checkConflicts(
   return { data: conflicts as unknown as AppointmentWithRelations[], error: null };
 }
 
+export async function getMemberDayAvailability(
+  memberId: string,
+  date: string
+): Promise<{
+  tramos: { start_time: string; end_time: string }[];
+  blocks: { start_date: string; end_date: string; reason: string | null }[];
+}> {
+  const supabase = await createClient();
+
+  // Guard cross-tenant explícito. RLS ya filtra, pero sin este check podría
+  // inferirse existencia del memberId por el tiempo de respuesta.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { tramos: [], blocks: [] };
+  }
+
+  const { data: caller } = await supabase
+    .from("organization_members")
+    .select("org_id")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .maybeSingle();
+  if (!caller) {
+    return { tramos: [], blocks: [] };
+  }
+
+  const { data: target } = await supabase
+    .from("organization_members")
+    .select("org_id")
+    .eq("id", memberId)
+    .maybeSingle();
+  if (!target || target.org_id !== caller.org_id) {
+    return { tramos: [], blocks: [] };
+  }
+
+  const dayOfWeek = new Date(`${date}T12:00:00`).getDay();
+
+  const [tramosRes, blocksRes] = await Promise.all([
+    supabase
+      .from("member_weekly_schedules")
+      .select("start_time, end_time")
+      .eq("member_id", memberId)
+      .eq("day_of_week", dayOfWeek)
+      .order("start_time", { ascending: true }),
+    supabase
+      .from("member_schedule_blocks")
+      .select("start_date, end_date, reason")
+      .eq("member_id", memberId)
+      .lte("start_date", date)
+      .gte("end_date", date),
+  ]);
+
+  return {
+    tramos: tramosRes.data ?? [],
+    blocks: blocksRes.data ?? [],
+  };
+}
+
 export async function getProfessionalDayAppointments(
   orgId: string,
   professionalId: string,
@@ -369,10 +513,16 @@ export async function getProfessionalDayAppointments(
   return { data, error: null };
 }
 
-export async function getProfessionals(orgId: string) {
+export async function getProfessionals(
+  orgId: string,
+  appointmentType?: AppointmentType
+) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  // Base: admin, vet, groomer activos. Son los roles que HOY atienden
+  // por rol base. Miembros con role receptionist pero con capability
+  // can_vet/can_groom se suman abajo.
+  const { data: baseMembers, error: baseError } = await supabase
     .from("organization_members")
     .select("id, first_name, last_name, specialty, role")
     .eq("org_id", orgId)
@@ -380,11 +530,49 @@ export async function getProfessionals(orgId: string) {
     .in("role", ["admin", "vet", "groomer"])
     .order("first_name");
 
-  if (error) {
-    return { data: null, error: error.message };
+  if (baseError) {
+    return { data: null, error: baseError.message };
   }
 
-  return { data, error: null };
+  // Incluir también miembros con capabilities explícitas (ej: recepcionista
+  // con can_groom, o cualquier combinación post-multi-rol).
+  const { data: extraMembers, error: extraError } = await supabase
+    .from("organization_members")
+    .select(
+      `id, first_name, last_name, specialty, role,
+       member_capabilities!inner (capability)`
+    )
+    .eq("org_id", orgId)
+    .eq("active", true)
+    .not("role", "in", "(admin,vet,groomer)");
+
+  if (extraError) {
+    return { data: null, error: extraError.message };
+  }
+
+  const baseIds = new Set((baseMembers ?? []).map((m) => m.id));
+  const merged = [
+    ...(baseMembers ?? []),
+    ...(extraMembers ?? [])
+      .filter((m) => !baseIds.has(m.id))
+      .map(({ member_capabilities: _omit, ...rest }) => rest),
+  ];
+
+  if (!appointmentType) {
+    return { data: merged, error: null };
+  }
+
+  // Filtrar por capability específica del tipo de cita.
+  const allowedIds = await filterMembersByCapability(
+    supabase,
+    merged.map((m) => m.id),
+    capabilityForAppointmentType(appointmentType)
+  );
+  const allowedSet = new Set(allowedIds);
+  return {
+    data: merged.filter((m) => allowedSet.has(m.id)),
+    error: null,
+  };
 }
 
 export async function getClientsWithPets(orgId: string) {

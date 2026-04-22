@@ -16,6 +16,7 @@ import {
   createTeamMember,
   updateTeamMember,
   inviteExistingMember,
+  updateMemberCapabilities,
 } from "@/app/[clinic]/settings/team/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,11 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Loader2, UserCog, Stethoscope, Users, Scissors, Shield } from "lucide-react";
-import type { OrganizationMember, MemberRole } from "@/types";
+import type {
+  OrganizationMember,
+  MemberRole,
+  MemberCapability,
+} from "@/types";
 
 const roleIcons: Record<MemberRole, typeof Shield> = {
   admin: Shield,
@@ -39,6 +44,19 @@ const roleIcons: Record<MemberRole, typeof Shield> = {
 
 interface TeamMemberFormProps {
   member?: OrganizationMember;
+  initialCapabilities?: MemberCapability[];
+}
+
+// Roles que ya cubren implícitamente una capability (mismo criterio que
+// lib/auth/capabilities.ts ROLE_COVERS_CAPABILITY).
+function roleCoversCapability(
+  role: MemberRole,
+  capability: MemberCapability
+): boolean {
+  if (role === "admin") return true;
+  if (capability === "can_vet") return role === "vet";
+  if (capability === "can_groom") return role === "groomer";
+  return false;
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -46,11 +64,21 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-xs text-destructive">{message}</p>;
 }
 
-export function TeamMemberForm({ member }: TeamMemberFormProps) {
+export function TeamMemberForm({
+  member,
+  initialCapabilities = [],
+}: TeamMemberFormProps) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [canVetExtra, setCanVetExtra] = useState(
+    initialCapabilities.includes("can_vet")
+  );
+  const [canGroomExtra, setCanGroomExtra] = useState(
+    initialCapabilities.includes("can_groom")
+  );
 
   const isEditing = !!member;
   const canInvite = !member?.user_id;
@@ -85,6 +113,19 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
     if (!result.success) {
       setLoading(false);
       setError(result.error);
+      return;
+    }
+
+    const memberId = isEditing ? member.id : result.data.id;
+    const capsResult = await updateMemberCapabilities(memberId, clinicSlug, {
+      can_vet: canVetExtra,
+      can_groom: canGroomExtra,
+    });
+    if (!capsResult.success) {
+      setLoading(false);
+      setError(
+        `Datos guardados, pero falló actualizar capacidades: ${capsResult.error}`
+      );
       return;
     }
 
@@ -201,6 +242,67 @@ export function TeamMemberForm({ member }: TeamMemberFormProps) {
               })}
             </div>
             <FieldError message={errors.role?.message} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Capacidades adicionales</Label>
+            <p className="text-xs text-muted-foreground">
+              Marca si este miembro también puede atender el otro tipo de
+              servicio además de su rol principal.
+            </p>
+            <div className="space-y-2">
+              {(() => {
+                const vetCovered = roleCoversCapability(selectedRole, "can_vet");
+                return (
+                  <label className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/50">
+                    <input
+                      type="checkbox"
+                      className="mt-1 size-4 rounded border-border"
+                      checked={vetCovered || canVetExtra}
+                      disabled={vetCovered}
+                      onChange={(e) => setCanVetExtra(e.target.checked)}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">
+                        Puede atender consultas médicas
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {vetCovered
+                          ? "Incluido en el rol seleccionado."
+                          : "Permite asignar citas médicas a este miembro."}
+                      </p>
+                    </div>
+                  </label>
+                );
+              })()}
+              {(() => {
+                const groomCovered = roleCoversCapability(
+                  selectedRole,
+                  "can_groom"
+                );
+                return (
+                  <label className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/50">
+                    <input
+                      type="checkbox"
+                      className="mt-1 size-4 rounded border-border"
+                      checked={groomCovered || canGroomExtra}
+                      disabled={groomCovered}
+                      onChange={(e) => setCanGroomExtra(e.target.checked)}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">
+                        Puede atender peluquería
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {groomCovered
+                          ? "Incluido en el rol seleccionado."
+                          : "Permite asignar citas de peluquería a este miembro."}
+                      </p>
+                    </div>
+                  </label>
+                );
+              })()}
+            </div>
           </div>
 
           <div>

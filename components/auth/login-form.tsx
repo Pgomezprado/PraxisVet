@@ -76,6 +76,26 @@ export function LoginForm() {
       return;
     }
 
+    // Tutor del portal: tiene vínculo activo a una o más clínicas.
+    const { data: tutorLinks } = await supabase
+      .from("client_auth_links")
+      .select("organizations!inner(slug)")
+      .eq("active", true)
+      .not("linked_at", "is", null);
+
+    const clinics = ((tutorLinks ?? []) as unknown as Array<{
+      organizations: { slug: string };
+    }>).map((l) => l.organizations.slug);
+
+    if (clinics.length === 1) {
+      router.push(`/tutor/${clinics[0]}`);
+      return;
+    }
+    if (clinics.length > 1) {
+      router.push("/tutor");
+      return;
+    }
+
     router.push("/onboarding");
   }
 

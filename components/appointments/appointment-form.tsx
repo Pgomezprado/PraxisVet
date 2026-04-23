@@ -11,6 +11,7 @@ import {
   checkConflicts,
   getProfessionalDayAppointments,
   getMemberDayAvailability,
+  getMemberWeeklySchedule,
   getProfessionals,
 } from "@/app/[clinic]/appointments/actions";
 import type { AppointmentWithRelations } from "@/app/[clinic]/appointments/actions";
@@ -18,11 +19,13 @@ import type { MemberRole } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select } from "@/components/ui/select";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock, Loader2 } from "lucide-react";
+import { AlertTriangle, CalendarDays, Clock, Loader2 } from "lucide-react";
 import { formatCLP } from "@/lib/utils/format";
 import { formatSpecies } from "@/lib/validations/clients";
 
@@ -97,6 +100,9 @@ export function AppointmentForm({
     tramos: { start_time: string; end_time: string }[];
     blocks: { start_date: string; end_date: string; reason: string | null }[];
   } | null>(null);
+  const [weeklySchedule, setWeeklySchedule] = useState<
+    { day_of_week: number; start_time: string; end_time: string }[] | null
+  >(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEditing = !!appointmentId;
 
@@ -119,6 +125,7 @@ export function AppointmentForm({
       end_time: "",
       reason: "",
       notes: "",
+      is_dangerous: false,
       ...defaultValues,
     },
   });
@@ -275,6 +282,20 @@ export function AppointmentForm({
     };
   }, [watchedAssignedTo, watchedDate]);
 
+  useEffect(() => {
+    if (!watchedAssignedTo) {
+      setWeeklySchedule(null);
+      return;
+    }
+    let cancelled = false;
+    getMemberWeeklySchedule(watchedAssignedTo).then((res) => {
+      if (!cancelled) setWeeklySchedule(res);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [watchedAssignedTo]);
+
   async function onSubmit(data: AppointmentInput) {
     setServerError(null);
 
@@ -428,6 +449,58 @@ export function AppointmentForm({
               <FieldError message={errors.assigned_to?.message} />
             </div>
 
+            {watchedAssignedTo && weeklySchedule && (
+              <div className="sm:col-span-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+                <div className="flex items-center gap-2 font-medium">
+                  <CalendarDays className="size-4 text-primary" />
+                  Horario de {professionalDisplayName || professionalLabel.toLowerCase()}
+                </div>
+                {weeklySchedule.length === 0 ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Este profesional no tiene horario configurado. Pídele a un
+                    administrador que lo configure en Ajustes → Equipo.
+                  </p>
+                ) : (
+                  <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
+                    {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
+                      const tramos = weeklySchedule.filter(
+                        (s) => s.day_of_week === dow
+                      );
+                      const dayLabel = [
+                        "Dom",
+                        "Lun",
+                        "Mar",
+                        "Mié",
+                        "Jue",
+                        "Vie",
+                        "Sáb",
+                      ][dow];
+                      return (
+                        <li
+                          key={dow}
+                          className={`text-xs ${
+                            tramos.length === 0
+                              ? "text-muted-foreground/50"
+                              : "text-foreground"
+                          }`}
+                        >
+                          <span className="font-semibold">{dayLabel}:</span>{" "}
+                          {tramos.length === 0
+                            ? "no atiende"
+                            : tramos
+                                .map(
+                                  (t) =>
+                                    `${t.start_time.slice(0, 5)}–${t.end_time.slice(0, 5)}`
+                                )
+                                .join(", ")}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="service_id">Servicio</Label>
               <Select
@@ -448,10 +521,15 @@ export function AppointmentForm({
 
             <div className="space-y-2">
               <Label htmlFor="date">Fecha *</Label>
-              <Input
+              <DatePicker
                 id="date"
-                type="date"
-                {...register("date")}
+                value={watch("date")}
+                onChange={(v) =>
+                  setValue("date", v, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
                 aria-invalid={!!errors.date}
               />
               <FieldError message={errors.date?.message} />
@@ -583,6 +661,30 @@ export function AppointmentForm({
               rows={2}
             />
           </div>
+
+          {watchedType === "grooming" && (
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-red-300 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/30">
+              <div className="space-y-1">
+                <Label
+                  htmlFor="is_dangerous"
+                  className="flex items-center gap-2 text-red-900 dark:text-red-200"
+                >
+                  <AlertTriangle className="size-4 text-red-600" />
+                  Animal peligroso o agresivo
+                </Label>
+                <p className="text-xs text-red-800/80 dark:text-red-300/80">
+                  Marca esta opción si el animal requiere manejo especial
+                  (bozal, sedación previa, apoyo). El peluquero verá una
+                  alerta destacada en su agenda.
+                </p>
+              </div>
+              <Switch
+                id="is_dangerous"
+                checked={watch("is_dangerous") ?? false}
+                onCheckedChange={(value) => setValue("is_dangerous", value)}
+              />
+            </div>
+          )}
 
           <div className="flex items-center gap-3 pt-2">
             <Button type="submit" disabled={isSubmitting}>

@@ -16,6 +16,7 @@ import {
   updateDeworming,
 } from "@/app/[clinic]/clients/[id]/pets/[petId]/dewormings/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -205,10 +206,16 @@ export function DewormingForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="date_administered">Fecha de aplicación</Label>
-                <Input
+                <DatePicker
                   id="date_administered"
-                  type="date"
-                  {...register("date_administered")}
+                  value={watch("date_administered") ?? ""}
+                  onChange={(v) =>
+                    setValue("date_administered", v, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
+                  aria-invalid={!!errors.date_administered}
                 />
                 {errors.date_administered && (
                   <p className="text-sm text-destructive">
@@ -269,10 +276,12 @@ export function DewormingForm({
                 <Label htmlFor="next_due_date">
                   Próxima fecha (opcional)
                 </Label>
-                <Input
+                <DatePicker
                   id="next_due_date"
-                  type="date"
-                  {...register("next_due_date")}
+                  value={watch("next_due_date") ?? ""}
+                  onChange={(v) =>
+                    setValue("next_due_date", v, { shouldDirty: true })
+                  }
                 />
                 {previewDue && (
                   <p className="text-xs text-muted-foreground">

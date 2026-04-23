@@ -10,6 +10,7 @@ import { useClinic } from "@/lib/context/clinic-context";
 import { createInvoice } from "@/app/[clinic]/billing/actions";
 import { formatCLP } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -64,6 +65,8 @@ export function InvoiceForm({
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } = useForm<InvoiceInput>({
@@ -149,10 +152,12 @@ export function InvoiceForm({
 
             <div className="space-y-2">
               <Label htmlFor="due_date">Fecha de vencimiento (opcional)</Label>
-              <Input
+              <DatePicker
                 id="due_date"
-                type="date"
-                {...register("due_date")}
+                value={watch("due_date") ?? ""}
+                onChange={(v) =>
+                  setValue("due_date", v, { shouldDirty: true })
+                }
               />
             </div>
           </div>

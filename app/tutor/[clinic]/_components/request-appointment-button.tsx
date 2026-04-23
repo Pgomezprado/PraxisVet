@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +34,7 @@ export function RequestAppointmentButton({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [preferredDate, setPreferredDate] = useState("");
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -45,8 +47,6 @@ export function RequestAppointmentButton({
       setOpen(false);
     });
   }
-
-  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -101,11 +101,15 @@ export function RequestAppointmentButton({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="preferredDate">Fecha preferida</Label>
-              <Input
+              <DatePicker
                 id="preferredDate"
+                value={preferredDate}
+                onChange={setPreferredDate}
+              />
+              <input
+                type="hidden"
                 name="preferredDate"
-                type="date"
-                min={today}
+                value={preferredDate}
                 required
               />
             </div>

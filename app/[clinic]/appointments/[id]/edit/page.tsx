@@ -67,6 +67,7 @@ export default async function EditAppointmentPage({
           end_time: appointment.end_time.slice(0, 5),
           reason: appointment.reason ?? "",
           notes: appointment.notes ?? "",
+          is_dangerous: appointment.is_dangerous ?? false,
         }}
       />
     </div>

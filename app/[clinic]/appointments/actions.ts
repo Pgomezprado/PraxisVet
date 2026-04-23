@@ -32,6 +32,7 @@ export type AppointmentWithRelations = {
   end_time: string;
   reason: string | null;
   notes: string | null;
+  is_dangerous: boolean;
   reminder_sent: boolean;
   created_at: string;
   client: { id: string; first_name: string; last_name: string; phone: string | null };
@@ -192,6 +193,7 @@ export async function createAppointment(orgId: string, formData: AppointmentInpu
       end_time: parsed.data.end_time,
       reason: parsed.data.reason || null,
       notes: parsed.data.notes || null,
+      is_dangerous: parsed.data.is_dangerous,
       status: "pending",
     })
     .select()
@@ -285,6 +287,7 @@ export async function updateAppointment(appointmentId: string, formData: Appoint
       end_time: parsed.data.end_time,
       reason: parsed.data.reason || null,
       notes: parsed.data.notes || null,
+      is_dangerous: parsed.data.is_dangerous,
     })
     .eq("id", appointmentId)
     .select()
@@ -494,6 +497,41 @@ export async function getMemberDayAvailability(
     tramos: tramosRes.data ?? [],
     blocks: blocksRes.data ?? [],
   };
+}
+
+export async function getMemberWeeklySchedule(
+  memberId: string
+): Promise<{ day_of_week: number; start_time: string; end_time: string }[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: caller } = await supabase
+    .from("organization_members")
+    .select("org_id")
+    .eq("user_id", user.id)
+    .eq("active", true)
+    .maybeSingle();
+  if (!caller) return [];
+
+  const { data: target } = await supabase
+    .from("organization_members")
+    .select("org_id")
+    .eq("id", memberId)
+    .maybeSingle();
+  if (!target || target.org_id !== caller.org_id) return [];
+
+  const { data } = await supabase
+    .from("member_weekly_schedules")
+    .select("day_of_week, start_time, end_time")
+    .eq("member_id", memberId)
+    .order("day_of_week", { ascending: true })
+    .order("start_time", { ascending: true });
+
+  return data ?? [];
 }
 
 export async function getProfessionalDayAppointments(

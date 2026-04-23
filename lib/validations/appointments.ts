@@ -12,6 +12,7 @@ export const appointmentSchema = z
     end_time: z.string().min(1, "Selecciona hora de fin"),
     reason: z.string().optional(),
     notes: z.string().optional(),
+    is_dangerous: z.boolean(),
   })
   .refine(
     (data) => {

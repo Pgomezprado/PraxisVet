@@ -15,6 +15,7 @@ import {
   updateVaccination,
 } from "@/app/[clinic]/clients/[id]/pets/[petId]/vaccinations/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -184,8 +185,7 @@ export function VaccinationForm({
   }
 
   // Recalcula preview si cambia fecha con dosis del catálogo seleccionada
-  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value;
+  function handleDateChange(value: string) {
     setValue("date_administered", value, { shouldValidate: true });
     if (selectedMeta && value) {
       setValue(
@@ -311,11 +311,11 @@ export function VaccinationForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="date_administered">Fecha de aplicación</Label>
-              <Input
+              <DatePicker
                 id="date_administered"
-                type="date"
                 value={dateAdministered ?? ""}
                 onChange={handleDateChange}
+                aria-invalid={!!errors.date_administered}
               />
               {errors.date_administered && (
                 <p className="text-sm text-destructive">
@@ -327,13 +327,13 @@ export function VaccinationForm({
               <Label htmlFor="next_due_date">
                 Próxima dosis {isFromCatalog && "(preview automático)"}
               </Label>
-              <Input
+              <DatePicker
                 id="next_due_date"
-                type="date"
                 value={nextDueDate ?? ""}
-                onChange={(e) =>
-                  setValue("next_due_date", e.target.value, {
+                onChange={(v) =>
+                  setValue("next_due_date", v, {
                     shouldValidate: true,
+                    shouldDirty: true,
                   })
                 }
               />

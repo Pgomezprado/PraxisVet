@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, User, PawPrint, Stethoscope, Loader2 } from "lucide-react";
+import { AlertTriangle, Clock, User, PawPrint, Stethoscope, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/appointments/status-badge";
 import {
@@ -96,7 +96,7 @@ export function AppointmentCard({
           href={`/${clinicSlug}/appointments/${appointment.id}`}
           className="flex-1 space-y-1.5"
         >
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-medium leading-none">
               {appointment.pet.name}
               {appointment.pet.species && (
@@ -105,6 +105,12 @@ export function AppointmentCard({
                 </span>
               )}
             </h3>
+            {appointment.is_dangerous && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-200">
+                <AlertTriangle className="size-3" />
+                Peligroso
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">

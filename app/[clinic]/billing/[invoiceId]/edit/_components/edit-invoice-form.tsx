@@ -18,6 +18,7 @@ import {
 } from "@/app/[clinic]/billing/actions";
 import type { InvoiceDetail } from "@/app/[clinic]/billing/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -65,6 +66,8 @@ export function EditInvoiceForm({
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } = useForm<InvoiceUpdateInput>({
@@ -170,10 +173,12 @@ export function EditInvoiceForm({
                 <Label htmlFor="due_date">
                   Fecha de vencimiento (opcional)
                 </Label>
-                <Input
+                <DatePicker
                   id="due_date"
-                  type="date"
-                  {...register("due_date")}
+                  value={watch("due_date") ?? ""}
+                  onChange={(v) =>
+                    setValue("due_date", v, { shouldDirty: true })
+                  }
                 />
               </div>
             </div>

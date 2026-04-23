@@ -498,7 +498,17 @@ export function RecordForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="date">Fecha</Label>
-                <Input id="date" type="date" {...register("date")} />
+                <DatePicker
+                  id="date"
+                  value={watch("date") ?? ""}
+                  onChange={(v) =>
+                    setValue("date", v, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
+                  aria-invalid={!!errors.date}
+                />
                 {errors.date && (
                   <p className="text-sm text-destructive">
                     {errors.date.message}

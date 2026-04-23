@@ -14,6 +14,7 @@ import {
   updateGroomingRecord,
 } from "@/app/[clinic]/clients/[id]/pets/[petId]/grooming/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -169,10 +170,15 @@ export function GroomingRecordForm({
 
             <div>
               <Label htmlFor="date">Fecha *</Label>
-              <Input
+              <DatePicker
                 id="date"
-                type="date"
-                {...register("date")}
+                value={watch("date") ?? ""}
+                onChange={(v) =>
+                  setValue("date", v, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
                 aria-invalid={!!errors.date}
               />
               <FieldError message={errors.date?.message} />

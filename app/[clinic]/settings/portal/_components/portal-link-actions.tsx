@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -213,13 +214,13 @@ export function PortalLinkActions({
           <div className="space-y-2">
             <Label htmlFor={`exp-${link.id}`}>Fecha de expiración</Label>
             <div className="flex items-center gap-2">
-              <Input
-                id={`exp-${link.id}`}
-                type="date"
-                value={expirationValue}
-                onChange={(e) => setExpirationValue(e.target.value)}
-                min={new Date().toISOString().slice(0, 10)}
-              />
+              <div className="flex-1">
+                <DatePicker
+                  id={`exp-${link.id}`}
+                  value={expirationValue}
+                  onChange={setExpirationValue}
+                />
+              </div>
               {expirationValue && (
                 <Button
                   variant="ghost"

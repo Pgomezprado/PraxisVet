@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface DaySelectorProps {
   clinicSlug: string;
@@ -39,13 +39,10 @@ export function DaySelector({ clinicSlug, selectedDate, view }: DaySelectorProps
           Ir a fecha
         </Button>
         {open && (
-          <div className="absolute top-full left-0 z-50 mt-1 rounded-md border bg-popover p-2 shadow-md">
-            <Input
-              type="date"
-              defaultValue={selectedDate}
-              onChange={(e) => handleDateChange(e.target.value)}
-              className="w-auto"
-              autoFocus
+          <div className="absolute top-full left-0 z-50 mt-1 w-56">
+            <DatePicker
+              value={selectedDate}
+              onChange={handleDateChange}
             />
           </div>
         )}

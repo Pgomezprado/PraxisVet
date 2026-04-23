@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  AlertTriangle,
   CalendarDays,
   Clock,
   User,
@@ -89,6 +90,22 @@ export default async function AppointmentDetailPage({
           </Link>
         )}
       </div>
+
+      {appointment.is_dangerous && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-red-950/30">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-600" />
+          <div className="space-y-1">
+            <p className="font-semibold text-red-900 dark:text-red-200">
+              Animal peligroso
+            </p>
+            <p className="text-sm text-red-800 dark:text-red-300">
+              Esta mascota fue marcada como agresiva al agendar. Prepara el
+              manejo (bozal, sedación previa o apoyo de un segundo) antes de
+              iniciar la atención.
+            </p>
+          </div>
+        </div>
+      )}
 
       <StatusActions
         appointmentId={appointment.id}

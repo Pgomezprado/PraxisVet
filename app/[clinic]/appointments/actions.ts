@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { appointmentSchema, updateStatusSchema } from "@/lib/validations/appointments";
 import type { AppointmentInput } from "@/lib/validations/appointments";
-import type { AppointmentStatus, AppointmentType, MemberRole } from "@/types";
+import type {
+  AppointmentStatus,
+  AppointmentType,
+  MemberRole,
+  ServiceCategory,
+} from "@/types";
 import { validateMemberInOrg } from "@/lib/auth/validate-member";
 import {
   canAssignMemberToAppointment,
@@ -38,7 +43,13 @@ export type AppointmentWithRelations = {
     specialty: string | null;
     role: MemberRole;
   };
-  service: { id: string; name: string; duration_minutes: number; price: number | null } | null;
+  service: {
+    id: string;
+    name: string;
+    duration_minutes: number;
+    price: number | null;
+    category: ServiceCategory | null;
+  } | null;
 };
 
 const SELECT_WITH_RELATIONS = `
@@ -46,7 +57,7 @@ const SELECT_WITH_RELATIONS = `
       client:clients!client_id (id, first_name, last_name, phone),
       pet:pets!pet_id (id, name, species, breed),
       professional:organization_members!assigned_to (id, first_name, last_name, specialty, role),
-      service:services!service_id (id, name, duration_minutes, price)
+      service:services!service_id (id, name, duration_minutes, price, category)
     `;
 
 export async function getAppointments(

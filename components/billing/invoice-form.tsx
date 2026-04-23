@@ -41,6 +41,11 @@ interface InvoiceFormProps {
     unit_price: number;
     item_type?: "service" | "product";
   }[];
+  priceTierInfo?: {
+    label: string;
+    price: number;
+    service_name: string;
+  };
 }
 
 export function InvoiceForm({
@@ -48,6 +53,7 @@ export function InvoiceForm({
   defaultClientId,
   defaultAppointmentId,
   defaultItems,
+  priceTierInfo,
 }: InvoiceFormProps) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
@@ -211,6 +217,14 @@ export function InvoiceForm({
           </div>
         </CardHeader>
         <CardContent>
+          {priceTierInfo && (
+            <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+              Tarifa aplicada: <strong>{priceTierInfo.label}</strong> (
+              {formatCLP(priceTierInfo.price)}) para{" "}
+              <strong>{priceTierInfo.service_name}</strong>. Puedes editar el
+              precio si necesitas.
+            </div>
+          )}
           {errors.items?.root && (
             <p className="mb-3 text-sm text-destructive">
               {errors.items.root.message}

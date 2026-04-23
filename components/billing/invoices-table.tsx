@@ -30,14 +30,12 @@ import { InvoiceStatusBadge } from "@/components/billing/invoice-status-badge";
 import { deleteInvoice } from "@/app/[clinic]/billing/actions";
 import type { InvoiceWithClient } from "@/app/[clinic]/billing/actions";
 import type { InvoiceStatus } from "@/types";
-
-function formatCurrency(amount: number): string {
-  return `$${Number(amount).toFixed(2)}`;
-}
+import { formatCLP } from "@/lib/utils/format";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Borrador" },
   { value: "sent", label: "Enviada" },
+  { value: "partial_paid", label: "Abono parcial" },
   { value: "paid", label: "Pagada" },
   { value: "overdue", label: "Vencida" },
   { value: "cancelled", label: "Cancelada" },
@@ -146,7 +144,7 @@ export function InvoicesTable({
                     />
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(inv.total)}
+                    {formatCLP(inv.total)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">

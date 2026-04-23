@@ -32,6 +32,7 @@ import { PaymentDialog } from "@/components/billing/payment-dialog";
 import { DownloadPdfButton } from "@/components/pdf/DownloadPdfButton";
 import { InvoiceStatusActions } from "./_components/invoice-status-actions";
 import { getInvoice } from "../actions";
+import { formatCLP } from "@/lib/utils/format";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: "Efectivo",
@@ -39,10 +40,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   transfer: "Transferencia",
   other: "Otro",
 };
-
-function formatCurrency(amount: number): string {
-  return `$${Number(amount).toFixed(2)}`;
-}
 
 export default async function InvoiceDetailPage({
   params,
@@ -60,11 +57,9 @@ export default async function InvoiceDetailPage({
   const invoice = result.data;
   const clientName = `${invoice.client.first_name} ${invoice.client.last_name}`;
 
-  const totalPaid = invoice.payments.reduce(
-    (sum, p) => sum + Number(p.amount),
-    0
-  );
-  const remaining = Number(invoice.total) - totalPaid;
+  const totalPaid = Number(invoice.amount_paid ?? 0);
+  const remaining = Math.max(Number(invoice.total) - totalPaid, 0);
+  const isPartial = invoice.status === "partial_paid";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -180,22 +175,36 @@ export default async function InvoiceDetailPage({
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="text-sm font-bold">
-                {formatCurrency(invoice.total)}
+                {formatCLP(invoice.total)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Pagado</span>
               <span className="text-sm font-medium text-green-600">
-                {formatCurrency(totalPaid)}
+                {formatCLP(totalPaid)}
               </span>
             </div>
             <Separator />
             <div className="flex justify-between">
-              <span className="text-sm font-medium">Pendiente</span>
-              <span className="text-sm font-bold text-orange-600">
-                {formatCurrency(remaining > 0 ? remaining : 0)}
+              <span className="text-sm font-medium">
+                {isPartial ? "Saldo pendiente" : "Pendiente"}
+              </span>
+              <span
+                className={
+                  isPartial
+                    ? "text-base font-bold text-amber-600"
+                    : "text-sm font-bold text-orange-600"
+                }
+              >
+                {formatCLP(remaining)}
               </span>
             </div>
+            {isPartial && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Esta factura tiene abonos registrados. Continúa registrando pagos
+                hasta cubrir el total.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -220,10 +229,10 @@ export default async function InvoiceDetailPage({
                   <TableCell>{item.description}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(item.unit_price)}
+                    {formatCLP(item.unit_price)}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(item.total)}
+                    {formatCLP(item.total)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -234,7 +243,7 @@ export default async function InvoiceDetailPage({
                   Subtotal
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {formatCurrency(invoice.subtotal)}
+                  {formatCLP(invoice.subtotal)}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -242,7 +251,7 @@ export default async function InvoiceDetailPage({
                   Impuesto ({invoice.tax_rate}%)
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {formatCurrency(invoice.tax_amount)}
+                  {formatCLP(invoice.tax_amount)}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -250,7 +259,7 @@ export default async function InvoiceDetailPage({
                   Total
                 </TableCell>
                 <TableCell className="text-right text-base font-bold">
-                  {formatCurrency(invoice.total)}
+                  {formatCLP(invoice.total)}
                 </TableCell>
               </TableRow>
             </TableFooter>
@@ -299,7 +308,7 @@ export default async function InvoiceDetailPage({
                     </TableCell>
                     <TableCell>{payment.reference || "--"}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(payment.amount)}
+                      {formatCLP(payment.amount)}
                     </TableCell>
                   </TableRow>
                 ))}

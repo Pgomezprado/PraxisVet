@@ -1,9 +1,6 @@
 import { DollarSign, TrendingUp, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`;
-}
+import { formatCLP } from "@/lib/utils/format";
 
 interface InvoiceSummaryProps {
   invoiced: number;
@@ -26,7 +23,7 @@ export function InvoiceSummary({
           <DollarSign className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold">{formatCurrency(invoiced)}</p>
+          <p className="text-2xl font-bold">{formatCLP(invoiced)}</p>
         </CardContent>
       </Card>
 
@@ -37,7 +34,7 @@ export function InvoiceSummary({
         </CardHeader>
         <CardContent>
           <p className="text-2xl font-bold text-green-600">
-            {formatCurrency(collected)}
+            {formatCLP(collected)}
           </p>
         </CardContent>
       </Card>
@@ -49,7 +46,7 @@ export function InvoiceSummary({
         </CardHeader>
         <CardContent>
           <p className="text-2xl font-bold text-orange-600">
-            {formatCurrency(pending)}
+            {formatCLP(pending)}
           </p>
         </CardContent>
       </Card>

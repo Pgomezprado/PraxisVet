@@ -31,6 +31,15 @@ const superadminAllowlist = [
   // el usuario tenga permisos RLS (membership o linked_at). Service-role
   // solo se usa para ese upsert puntual.
   "app/auth/portal-bootstrap/**",
+  // Audit log del portal: la tabla client_auth_audit no expone INSERT a
+  // authenticated (solo SELECT a staff), por eso escribir requiere service-role.
+  "lib/audit/**",
+  // Gestión admin del portal del tutor: lee y muta client_auth_links sin pasar
+  // por la sesión del propio tutor (que aún no tiene linked_at). Las actions
+  // ya validan rol admin via organization_members antes de tocar nada.
+  // Usamos `**/settings/portal/**` porque el segmento `[clinic]` es interpretado
+  // como char-class por minimatch.
+  "**/settings/portal/**",
 ];
 
 const restrictedSuperadmin = {

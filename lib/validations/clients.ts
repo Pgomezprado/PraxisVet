@@ -101,6 +101,16 @@ export const petSchema = z.object({
     .or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   photo_url: z.string().url().nullable().optional(),
+  size: z
+    .enum(["xs", "s", "m", "l", "xl"])
+    .optional()
+    .or(z.literal("")),
+  weight: z
+    .number({ error: "Ingresa un peso válido" })
+    .min(0, "El peso no puede ser negativo")
+    .max(999, "Peso fuera de rango")
+    .nullable()
+    .optional(),
 });
 
 export type PetInput = z.infer<typeof petSchema>;

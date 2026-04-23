@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Stethoscope, Users, Building2, MessageCircle } from "lucide-react";
+import {
+  Stethoscope,
+  Users,
+  Building2,
+  MessageCircle,
+  ShieldCheck,
+} from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -31,6 +37,12 @@ const sections = [
     description: "Recordatorios automáticos por WhatsApp a tus clientes.",
     href: "notifications",
     icon: MessageCircle,
+  },
+  {
+    title: "Portal del tutor",
+    description: "Gestiona accesos, expiraciones y auditoría del portal.",
+    href: "portal",
+    icon: ShieldCheck,
   },
 ];
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { InvoiceSummary } from "@/components/billing/invoice-summary";
@@ -65,12 +65,20 @@ export default async function BillingPage({
             Gestiona las facturas y pagos de tu clínica.
           </p>
         </div>
-        <Link href={`/${clinic}/billing/new`}>
-          <Button>
-            <Plus className="size-4" />
-            Nueva factura
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/${clinic}/billing/pending`}>
+            <Button variant="outline">
+              <Wallet className="size-4" />
+              Saldos pendientes
+            </Button>
+          </Link>
+          <Link href={`/${clinic}/billing/new`}>
+            <Button>
+              <Plus className="size-4" />
+              Nueva factura
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <InvoiceSummary

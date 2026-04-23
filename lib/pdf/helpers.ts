@@ -1,10 +1,8 @@
 import jsPDF from "jspdf";
 
-export function formatCurrency(amount: number): string {
-  return "$" + amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+export function formatCurrency(amount: number | null | undefined): string {
+  const n = Number(amount) || 0;
+  return `$${n.toLocaleString("es-CL")}`;
 }
 
 export function formatDateES(dateStr: string): string {
@@ -80,6 +78,7 @@ const INVOICE_STATUS_MAP: Record<string, string> = {
   draft: "Borrador",
   sent: "Enviada",
   paid: "Pagada",
+  partial_paid: "Abono parcial",
   overdue: "Vencida",
   cancelled: "Cancelada",
 };

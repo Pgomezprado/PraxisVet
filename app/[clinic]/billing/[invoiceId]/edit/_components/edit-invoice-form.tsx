@@ -38,10 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-function formatCurrency(amount: number): string {
-  return `$${Number(amount).toFixed(2)}`;
-}
+import { formatCLP } from "@/lib/utils/format";
 
 interface EditInvoiceFormProps {
   invoice: InvoiceDetail;
@@ -232,10 +229,10 @@ export function EditInvoiceForm({
                   <TableCell>{item.description}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(item.unit_price)}
+                    {formatCLP(item.unit_price)}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(item.total)}
+                    {formatCLP(item.total)}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -279,7 +276,7 @@ export function EditInvoiceForm({
                   />
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {formatCurrency(newItemQty * newItemPrice)}
+                  {formatCLP(newItemQty * newItemPrice)}
                 </TableCell>
                 <TableCell>
                   <Button
@@ -299,7 +296,7 @@ export function EditInvoiceForm({
                   Subtotal
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {formatCurrency(invoice.subtotal)}
+                  {formatCLP(invoice.subtotal)}
                 </TableCell>
                 <TableCell />
               </TableRow>
@@ -308,7 +305,7 @@ export function EditInvoiceForm({
                   Impuesto ({invoice.tax_rate}%)
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {formatCurrency(invoice.tax_amount)}
+                  {formatCLP(invoice.tax_amount)}
                 </TableCell>
                 <TableCell />
               </TableRow>
@@ -317,7 +314,7 @@ export function EditInvoiceForm({
                   Total
                 </TableCell>
                 <TableCell className="text-right text-base font-bold">
-                  {formatCurrency(invoice.total)}
+                  {formatCLP(invoice.total)}
                 </TableCell>
                 <TableCell />
               </TableRow>

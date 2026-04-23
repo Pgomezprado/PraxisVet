@@ -368,6 +368,8 @@ export async function createPet(
       reproductive_status: parsed.data.reproductive_status || null,
       notes: parsed.data.notes || null,
       photo_url: parsed.data.photo_url ?? null,
+      size: parsed.data.size || null,
+      weight: parsed.data.weight ?? null,
     })
     .select()
     .single();
@@ -427,6 +429,8 @@ export async function updatePet(
       reproductive_status: parsed.data.reproductive_status || null,
       notes: parsed.data.notes || null,
       photo_url: parsed.data.photo_url ?? null,
+      size: parsed.data.size || null,
+      weight: parsed.data.weight ?? null,
     })
     .eq("id", petId)
     .eq("org_id", orgId)

@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin.server";
 import { sendPortalInvitationEmail } from "@/lib/email/portal-invitation";
+import { logPortalAuditEvent } from "@/lib/audit/portal-audit";
 
 type InviteResult =
   | { success: true }
@@ -46,6 +47,8 @@ export async function invitePortalAccess(params: {
     .eq("org_id", params.orgId)
     .maybeSingle();
 
+  let linkId: string | null = existing?.id ?? null;
+
   if (existing) {
     const { error: updateErr } = await admin
       .from("client_auth_links")
@@ -65,14 +68,16 @@ export async function invitePortalAccess(params: {
       };
     }
   } else {
-    const { error: insertErr } = await admin
+    const { data: inserted, error: insertErr } = await admin
       .from("client_auth_links")
       .insert({
         client_id: params.clientId,
         org_id: params.orgId,
         email,
         invited_by: params.invitedByMemberId,
-      });
+      })
+      .select("id")
+      .single();
 
     if (insertErr) {
       return {
@@ -80,7 +85,15 @@ export async function invitePortalAccess(params: {
         error: `No se pudo crear el vínculo: ${insertErr.message}`,
       };
     }
+    linkId = inserted.id;
   }
+
+  await logPortalAuditEvent({
+    orgId: params.orgId,
+    event: "link_requested",
+    linkId,
+    metadata: { email, reactivated: Boolean(existing) },
+  });
 
   // Magic link de Supabase. Redirige al callback, que luego pasa por el
   // bootstrap para completar linked_at.
@@ -127,6 +140,13 @@ export async function revokePortalAccess(params: {
   orgId: string;
 }): Promise<InviteResult> {
   const admin = createAdminClient();
+  const { data: link } = await admin
+    .from("client_auth_links")
+    .select("id, user_id")
+    .eq("client_id", params.clientId)
+    .eq("org_id", params.orgId)
+    .maybeSingle();
+
   const { error } = await admin
     .from("client_auth_links")
     .update({
@@ -138,6 +158,15 @@ export async function revokePortalAccess(params: {
 
   if (error) {
     return { success: false, error: error.message };
+  }
+
+  if (link) {
+    await logPortalAuditEvent({
+      orgId: params.orgId,
+      event: "access_revoked",
+      linkId: link.id,
+      userId: link.user_id ?? null,
+    });
   }
   return { success: true };
 }

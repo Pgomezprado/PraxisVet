@@ -31,15 +31,16 @@ import {
   toggleServiceActive,
 } from "@/app/[clinic]/settings/services/actions";
 import type { Service, ServiceCategory } from "@/types";
+import { formatCLP } from "@/lib/utils/format";
 
 interface ServicesTableProps {
   services: Service[];
   clinicSlug: string;
 }
 
-function formatPrice(price: number | null): string {
+function formatPrice(price: number | null | undefined): string {
   if (price === null || price === undefined) return "--";
-  return `$${Number(price).toFixed(2)}`;
+  return formatCLP(price);
 }
 
 export function ServicesTable({ services, clinicSlug }: ServicesTableProps) {

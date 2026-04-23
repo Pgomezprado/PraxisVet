@@ -21,10 +21,11 @@ type ActionResult<T = void> =
 
 const ALLOWED_STATUS_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
   draft: ["sent", "cancelled"],
-  sent: ["paid", "overdue", "cancelled"],
-  overdue: ["paid", "cancelled"],
+  sent: ["overdue", "cancelled"],
+  overdue: ["cancelled"],
+  partial_paid: ["cancelled"],
   paid: [],
-  cancelled: [],
+  cancelled: ["draft"],
 };
 
 async function getInvoiceInOrg(
@@ -32,12 +33,20 @@ async function getInvoiceInOrg(
   invoiceId: string,
   orgId: string
 ): Promise<
-  | { ok: true; invoice: { id: string; status: InvoiceStatus; total: number } }
+  | {
+      ok: true;
+      invoice: {
+        id: string;
+        status: InvoiceStatus;
+        total: number;
+        amount_paid: number;
+      };
+    }
   | { ok: false; error: string }
 > {
   const { data, error } = await supabase
     .from("invoices")
-    .select("id, status, total")
+    .select("id, status, total, amount_paid")
     .eq("id", invoiceId)
     .eq("org_id", orgId)
     .maybeSingle();
@@ -49,6 +58,7 @@ async function getInvoiceInOrg(
       id: data.id as string,
       status: data.status as InvoiceStatus,
       total: Number(data.total),
+      amount_paid: Number(data.amount_paid ?? 0),
     },
   };
 }
@@ -73,6 +83,7 @@ export type InvoiceWithClient = {
   tax_rate: number;
   tax_amount: number;
   total: number;
+  amount_paid: number;
   due_date: string | null;
   paid_at: string | null;
   notes: string | null;
@@ -501,26 +512,9 @@ export async function updateInvoiceStatus(
       };
     }
 
-    if (status === "paid") {
-      const { data: payments } = await supabase
-        .from("payments")
-        .select("amount")
-        .eq("invoice_id", invoiceId);
-      const totalPaid = (payments ?? []).reduce(
-        (sum, p) => sum + Number(p.amount),
-        0
-      );
-      if (totalPaid < check.invoice.total) {
-        return {
-          success: false,
-          error: "No se puede marcar como pagada: pagos insuficientes",
-        };
-      }
-    }
-
     const updateData: Record<string, unknown> = { status };
-    if (status === "paid") {
-      updateData.paid_at = new Date().toISOString();
+    if (status === "draft") {
+      updateData.paid_at = null;
     }
 
     const { error } = await supabase
@@ -557,24 +551,17 @@ export async function registerPayment(
 
     if (
       check.invoice.status === "paid" ||
-      check.invoice.status === "cancelled"
+      check.invoice.status === "cancelled" ||
+      check.invoice.status === "draft"
     ) {
       return {
         success: false,
-        error: "No se pueden registrar pagos en facturas pagadas o canceladas",
+        error:
+          "Solo se pueden registrar pagos en facturas enviadas, vencidas o con abono parcial",
       };
     }
 
-    const { data: existingPayments } = await supabase
-      .from("payments")
-      .select("amount")
-      .eq("invoice_id", invoiceId);
-
-    const alreadyPaid = (existingPayments ?? []).reduce(
-      (sum, p) => sum + Number(p.amount),
-      0
-    );
-    const remaining = check.invoice.total - alreadyPaid;
+    const remaining = check.invoice.total - check.invoice.amount_paid;
 
     if (parsed.data.amount <= 0) {
       return { success: false, error: "El monto debe ser positivo" };
@@ -582,7 +569,9 @@ export async function registerPayment(
     if (parsed.data.amount > remaining + 0.009) {
       return {
         success: false,
-        error: `El monto excede el saldo pendiente (${remaining.toFixed(2)})`,
+        error: `El monto excede el saldo pendiente ($${Math.round(
+          remaining
+        ).toLocaleString("es-CL")})`,
       };
     }
 
@@ -597,18 +586,9 @@ export async function registerPayment(
 
     if (paymentError) return { success: false, error: paymentError.message };
 
-    const totalPaid = alreadyPaid + parsed.data.amount;
-
-    if (totalPaid + 0.009 >= check.invoice.total) {
-      await supabase
-        .from("invoices")
-        .update({ status: "paid", paid_at: new Date().toISOString() })
-        .eq("id", invoiceId)
-        .eq("org_id", orgId);
-    }
-
     revalidatePath("/[clinic]/billing", "page");
     revalidatePath(`/[clinic]/billing/${invoiceId}`, "page");
+    revalidatePath(`/[clinic]/billing/pending`, "page");
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: "No autenticado" };
@@ -660,6 +640,109 @@ export async function getClients(
 
     if (error) return { success: false, error: error.message };
     return { success: true, data: data ?? [] };
+  } catch {
+    return { success: false, error: "No autenticado" };
+  }
+}
+
+export type PendingInvoiceRow = {
+  id: string;
+  invoice_number: string;
+  status: InvoiceStatus;
+  total: number;
+  amount_paid: number;
+  remaining: number;
+  due_date: string | null;
+  created_at: string;
+};
+
+export type PendingByClient = {
+  client_id: string;
+  client_name: string;
+  client_phone: string | null;
+  total_pending: number;
+  invoice_count: number;
+  invoices: PendingInvoiceRow[];
+};
+
+export async function getPendingInvoicesByClient(
+  orgId: string
+): Promise<ActionResult<PendingByClient[]>> {
+  try {
+    const { supabase } = await getAuthUser();
+
+    const { data, error } = await supabase
+      .from("invoices")
+      .select(
+        `
+        id, invoice_number, status, total, amount_paid, due_date, created_at,
+        client:clients!client_id (id, first_name, last_name, phone)
+        `
+      )
+      .eq("org_id", orgId)
+      .in("status", ["sent", "overdue", "partial_paid"])
+      .order("due_date", { ascending: true, nullsFirst: false });
+
+    if (error) return { success: false, error: error.message };
+
+    type Row = {
+      id: string;
+      invoice_number: string;
+      status: InvoiceStatus;
+      total: number | string;
+      amount_paid: number | string;
+      due_date: string | null;
+      created_at: string;
+      client: {
+        id: string;
+        first_name: string;
+        last_name: string;
+        phone: string | null;
+      };
+    };
+
+    const grouped = new Map<string, PendingByClient>();
+
+    for (const row of (data ?? []) as unknown as Row[]) {
+      const total = Number(row.total);
+      const paid = Number(row.amount_paid);
+      const remaining = Math.max(total - paid, 0);
+      if (remaining <= 0.009) continue;
+
+      const clientId = row.client.id;
+      const clientName = `${row.client.first_name} ${row.client.last_name}`;
+
+      if (!grouped.has(clientId)) {
+        grouped.set(clientId, {
+          client_id: clientId,
+          client_name: clientName,
+          client_phone: row.client.phone,
+          total_pending: 0,
+          invoice_count: 0,
+          invoices: [],
+        });
+      }
+
+      const bucket = grouped.get(clientId)!;
+      bucket.total_pending += remaining;
+      bucket.invoice_count += 1;
+      bucket.invoices.push({
+        id: row.id,
+        invoice_number: row.invoice_number,
+        status: row.status,
+        total,
+        amount_paid: paid,
+        remaining,
+        due_date: row.due_date,
+        created_at: row.created_at,
+      });
+    }
+
+    const result = Array.from(grouped.values()).sort(
+      (a, b) => b.total_pending - a.total_pending
+    );
+
+    return { success: true, data: result };
   } catch {
     return { success: false, error: "No autenticado" };
   }

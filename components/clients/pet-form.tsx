@@ -12,6 +12,7 @@ import {
   SEX_OPTIONS,
   getReproductiveStatusOptions,
 } from "@/lib/validations/clients";
+import { SIZE_OPTIONS } from "@/lib/validations/services";
 import { getBreedSuggestions } from "@/lib/constants/breeds";
 import { useClinic } from "@/lib/context/clinic-context";
 import {
@@ -79,6 +80,8 @@ export function PetForm({ clientId, pet }: PetFormProps) {
       reproductive_status: pet?.reproductive_status ?? "",
       notes: pet?.notes ?? "",
       photo_url: pet?.photo_url ?? null,
+      size: pet?.size ?? "",
+      weight: pet?.weight ?? null,
     },
   });
 
@@ -281,6 +284,38 @@ export function PetForm({ clientId, pet }: PetFormProps) {
                 id="color"
                 placeholder="ej: Dorado"
                 {...register("color")}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="size">Talla (opcional)</Label>
+              <Select id="size" {...register("size")}>
+                <option value="">Seleccionar talla</option>
+                {SIZE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Usado para tarifas de peluquería.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="weight">Peso (kg, opcional)</Label>
+              <Input
+                id="weight"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                min="0"
+                placeholder="ej: 12.5"
+                {...register("weight", {
+                  setValueAs: (v) =>
+                    v === "" || v === null ? null : Number(v),
+                })}
               />
             </div>
           </div>

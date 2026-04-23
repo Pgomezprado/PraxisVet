@@ -29,6 +29,7 @@ import { StockIndicator } from "./stock-indicator";
 import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "./category-labels";
 import type { ProductCategory } from "@/types";
 import { cn } from "@/lib/utils";
+import { formatCLP } from "@/lib/utils/format";
 
 interface ProductsTableProps {
   products: ProductWithStock[];
@@ -166,7 +167,7 @@ export function ProductsTable({
                   </TableCell>
                   <TableCell>
                     {product.sale_price != null
-                      ? `$${product.sale_price.toFixed(2)}`
+                      ? formatCLP(product.sale_price)
                       : "--"}
                   </TableCell>
                   <TableCell>

@@ -111,6 +111,7 @@ export async function GET(
   const statusText = invoiceStatusLabel(invoice.status);
   const statusColors: Record<string, [number, number, number]> = {
     paid: [34, 139, 34],
+    partial_paid: [217, 119, 6],
     sent: [30, 100, 200],
     draft: [150, 150, 150],
     overdue: [200, 50, 50],
@@ -247,7 +248,30 @@ export async function GET(
   doc.setFont("helvetica", "bold");
   doc.text("Total:", totalsX, y);
   doc.text(formatCurrency(invoice.total), totalsValX, y, { align: "right" });
-  y += 10;
+  y += 7;
+
+  // Pagado y saldo pendiente
+  const totalPaidPdf = Number(invoice.amount_paid ?? 0);
+  const remainingPdf = Math.max(Number(invoice.total) - totalPaidPdf, 0);
+
+  if (totalPaidPdf > 0 || invoice.status === "partial_paid") {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(34, 139, 34);
+    doc.text("Pagado:", totalsX, y);
+    doc.text(formatCurrency(totalPaidPdf), totalsValX, y, { align: "right" });
+    y += 5;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(217, 119, 6);
+    doc.text("Saldo pendiente:", totalsX, y);
+    doc.text(formatCurrency(remainingPdf), totalsValX, y, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+    y += 7;
+  } else {
+    y += 3;
+  }
 
   // Historial de pagos
   if (payments && payments.length > 0) {

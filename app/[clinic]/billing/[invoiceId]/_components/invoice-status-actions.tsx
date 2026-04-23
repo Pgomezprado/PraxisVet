@@ -32,6 +32,9 @@ const transitions: Record<
   overdue: [
     { label: "Cancelar", to: "cancelled", icon: Ban, variant: "destructive" },
   ],
+  partial_paid: [
+    { label: "Cancelar", to: "cancelled", icon: Ban, variant: "destructive" },
+  ],
   paid: [],
   cancelled: [
     {

@@ -19,6 +19,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { paymentSchema, type PaymentInput } from "@/lib/validations/billing";
 import { registerPayment } from "@/app/[clinic]/billing/actions";
+import { formatCLP } from "@/lib/utils/format";
 
 interface PaymentDialogProps {
   orgId: string;
@@ -46,7 +47,7 @@ export function PaymentDialog({
   } = useForm<PaymentInput>({
     resolver: zodResolver(paymentSchema) as any,
     defaultValues: {
-      amount: remaining > 0 ? Number(remaining.toFixed(2)) : 0,
+      amount: remaining > 0 ? Math.round(remaining) : 0,
       method: "cash",
       reference: "",
       notes: "",
@@ -79,7 +80,7 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle>Registrar pago</DialogTitle>
           <DialogDescription>
-            Saldo pendiente: ${remaining.toFixed(2)}
+            Saldo pendiente: {formatCLP(remaining)}
           </DialogDescription>
         </DialogHeader>
 

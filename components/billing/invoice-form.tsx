@@ -8,6 +8,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { invoiceSchema, type InvoiceInput } from "@/lib/validations/billing";
 import { useClinic } from "@/lib/context/clinic-context";
 import { createInvoice } from "@/app/[clinic]/billing/actions";
+import { formatCLP } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -288,7 +289,7 @@ export function InvoiceForm({
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      ${lineTotal.toFixed(2)}
+                      {formatCLP(lineTotal)}
                     </TableCell>
                     <TableCell>
                       {fields.length > 1 && (
@@ -312,7 +313,7 @@ export function InvoiceForm({
                   Subtotal
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  ${subtotal.toFixed(2)}
+                  {formatCLP(subtotal)}
                 </TableCell>
                 <TableCell />
               </TableRow>
@@ -321,7 +322,7 @@ export function InvoiceForm({
                   Impuesto ({taxRate}%)
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  ${taxAmount.toFixed(2)}
+                  {formatCLP(taxAmount)}
                 </TableCell>
                 <TableCell />
               </TableRow>
@@ -330,7 +331,7 @@ export function InvoiceForm({
                   Total
                 </TableCell>
                 <TableCell className="text-right text-base font-bold">
-                  ${total.toFixed(2)}
+                  {formatCLP(total)}
                 </TableCell>
                 <TableCell />
               </TableRow>

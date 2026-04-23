@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Pencil, Plus, ArrowDownUp, Trash2 } from "lucide-react";
 import { getProduct } from "../actions";
+import { formatCLP } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -131,7 +132,7 @@ export default async function ProductDetailPage({
                 <dt className="text-muted-foreground">Precio compra</dt>
                 <dd className="font-medium">
                   {product.purchase_price != null
-                    ? `$${product.purchase_price.toFixed(2)}`
+                    ? formatCLP(product.purchase_price)
                     : "--"}
                 </dd>
               </div>
@@ -139,7 +140,7 @@ export default async function ProductDetailPage({
                 <dt className="text-muted-foreground">Precio venta</dt>
                 <dd className="font-medium">
                   {product.sale_price != null
-                    ? `$${product.sale_price.toFixed(2)}`
+                    ? formatCLP(product.sale_price)
                     : "--"}
                 </dd>
               </div>

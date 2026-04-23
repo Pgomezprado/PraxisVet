@@ -19,7 +19,13 @@ export type AppointmentStatus =
   | "completed"
   | "cancelled"
   | "no_show";
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
+export type InvoiceStatus =
+  | "draft"
+  | "sent"
+  | "paid"
+  | "overdue"
+  | "cancelled"
+  | "partial_paid";
 export type PaymentMethod = "cash" | "card" | "transfer" | "other";
 export type ProductCategory = "medicine" | "supply" | "food" | "accessory" | "other";
 export type ProductUnit = "unit" | "ml" | "mg" | "box" | "kg" | "g";
@@ -109,6 +115,8 @@ export interface Client {
   created_at: string;
 }
 
+export type PetSize = "xs" | "s" | "m" | "l" | "xl";
+
 export interface Pet {
   id: string;
   org_id: string;
@@ -123,6 +131,8 @@ export interface Pet {
   reproductive_status: ReproductiveStatus | null;
   photo_url: string | null;
   notes: string | null;
+  size: PetSize | null;
+  weight: number | null;
   active: boolean;
   created_at: string;
 }
@@ -135,6 +145,20 @@ export interface Service {
   category: ServiceCategory | null;
   duration_minutes: number;
   price: number | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface ServicePriceTier {
+  id: string;
+  org_id: string;
+  service_id: string;
+  label: string;
+  species_filter: Species | null;
+  size: PetSize | null;
+  weight_min_kg: number | null;
+  weight_max_kg: number | null;
+  price: number;
   active: boolean;
   created_at: string;
 }
@@ -337,6 +361,7 @@ export interface Invoice {
   tax_rate: number;
   tax_amount: number;
   total: number;
+  amount_paid: number;
   due_date: string | null;
   paid_at: string | null;
   notes: string | null;

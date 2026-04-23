@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { InvoiceForm } from "@/components/billing/invoice-form";
 import { getClients } from "../actions";
 import { getAppointment } from "../../appointments/actions";
+import { resolvePriceForPet } from "../../settings/services/actions";
 
 export default async function NewInvoicePage({
   params,
@@ -42,6 +43,9 @@ export default async function NewInvoicePage({
     unit_price: number;
     item_type?: "service" | "product";
   }[] = [];
+  let priceTierInfo:
+    | { label: string; price: number; service_name: string }
+    | undefined;
 
   if (appointmentId) {
     const appointmentResult = await getAppointment(appointmentId);
@@ -51,11 +55,33 @@ export default async function NewInvoicePage({
       defaultAppointmentId = appt.id;
 
       if (appt.service) {
+        let unitPrice = Number(appt.service.price ?? 0);
+
+        if (appt.service.category === "grooming" && appt.pet) {
+          const resolved = await resolvePriceForPet(
+            appt.service.id,
+            appt.pet.id
+          );
+          if (resolved.success) {
+            unitPrice = resolved.data.price;
+            if (
+              resolved.data.source === "tier" &&
+              resolved.data.tier_label
+            ) {
+              priceTierInfo = {
+                label: resolved.data.tier_label,
+                price: resolved.data.price,
+                service_name: appt.service.name,
+              };
+            }
+          }
+        }
+
         defaultItems = [
           {
             description: appt.service.name,
             quantity: 1,
-            unit_price: Number(appt.service.price ?? 0),
+            unit_price: unitPrice,
             item_type: "service" as const,
           },
         ];
@@ -84,6 +110,7 @@ export default async function NewInvoicePage({
         defaultClientId={defaultClientId}
         defaultAppointmentId={defaultAppointmentId}
         defaultItems={defaultItems.length > 0 ? defaultItems : undefined}
+        priceTierInfo={priceTierInfo}
       />
     </div>
   );

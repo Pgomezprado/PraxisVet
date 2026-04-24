@@ -117,10 +117,11 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
       selectedDate ? format(selectedDate, "dd/MM/yyyy") : ""
     );
 
+    const selectedTime = selectedDate?.getTime();
     useEffect(() => {
       setInputText(selectedDate ? format(selectedDate, "dd/MM/yyyy") : "");
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value]);
+    }, [selectedTime]);
 
     // Altura estimada del popover (calendario + header nav + padding).
     // Si después del primer render el popover real mide distinto, re-calculamos.
@@ -215,8 +216,10 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
     function handleSelect(date: Date | undefined) {
       if (!date) {
         onChange?.("");
+        setInputText("");
       } else {
         onChange?.(format(date, "yyyy-MM-dd"));
+        setInputText(format(date, "dd/MM/yyyy"));
       }
       setOpen(false);
     }
@@ -337,11 +340,17 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
 
     function handleInputBlur(e: React.FocusEvent<HTMLInputElement>) {
       // Normaliza visualmente al perder foco si el texto parsea, o restaura
-      // el valor canónico si no.
+      // el valor canónico si no. Si el texto parsea pero todavía no se emitió
+      // al padre (p.ej. año corto), confirmamos el onChange aquí.
       const parsed = tryParseTyped(inputText);
       if (parsed) {
+        const iso = format(parsed, "yyyy-MM-dd");
+        if (iso !== value) {
+          onChange?.(iso);
+        }
         setInputText(format(parsed, "dd/MM/yyyy"));
       } else if (inputText.trim() === "") {
+        if (value) onChange?.("");
         setInputText("");
       } else {
         setInputText(selectedDate ? format(selectedDate, "dd/MM/yyyy") : "");

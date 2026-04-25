@@ -10,6 +10,7 @@ import {
   drawLabelValue,
   drawFooter,
   checkPageBreak,
+  fetchLogoForPdf,
 } from "@/lib/pdf/helpers";
 
 export async function GET(
@@ -93,7 +94,8 @@ export async function GET(
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-  let y = drawHeader(doc, org, 20);
+  const logo = await fetchLogoForPdf(org.logo_url, doc);
+  let y = drawHeader(doc, org, 20, logo);
 
   // Titulo
   doc.setFontSize(14);

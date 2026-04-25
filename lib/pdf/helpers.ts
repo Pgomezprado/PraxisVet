@@ -87,17 +87,87 @@ export function invoiceStatusLabel(status: string): string {
   return INVOICE_STATUS_MAP[status] ?? status;
 }
 
+export type PdfLogo = {
+  dataUrl: string;
+  format: "PNG" | "JPEG";
+  widthMm: number;
+  heightMm: number;
+};
+
+const LOGO_MAX_HEIGHT_MM = 22;
+const LOGO_MAX_BYTES = 1_000_000;
+const LOGO_FETCH_TIMEOUT_MS = 3000;
+
+export async function fetchLogoForPdf(
+  logoUrl: string | null | undefined,
+  doc: jsPDF
+): Promise<PdfLogo | undefined> {
+  if (!logoUrl) return undefined;
+
+  try {
+    const response = await fetch(logoUrl, {
+      signal: AbortSignal.timeout(LOGO_FETCH_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      console.warn(`[pdf] logo fetch failed: ${response.status} ${logoUrl}`);
+      return undefined;
+    }
+
+    const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
+    let format: "PNG" | "JPEG";
+    if (contentType.includes("image/png")) {
+      format = "PNG";
+    } else if (contentType.includes("image/jpeg") || contentType.includes("image/jpg")) {
+      format = "JPEG";
+    } else {
+      console.warn(`[pdf] unsupported logo content-type: ${contentType} ${logoUrl}`);
+      return undefined;
+    }
+
+    const contentLength = Number(response.headers.get("content-length") ?? "0");
+    if (contentLength > LOGO_MAX_BYTES) {
+      console.warn(`[pdf] logo too large: ${contentLength} bytes ${logoUrl}`);
+      return undefined;
+    }
+
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > LOGO_MAX_BYTES) {
+      console.warn(`[pdf] logo too large after download: ${buffer.byteLength} bytes ${logoUrl}`);
+      return undefined;
+    }
+
+    const base64 = Buffer.from(buffer).toString("base64");
+    const dataUrl = `data:${format === "PNG" ? "image/png" : "image/jpeg"};base64,${base64}`;
+
+    const props = doc.getImageProperties(dataUrl);
+    const aspect = props.width / props.height;
+    const heightMm = LOGO_MAX_HEIGHT_MM;
+    const widthMm = Math.min(heightMm * aspect, 40);
+
+    return { dataUrl, format, widthMm, heightMm };
+  } catch (err) {
+    console.warn(`[pdf] logo fetch error`, err);
+    return undefined;
+  }
+}
+
 export function drawHeader(
   doc: jsPDF,
   org: { name: string; address: string | null; phone: string | null; email: string | null },
-  startY: number
+  startY: number,
+  logo?: PdfLogo
 ): number {
-  let y = startY;
+  const textX = logo ? 20 + logo.widthMm + 5 : 20;
+  let textY = startY;
+
+  if (logo) {
+    doc.addImage(logo.dataUrl, logo.format, 20, startY - 4, logo.widthMm, logo.heightMm);
+  }
 
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text(org.name, 20, y);
-  y += 6;
+  doc.text(org.name, textX, textY);
+  textY += 6;
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
@@ -109,9 +179,12 @@ export function drawHeader(
   if (org.email) contactParts.push(org.email);
 
   if (contactParts.length > 0) {
-    doc.text(contactParts.join("  |  "), 20, y);
-    y += 5;
+    doc.text(contactParts.join("  |  "), textX, textY);
+    textY += 5;
   }
+
+  const logoBottom = logo ? startY - 4 + logo.heightMm : 0;
+  let y = Math.max(textY, logoBottom);
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(200, 200, 200);

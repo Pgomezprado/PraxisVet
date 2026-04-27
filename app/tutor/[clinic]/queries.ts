@@ -41,6 +41,16 @@ export type TutorDeworming = {
   product: string | null;
 };
 
+export type TutorSharedExam = {
+  id: string;
+  type: string;
+  custom_type_label: string | null;
+  result_date: string | null;
+  shared_with_tutor_at: string | null;
+  vet_interpretation: string | null;
+  result_file_name: string | null;
+};
+
 export type TutorGroomingRecord = {
   id: string;
   date: string;
@@ -209,6 +219,22 @@ export async function getPetGroomingRecords(
       service: r.appointments?.services ?? null,
     };
   });
+}
+
+export async function getPetSharedExams(
+  supabase: Supabase,
+  petId: string
+): Promise<TutorSharedExam[]> {
+  const { data } = await supabase
+    .from("clinical_record_exams")
+    .select(
+      "id, type, custom_type_label, result_date, shared_with_tutor_at, vet_interpretation, result_file_name"
+    )
+    .eq("pet_id", petId)
+    .eq("status", "resultado_cargado")
+    .not("shared_with_tutor_at", "is", null)
+    .order("shared_with_tutor_at", { ascending: false });
+  return (data ?? []) as TutorSharedExam[];
 }
 
 export async function getPetAppointments(

@@ -13,6 +13,10 @@ import {
 } from "../actions";
 import { getAppointment } from "@/app/[clinic]/appointments/actions";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getCurrentMember,
+  canViewExams,
+} from "@/lib/auth/current-member";
 
 export default async function NewRecordPage({
   params,
@@ -61,12 +65,15 @@ export default async function NewRecordPage({
     );
   }
 
-  const [vetsResult, patientContext, todayRecord] = await Promise.all([
-    getVets(org.id),
-    getPatientContext(petId),
-    getTodayRecord(petId),
-  ]);
+  const [vetsResult, patientContext, todayRecord, currentMember] =
+    await Promise.all([
+      getVets(org.id),
+      getPatientContext(petId),
+      getTodayRecord(petId),
+      getCurrentMember(clinic),
+    ]);
   const vets = vetsResult.data ?? [];
+  const canRequestExams = !!currentMember && canViewExams(currentMember.role);
 
   let defaultVetId: string | undefined;
   let defaultAppointmentId: string | undefined;
@@ -143,6 +150,8 @@ export default async function NewRecordPage({
         defaultAppointmentId={defaultAppointmentId}
         defaultVetId={defaultVetId}
         defaultReason={defaultReason}
+        orgId={org.id}
+        canRequestExams={canRequestExams}
       />
     </div>
   );

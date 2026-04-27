@@ -350,6 +350,40 @@ export interface Attachment {
   created_at: string;
 }
 
+export type ExamType =
+  | "hemograma"
+  | "perfil_bioquimico"
+  | "urianalisis"
+  | "rayos_x"
+  | "ecografia"
+  | "citologia"
+  | "biopsia"
+  | "otro";
+
+export type ExamStatus = "solicitado" | "resultado_cargado";
+
+export interface ClinicalRecordExam {
+  id: string;
+  org_id: string;
+  pet_id: string;
+  clinical_record_id: string | null;
+  requested_by: string;
+  type: ExamType;
+  custom_type_label: string | null;
+  indications: string | null;
+  status: ExamStatus;
+  result_file_url: string | null;
+  result_file_name: string | null;
+  result_file_type: string | null;
+  result_date: string | null;
+  vet_interpretation: string | null;
+  uploaded_by: string | null;
+  shared_with_tutor_at: string | null;
+  requested_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Invoice {
   id: string;
   org_id: string;

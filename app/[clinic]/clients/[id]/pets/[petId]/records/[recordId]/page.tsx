@@ -9,6 +9,7 @@ import {
   LinkIcon,
   Syringe,
   Worm,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +38,13 @@ import {
   getVets as getVaccinationVets,
 } from "../../vaccinations/actions";
 import { getDewormingsByRecord } from "../../dewormings/actions";
+import { getExams } from "../../exams/actions";
+import { ExamList } from "@/components/exams/exam-list";
+import { RequestExamSheet } from "../../exams/_components/request-exam-sheet";
+import {
+  getCurrentMember,
+  canViewExams,
+} from "@/lib/auth/current-member";
 
 export default async function RecordDetailPage({
   params,
@@ -66,6 +74,8 @@ export default async function RecordDetailPage({
     vetsResult,
     catalog,
     petNotes,
+    member,
+    examsResult,
   ] = await Promise.all([
     getPrescriptions(recordId),
     getVaccinationsByRecord(recordId),
@@ -75,7 +85,15 @@ export default async function RecordDetailPage({
       ? getVaccineCatalogForPet(speciesForCatalog, record.org_id)
       : Promise.resolve([]),
     getPetNotes(petId),
+    getCurrentMember(clinic),
+    getExams(petId),
   ]);
+
+  const showExams = !!member && canViewExams(member.role);
+  const recordExams =
+    showExams && examsResult.success
+      ? examsResult.data.filter((e) => e.clinical_record_id === recordId)
+      : [];
 
   const hasPrescriptions =
     prescriptionsResult.success && prescriptionsResult.data.length > 0;
@@ -341,6 +359,34 @@ export default async function RecordDetailPage({
           <DewormingInlineList dewormings={dewormingsList} />
         </CardContent>
       </Card>
+
+      {showExams && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FlaskConical className="size-4" />
+              Exámenes de esta consulta
+            </CardTitle>
+            <RequestExamSheet
+              orgId={record.org_id}
+              petId={petId}
+              clientId={id}
+              clinicSlug={clinic}
+              clinicalRecordId={recordId}
+              triggerVariant="outline"
+            />
+          </CardHeader>
+          <CardContent>
+            {recordExams.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                Sin exámenes solicitados en esta consulta.
+              </p>
+            ) : (
+              <ExamList exams={recordExams} compact canInterpret={false} />
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

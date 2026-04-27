@@ -7,6 +7,8 @@ import {
   Bug,
   Stethoscope,
   Scissors,
+  FlaskConical,
+  Download,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +27,7 @@ import {
   getPetAppointments,
   getPetDewormings,
   getPetGroomingRecords,
+  getPetSharedExams,
   getPetVaccinations,
   getTutorPet,
 } from "../../queries";
@@ -39,14 +42,30 @@ export default async function TutorPetDetailPage({
   const { clinic, petId } = await params;
   const supabase = await createClient();
 
-  const [pet, vaccinations, dewormings, groomings, appointments] =
+  const [pet, vaccinations, dewormings, groomings, appointments, sharedExams] =
     await Promise.all([
       getTutorPet(supabase, petId),
       getPetVaccinations(supabase, petId),
       getPetDewormings(supabase, petId),
       getPetGroomingRecords(supabase, petId),
       getPetAppointments(supabase, petId),
+      getPetSharedExams(supabase, petId),
     ]);
+
+  const examTypeLabels: Record<string, string> = {
+    hemograma: "Hemograma",
+    perfil_bioquimico: "Perfil bioquímico",
+    urianalisis: "Urianálisis",
+    rayos_x: "Rayos X",
+    ecografia: "Ecografía",
+    citologia: "Citología",
+    biopsia: "Biopsia",
+    otro: "Otro",
+  };
+  function examLabel(type: string, custom: string | null) {
+    if (type === "otro" && custom?.trim()) return custom.trim();
+    return examTypeLabels[type] ?? type;
+  }
 
   if (!pet) {
     notFound();
@@ -179,6 +198,70 @@ export default async function TutorPetDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FlaskConical className="size-4" />
+            Exámenes compartidos
+            <Badge variant="secondary">{sharedExams.length}</Badge>
+          </CardTitle>
+          <CardDescription>
+            Resultados que el veterinario compartió contigo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sharedExams.length === 0 ? (
+            <p className="py-4 text-sm text-muted-foreground">
+              Aún no hay exámenes compartidos.
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {sharedExams.map((exam) => (
+                <li
+                  key={exam.id}
+                  className="flex flex-wrap items-start justify-between gap-3 py-3"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                      <FlaskConical className="size-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">
+                        {examLabel(exam.type, exam.custom_type_label)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {exam.result_date
+                          ? formatDate(exam.result_date)
+                          : "Sin fecha"}
+                      </p>
+                      {exam.vet_interpretation && (
+                        <p className="mt-1 text-xs text-muted-foreground/90 line-clamp-3">
+                          {exam.vet_interpretation}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={
+                      <a
+                        href={`/api/tutor/${clinic}/exams/${exam.id}/file`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    }
+                  >
+                    <Download className="size-3.5" data-icon="inline-start" />
+                    Descargar
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

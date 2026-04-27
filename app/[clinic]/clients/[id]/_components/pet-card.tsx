@@ -2,7 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { PawPrint, Pencil, Syringe, ClipboardList, Bug, Scissors } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import {
+  PawPrint,
+  Pencil,
+  Syringe,
+  ClipboardList,
+  Bug,
+  Scissors,
+  FlaskConical,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteButton } from "@/components/clients/delete-button";
@@ -34,21 +43,41 @@ function calculateAge(birthdate: string | null): string | null {
   if (!birthdate) return null;
   const birth = new Date(birthdate);
   const now = new Date();
-  const years = now.getFullYear() - birth.getFullYear();
-  const months = now.getMonth() - birth.getMonth();
-  const totalMonths = years * 12 + months;
+  let totalMonths =
+    (now.getFullYear() - birth.getFullYear()) * 12 +
+    (now.getMonth() - birth.getMonth());
+  if (now.getDate() < birth.getDate()) totalMonths -= 1;
 
   if (totalMonths < 1) return "Menos de 1 mes";
-  if (totalMonths < 12) return `${totalMonths} ${totalMonths === 1 ? "mes" : "meses"}`;
-  const y = Math.floor(totalMonths / 12);
-  return `${y} ${y === 1 ? "año" : "años"}`;
+  if (totalMonths < 12)
+    return `${totalMonths} ${totalMonths === 1 ? "mes" : "meses"}`;
+
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  const yearsLabel = `${years} ${years === 1 ? "año" : "años"}`;
+  if (months === 0) return yearsLabel;
+  return `${yearsLabel} ${months} ${months === 1 ? "mes" : "meses"}`;
+}
+
+function formatBirthdate(birthdate: string | null): string | null {
+  if (!birthdate) return null;
+  try {
+    return format(parseISO(birthdate), "dd-MM-yyyy");
+  } catch {
+    return null;
+  }
 }
 
 export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
   const { member } = useClinic();
   const canSeeClinical = member.role === "admin" || member.role === "vet";
   const canSeeGrooming = member.role === "admin" || member.role === "groomer";
+  const canSeeExams =
+    member.role === "admin" ||
+    member.role === "vet" ||
+    member.role === "receptionist";
   const age = calculateAge(pet.birthdate);
+  const birthdateLabel = formatBirthdate(pet.birthdate);
   const reproductiveLabel = formatReproductiveStatus(
     pet.reproductive_status,
     pet.sex
@@ -97,6 +126,12 @@ export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
         {pet.color && <Badge variant="outline">{pet.color}</Badge>}
       </div>
 
+      {birthdateLabel && (
+        <p className="text-xs text-muted-foreground">
+          Nacimiento: {birthdateLabel}
+        </p>
+      )}
+
       {pet.microchip && (
         <p className="text-xs text-muted-foreground">
           Microchip: {pet.microchip}
@@ -139,6 +174,20 @@ export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
               Desparasitaciones
             </Button>
           </>
+        )}
+        {canSeeExams && (
+          <Button
+            variant="outline"
+            size="xs"
+            render={
+              <Link
+                href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/exams`}
+              />
+            }
+          >
+            <FlaskConical className="size-3" data-icon="inline-start" />
+            Exámenes
+          </Button>
         )}
         {canSeeGrooming && (
           <Button

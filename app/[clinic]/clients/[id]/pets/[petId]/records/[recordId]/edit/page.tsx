@@ -22,6 +22,11 @@ import {
   getVets as getVaccinationVets,
 } from "../../../vaccinations/actions";
 import { getDewormingsByRecord } from "../../../dewormings/actions";
+import { getExams } from "../../../exams/actions";
+import {
+  getCurrentMember,
+  canViewExams,
+} from "@/lib/auth/current-member";
 
 export default async function EditRecordPage({
   params,
@@ -52,6 +57,8 @@ export default async function EditRecordPage({
     sheetVetsResult,
     catalog,
     petNotes,
+    member,
+    examsResult,
   ] = await Promise.all([
     getVets(record.org_id),
     getVaccinationsByRecord(recordId),
@@ -61,6 +68,8 @@ export default async function EditRecordPage({
       ? getVaccineCatalogForPet(speciesForCatalog, record.org_id)
       : Promise.resolve([]),
     getPetNotes(petId),
+    getCurrentMember(clinic),
+    getExams(petId),
   ]);
 
   const vets = vetsResult.data ?? [];
@@ -71,6 +80,11 @@ export default async function EditRecordPage({
   const dewormingsList = dewormingsOfRecord.success
     ? dewormingsOfRecord.data
     : [];
+  const recordExams =
+    examsResult.success && member && canViewExams(member.role)
+      ? examsResult.data.filter((e) => e.clinical_record_id === recordId)
+      : [];
+  const canRequestExams = !!member && canViewExams(member.role);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -103,6 +117,9 @@ export default async function EditRecordPage({
         petId={petId}
         clientId={id}
         vets={vets}
+        orgId={record.org_id}
+        canRequestExams={canRequestExams}
+        recordExams={recordExams}
         record={{
           id: record.id,
           vet_id: record.vet_id,

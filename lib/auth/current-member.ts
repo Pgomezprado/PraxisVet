@@ -43,3 +43,21 @@ export function canViewClinical(role: MemberRole): boolean {
 export function canViewGrooming(role: MemberRole): boolean {
   return role === "admin" || role === "groomer";
 }
+
+/**
+ * Quién puede ver/listar exámenes de una mascota.
+ * Recepcionista necesita acceso porque sube resultados que llegan del laboratorio.
+ * Peluquero NO ve exámenes (mismo criterio que ficha clínica).
+ */
+export function canViewExams(role: MemberRole): boolean {
+  return role === "admin" || role === "vet" || role === "receptionist";
+}
+
+/**
+ * Quién puede escribir/editar la interpretación clínica de un examen.
+ * Solo veterinarios y admin. La recepcionista puede subir el archivo,
+ * pero no interpretar el resultado.
+ */
+export function canInterpretExam(role: MemberRole): boolean {
+  return role === "admin" || role === "vet";
+}

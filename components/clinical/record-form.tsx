@@ -41,6 +41,9 @@ import {
 } from "@/lib/validations/prescriptions";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Printer } from "lucide-react";
+import { RequestExamSheet } from "@/app/[clinic]/clients/[id]/pets/[petId]/exams/_components/request-exam-sheet";
+import { ExamList } from "@/components/exams/exam-list";
+import type { ExamWithPeople } from "@/components/exams/types";
 
 interface InlinePrescriptionRow {
   medication: string;
@@ -120,6 +123,12 @@ interface RecordFormProps {
   defaultVetId?: string;
   defaultReason?: string;
   extraSections?: ReactNode;
+  /** Exámenes ya solicitados en esta ficha (solo lectura). */
+  recordExams?: ExamWithPeople[];
+  /** orgId del usuario actual; necesario si se va a permitir solicitar. */
+  orgId?: string;
+  /** Indica si el usuario actual puede ver/solicitar exámenes. */
+  canRequestExams?: boolean;
 }
 
 export function RecordForm({
@@ -131,6 +140,9 @@ export function RecordForm({
   defaultVetId,
   defaultReason,
   extraSections,
+  recordExams,
+  orgId,
+  canRequestExams = false,
 }: RecordFormProps) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
@@ -787,6 +799,54 @@ export function RecordForm({
                 </div>
               </div>
             </CollapsibleSection>
+
+            {/* Exámenes solicitados — visible siempre que el rol pueda gestionarlos */}
+            {canRequestExams && (
+              <CollapsibleSection
+                title="Exámenes solicitados"
+                hasContent={(recordExams?.length ?? 0) > 0}
+                preview={
+                  recordExams && recordExams.length > 0
+                    ? `${recordExams.length} examen${recordExams.length === 1 ? "" : "es"}`
+                    : ""
+                }
+                defaultOpen={(recordExams?.length ?? 0) > 0}
+              >
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Solicita exámenes asociados a esta consulta.
+                      Aparecerán también en la pestaña Exámenes de la mascota.
+                    </p>
+                    {isEditing && record && orgId ? (
+                      <RequestExamSheet
+                        orgId={orgId}
+                        petId={petId}
+                        clientId={clientId}
+                        clinicSlug={clinicSlug}
+                        clinicalRecordId={record.id}
+                        triggerVariant="outline"
+                      />
+                    ) : (
+                      <span
+                        className="text-xs text-muted-foreground italic"
+                        title="Guarda la ficha primero para solicitar exámenes"
+                      >
+                        Guarda la ficha primero
+                      </span>
+                    )}
+                  </div>
+                  {recordExams && recordExams.length > 0 && (
+                    <ExamList
+                      exams={recordExams}
+                      compact
+                      canInterpret={false}
+                      canDelete={false}
+                    />
+                  )}
+                </div>
+              </CollapsibleSection>
+            )}
 
             {/* Seccion 5: Observaciones - colapsada por default */}
             <CollapsibleSection

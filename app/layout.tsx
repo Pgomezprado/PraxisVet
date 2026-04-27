@@ -74,6 +74,9 @@ export const metadata: Metadata = {
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    other: {
+      "facebook-domain-verification": "pln3n1bsly2sq1vdjbtjj8sc4jlb7h",
+    },
   },
   icons: {
     icon: [

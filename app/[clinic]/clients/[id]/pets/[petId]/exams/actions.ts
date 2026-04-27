@@ -611,26 +611,3 @@ export async function getSignedExamUrl(
 
   return { success: true, data: { url: data.signedUrl } };
 }
-
-// ============================================
-// Helpers (catálogo de tipos para UI)
-// ============================================
-
-export const EXAM_TYPE_LABELS: Record<ClinicalRecordExam["type"], string> = {
-  hemograma: "Hemograma",
-  perfil_bioquimico: "Perfil bioquímico",
-  urianalisis: "Urianálisis",
-  rayos_x: "Rayos X",
-  ecografia: "Ecografía",
-  citologia: "Citología",
-  biopsia: "Biopsia",
-  otro: "Otro",
-};
-
-export function formatExamType(
-  type: ClinicalRecordExam["type"],
-  customLabel?: string | null
-): string {
-  if (type === "otro" && customLabel?.trim()) return customLabel.trim();
-  return EXAM_TYPE_LABELS[type] ?? type;
-}

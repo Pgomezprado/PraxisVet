@@ -8,6 +8,7 @@ import {
   Plus,
   PawPrint,
   StickyNote,
+  IdCard,
 } from "lucide-react";
 import { getClient, getClientPortalStatus } from "../actions";
 import { createClient as createServerSupabase } from "@/lib/supabase/server";
@@ -109,6 +110,10 @@ export default async function ClientDetailPage({
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex items-center gap-2 text-sm">
+              <IdCard className="size-4 text-muted-foreground" />
+              <span>{client.rut || "Sin RUT"}</span>
+            </div>
             <div className="flex items-center gap-2 text-sm">
               <Mail className="size-4 text-muted-foreground" />
               <span>{client.email || "Sin email"}</span>

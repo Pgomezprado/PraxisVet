@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -38,25 +37,18 @@ export function ClientForm({ client }: ClientFormProps) {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<ClientInput>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       first_name: client?.first_name ?? "",
       last_name: client?.last_name ?? "",
+      rut: client?.rut ?? "",
       email: client?.email ?? "",
       phone: client?.phone ?? "",
-      // Default false: consentimiento explícito (Ley 19.628). Si es edición,
-      // respetamos lo que ya tenía registrado.
-      whatsapp_opt_in: client?.whatsapp_opt_in ?? false,
       address: client?.address ?? "",
     },
   });
-
-  const phoneValue = watch("phone") ?? "";
-  const whatsappOptIn = watch("whatsapp_opt_in") ?? false;
 
   async function onSubmit(data: ClientInput) {
     setLoading(true);
@@ -122,6 +114,18 @@ export function ClientForm({ client }: ClientFormProps) {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="rut">RUT (opcional)</Label>
+            <Input
+              id="rut"
+              placeholder="ej: 12.345.678-9"
+              {...register("rut")}
+            />
+            {errors.rut && (
+              <p className="text-sm text-destructive">{errors.rut.message}</p>
+            )}
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="email">Email (opcional)</Label>
@@ -152,31 +156,7 @@ export function ClientForm({ client }: ClientFormProps) {
             </div>
           </div>
 
-          {phoneValue.trim().length > 0 && !errors.phone && (
-            <div className="flex items-start gap-3 rounded-md border bg-muted/30 p-3">
-              <Switch
-                id="whatsapp_opt_in"
-                checked={whatsappOptIn}
-                onCheckedChange={(value) =>
-                  setValue("whatsapp_opt_in", value, { shouldDirty: true })
-                }
-              />
-              <div className="flex-1 space-y-0.5">
-                <Label
-                  htmlFor="whatsapp_opt_in"
-                  className="cursor-pointer text-sm font-medium"
-                >
-                  Acepta recibir recordatorios por WhatsApp
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  El tutor acepta recibir recordatorios de citas y
-                  notificaciones de la clínica al número ingresado. Puede
-                  enviar &ldquo;BAJA&rdquo; en cualquier momento para
-                  desactivarlo (Ley 19.628).
-                </p>
-              </div>
-            </div>
-          )}
+
 
           <div className="space-y-2">
             <Label htmlFor="address">Dirección (opcional)</Label>

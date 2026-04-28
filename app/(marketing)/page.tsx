@@ -27,7 +27,6 @@ import {
   Rocket,
   PawPrint,
   ArrowRight,
-  Star,
   Activity,
   Users,
   TrendingUp,
@@ -53,7 +52,7 @@ const bigFeatures = [
     icon: CalendarDays,
     title: "Agenda que respeta tu ritmo",
     description:
-      "Calendario semanal y diario, recordatorios automáticos por WhatsApp y correo. Tu recepcionista agenda sin dolores de cabeza.",
+      "Calendario semanal y diario, vista por profesional y filtros por rol. Tu recepcionista agenda sin dolores de cabeza.",
   },
   {
     icon: ClipboardList,
@@ -86,7 +85,7 @@ const smallFeatures = [
     icon: Building2,
     title: "Multi-clínica",
     description:
-      "¿Tienes más de una sucursal? Gestión centralizada con datos aislados entre clínicas. Disponible en el plan Enterprise.",
+      "¿Tienes más de una sucursal? Gestión centralizada con datos aislados entre clínicas. Lo coordinamos en la demo según tu caso.",
   },
   {
     icon: ShieldCheck,
@@ -135,67 +134,72 @@ const dayInClinic = [
   },
 ] as const;
 
-const pricingTiers = [
-  {
-    name: "Básico",
-    tagline: "Para el veterinario que recién se independiza.",
-    price: "$29.000",
-    priceHint: "CLP / mes",
-    cta: "Probar 30 días gratis",
-    ctaHref: "/auth/register",
-    highlight: false,
-    trial: "30 días de prueba, sin tarjeta",
-    features: [
-      "1 veterinario",
-      "Pacientes ilimitados",
-      "Agenda y ficha clínica",
-      "Boleta y factura en PDF",
-      "Soporte por correo",
-    ],
-  },
-  {
-    name: "Pro",
-    tagline: "Para la mayoría de las clínicas.",
-    price: "$79.000",
-    priceHint: "CLP / mes",
-    cta: "Probar 30 días gratis",
-    ctaHref: "/auth/register",
-    highlight: true,
-    trial: "30 días de prueba, sin tarjeta",
-    features: [
-      "Hasta 5 miembros del equipo",
-      "Pacientes ilimitados",
-      "Peluquería integrada",
-      "Boleta y factura en PDF (SII vía partner próximamente)",
-      "Inventario + alertas",
-      "Recordatorios automáticos",
-      "Exporta a PDF",
-      "Soporte por WhatsApp",
-    ],
-  },
-  {
-    name: "Enterprise",
-    tagline: "Para clínicas con varias sucursales.",
-    price: "$149.000",
-    priceHint: "CLP / mes",
-    cta: "Hablar con ventas",
-    ctaHref: "mailto:ventas@praxisvet.cl",
-    highlight: false,
-    trial: null,
-    features: [
-      "Equipo ilimitado",
-      "Multi-clínica",
-      "API e integraciones",
-      "Onboarding guiado",
-      "SLA + soporte prioritario",
-    ],
-  },
-] as const;
+/* PRICING-DRAFT-START
+ * Pricing público pausado mientras se itera. Restaurar este array y la
+ * sección con `id="precios"` cuando los planes estén validados con clínicas.
+ *
+ * const pricingTiers = [
+ *   {
+ *     name: "Básico",
+ *     tagline: "Para el veterinario que recién se independiza.",
+ *     price: "$29.000",
+ *     priceHint: "CLP / mes",
+ *     cta: "Probar 30 días gratis",
+ *     ctaHref: "/auth/register",
+ *     highlight: false,
+ *     trial: "30 días de prueba, sin tarjeta",
+ *     features: [
+ *       "1 veterinario",
+ *       "Pacientes ilimitados",
+ *       "Agenda y ficha clínica",
+ *       "Boleta y factura en PDF",
+ *       "Soporte por correo",
+ *     ],
+ *   },
+ *   {
+ *     name: "Pro",
+ *     tagline: "Para la mayoría de las clínicas.",
+ *     price: "$79.000",
+ *     priceHint: "CLP / mes",
+ *     cta: "Probar 30 días gratis",
+ *     ctaHref: "/auth/register",
+ *     highlight: true,
+ *     trial: "30 días de prueba, sin tarjeta",
+ *     features: [
+ *       "Hasta 5 miembros del equipo",
+ *       "Pacientes ilimitados",
+ *       "Peluquería integrada",
+ *       "Boleta y factura en PDF (SII vía partner próximamente)",
+ *       "Inventario + alertas",
+ *       "Recordatorios automáticos",
+ *       "Exporta a PDF",
+ *       "Soporte por WhatsApp",
+ *     ],
+ *   },
+ *   {
+ *     name: "Enterprise",
+ *     tagline: "Para clínicas con varias sucursales.",
+ *     price: "$149.000",
+ *     priceHint: "CLP / mes",
+ *     cta: "Hablar con ventas",
+ *     ctaHref: "mailto:ventas@praxisvet.cl",
+ *     highlight: false,
+ *     trial: null,
+ *     features: [
+ *       "Equipo ilimitado",
+ *       "Multi-clínica",
+ *       "API e integraciones",
+ *       "Onboarding guiado",
+ *       "SLA + soporte prioritario",
+ *     ],
+ *   },
+ * ] as const;
+ * PRICING-DRAFT-END */
 
 const faqs = [
   {
     q: "¿Cómo funcionan los 30 días de prueba?",
-    a: "Los planes Básico y Pro vienen con 30 días de prueba sin tarjeta de crédito. Usas todas las funcionalidades del plan. Antes de que termine, te avisamos por correo y WhatsApp para que elijas seguir o darte de baja — sin cargos sorpresa.",
+    a: "Tu cuenta se crea con 30 días de prueba sin tarjeta de crédito. Usas todas las funcionalidades. Antes de que termine, te avisamos por correo para que elijas seguir o darte de baja — sin cargos sorpresa.",
   },
   {
     q: "¿Emite boletas electrónicas con el SII?",
@@ -207,11 +211,11 @@ const faqs = [
   },
   {
     q: "¿Puedo migrar desde Excel u otro sistema?",
-    a: "Sí. Tenemos plantillas para importar clientes, mascotas y productos. Si estás migrando desde otro software, nuestro equipo te acompaña en el onboarding (incluido en Pro y Enterprise).",
+    a: "Sí. Tenemos plantillas para importar clientes, mascotas y productos. Si estás migrando desde otro software, nuestro equipo te acompaña en el onboarding sin costo adicional.",
   },
   {
-    q: "¿Cuántos veterinarios caben en cada plan?",
-    a: "Gratis: 1 vet. Pro: hasta 5. Enterprise: ilimitados. Los peluqueros y recepcionistas no cuentan dentro del límite.",
+    q: "¿Cuántos veterinarios pueden usar PraxisVet?",
+    a: "Desde un veterinario solo hasta clínicas con varias sucursales. Los peluqueros y recepcionistas no cuentan dentro del límite de veterinarios. Lo dimensionamos contigo según tu equipo en la demo.",
   },
   {
     q: "¿Cómo manejan las recetas retenidas?",
@@ -227,7 +231,7 @@ const faqs = [
   },
   {
     q: "¿Hay soporte en español, por WhatsApp?",
-    a: "Sí, por correo y WhatsApp, en horario de oficina (lunes a viernes 9-18h). Los planes Pro y Enterprise tienen respuesta prioritaria.",
+    a: "Sí, por correo y WhatsApp, en horario de oficina (lunes a viernes 9-18h).",
   },
 ] as const;
 
@@ -507,7 +511,7 @@ export default function LandingPage() {
                     "h-12 px-8 text-base"
                   )}
                 >
-                  Ver precios
+                  Agendar demo
                 </a>
               </div>
 
@@ -769,101 +773,64 @@ export default function LandingPage() {
       </section>
 
       {/* ============================================================ */}
-      {/*  PRICING                                                      */}
+      {/*  PRICING — reemplazado por CTA de demo mientras se itera     */}
+      {/*  el pricing público. Para restaurar: revertir este bloque y  */}
+      {/*  descomentar `pricingTiers` arriba (PRICING-DRAFT).           */}
       {/* ============================================================ */}
       <section id="precios" className="relative border-t border-border/40 py-20 sm:py-28">
-        <div className="absolute left-1/2 top-0 -z-10 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-amber-500/5 blur-3xl" />
+        <div className="absolute left-1/2 top-0 -z-10 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
             <Badge variant="secondary" className="mb-4">
-              Precios
+              Planes
             </Badge>
             <h2 className="text-pretty text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Precios simples,{" "}
-              <span className="text-primary">sin letra chica</span>.
+              Un plan a la{" "}
+              <span className="text-primary">medida de tu clínica</span>.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Empieza gratis. Cuando tu clínica crezca, elige el plan que
-              calce. Cancelas cuando quieras.
+              Cada clínica tiene su propio ritmo: equipo, volumen de fichas y
+              forma de facturar. Conversemos 15 minutos y armamos un plan que
+              calce con cómo trabajas hoy.
             </p>
           </div>
 
-          <div className="mt-14 grid gap-6 lg:grid-cols-3">
-            {pricingTiers.map((tier) => (
-              <div
-                key={tier.name}
+          <div className="mt-12 rounded-3xl border border-border/60 bg-card/50 p-8 shadow-sm sm:p-10">
+            <ul className="grid gap-4 sm:grid-cols-3">
+              {[
+                "Sin tarjeta de crédito",
+                "Trial real con tu equipo",
+                "Migración asistida desde tu sistema actual",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2 text-sm text-foreground/90"
+                >
+                  <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/15">
+                    <Check className="size-2.5 text-primary" />
+                  </div>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <a
+                href="mailto:ventas@praxisvet.cl?subject=Demo%20PraxisVet"
                 className={cn(
-                  "relative flex flex-col rounded-3xl border bg-card p-8 shadow-sm transition-all duration-300",
-                  tier.highlight
-                    ? "border-primary/60 shadow-lg shadow-primary/10 ring-1 ring-primary/20 lg:-translate-y-2 lg:scale-[1.02]"
-                    : "border-border/60 hover:-translate-y-1 hover:shadow-lg"
+                  buttonVariants({ size: "lg" }),
+                  "h-12 px-8 text-base shadow-lg shadow-primary/20"
                 )}
               >
-                {tier.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary px-3 py-1 text-xs text-primary-foreground shadow-sm">
-                      <Star className="mr-1 size-3 fill-current" />
-                      Más popular
-                    </Badge>
-                  </div>
-                )}
-
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {tier.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {tier.tagline}
-                  </p>
-                </div>
-
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tracking-tight text-foreground">
-                    {tier.price}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {tier.priceHint}
-                  </span>
-                </div>
-
-                <Link
-                  href={tier.ctaHref}
-                  className={cn(
-                    buttonVariants({
-                      size: "lg",
-                      variant: tier.highlight ? "default" : "outline",
-                    }),
-                    "mt-6 w-full"
-                  )}
-                >
-                  {tier.cta}
-                  <ArrowRight className="ml-1.5 size-4" />
-                </Link>
-                {tier.trial && (
-                  <p className="mt-2 text-center text-xs text-muted-foreground">
-                    {tier.trial}
-                  </p>
-                )}
-
-                <ul className="mt-8 space-y-3 text-sm">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <div className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/15">
-                        <Check className="size-2.5 text-primary" />
-                      </div>
-                      <span className="text-foreground/90">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+                Agendar demo
+                <ArrowRight className="ml-2 size-4" />
+              </a>
+              <p className="text-xs text-muted-foreground">
+                Respondemos en menos de 24 horas hábiles · ventas@praxisvet.cl
+              </p>
+            </div>
           </div>
-
-          <p className="mt-10 text-center text-sm text-muted-foreground">
-            Precios en pesos chilenos, IVA incluido. Básico y Pro incluyen
-            30 días de prueba, sin tarjeta. Cancelas cuando quieras.
-          </p>
         </div>
       </section>
 
@@ -1016,7 +983,7 @@ export default function LandingPage() {
                   href="#precios"
                   className="text-sm font-medium text-primary-foreground/90 underline underline-offset-4 hover:text-primary-foreground"
                 >
-                  Ver todos los planes
+                  Hablar con ventas
                 </a>
               </div>
               <p className="mt-4 text-sm text-primary-foreground/60">

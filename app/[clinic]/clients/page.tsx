@@ -1,19 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
-import { getClients } from "./actions";
+import { getClients, type ClientsSortKey } from "./actions";
 import { ClientsTable } from "@/components/clients/clients-table";
 
 const PAGE_SIZE = 25;
+
+const VALID_SORTS: ReadonlyArray<ClientsSortKey> = [
+  "last_name_asc",
+  "last_name_desc",
+  "created_desc",
+  "created_asc",
+];
 
 export default async function ClientsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ clinic: string }>;
-  searchParams: Promise<{ page?: string; search?: string }>;
+  searchParams: Promise<{ page?: string; search?: string; sort?: string }>;
 }) {
   const { clinic } = await params;
-  const { page: pageParam, search } = await searchParams;
+  const { page: pageParam, search, sort: sortParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
+  const sort: ClientsSortKey = VALID_SORTS.includes(sortParam as ClientsSortKey)
+    ? (sortParam as ClientsSortKey)
+    : "last_name_asc";
 
   const supabase = await createClient();
 
@@ -33,6 +43,7 @@ export default async function ClientsPage({
     page,
     pageSize: PAGE_SIZE,
     search,
+    sort,
   });
 
   if (!result.success) {
@@ -71,6 +82,7 @@ export default async function ClientsPage({
         totalItems={total}
         pageSize={PAGE_SIZE}
         search={search}
+        sort={sort}
       />
     </div>
   );

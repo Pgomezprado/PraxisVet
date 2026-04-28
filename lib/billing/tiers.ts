@@ -46,9 +46,8 @@ export const pricingTiers: readonly PricingTier[] = [
       "Peluquería integrada",
       "Boleta y factura en PDF (SII vía partner próximamente)",
       "Inventario + alertas",
-      "Recordatorios automáticos",
       "Exporta a PDF",
-      "Soporte por WhatsApp",
+      "Soporte por correo",
     ],
   },
   {

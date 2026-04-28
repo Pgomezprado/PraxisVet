@@ -108,7 +108,7 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 - Detectar scope creep y bloquearlo antes de que entre al sprint.
 - Evaluar decisiones de negocio: pricing, go-to-market, conversión de trials.
 - Asegurarse de que las particularidades Chile (SII, RUT, CLP) estén contempladas desde el diseño, no como parche.
-- Gestionar el trial gateway: el sistema tiene períodos de 60 días (`trial_ends_at`). Decisiones sobre qué pasa cuando expira van aquí.
+- Gestionar el trial gateway: el sistema tiene períodos de 30 días (`trial_ends_at`). Decisiones sobre qué pasa cuando expira van aquí.
 
 **Pricing actual (implementado en código):**
 - Plan **Básico** (`basico`) — $29.000 CLP/mes

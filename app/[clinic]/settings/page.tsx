@@ -22,13 +22,13 @@ const sections = [
   },
   {
     title: "Equipo",
-    description: "Administra los miembros y roles de tu equipo.",
+    description: "Administra miembros, roles y horarios de atención.",
     href: "team",
     icon: Users,
   },
   {
     title: "Clínica",
-    description: "Información general, horarios y datos de contacto.",
+    description: "Nombre, dirección y datos de contacto de tu clínica.",
     href: "clinic",
     icon: Building2,
   },

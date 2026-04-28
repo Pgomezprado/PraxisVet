@@ -33,6 +33,7 @@ export default async function NotificationsSettingsPage({
 
   const data = result.data;
 
+  const planLocked = data.plan === "basico";
   const canEnable = data.providerConfigured;
   const disabledReason = !canEnable
     ? "WhatsApp aún no está conectado en esta instalación. Contacta a PraxisVet para activarlo."
@@ -74,8 +75,11 @@ export default async function NotificationsSettingsPage({
           <WhatsAppToggle
             clinicSlug={clinic}
             initialEnabled={data.whatsappRemindersEnabled}
+            initialReminder24h={data.whatsappApptReminder24hEnabled}
+            initialConfirmation={data.whatsappApptConfirmationEnabled}
             disabled={!canEnable}
             disabledReason={disabledReason}
+            planLocked={planLocked}
           />
 
           <Separator />

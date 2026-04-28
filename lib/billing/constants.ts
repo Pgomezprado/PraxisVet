@@ -1,6 +1,6 @@
 import type { Plan, SubscriptionStatus } from "@/types";
 
-export const TRIAL_DURATION_DAYS = 60;
+export const TRIAL_DURATION_DAYS = 30;
 
 /**
  * Cuando el banner en dashboard empieza a aparecer:
@@ -35,7 +35,7 @@ export const PLAN_LIMITS: Record<
   Plan,
   { teamSeats: number | null; patients: number | null }
 > = {
-  basico: { teamSeats: 1, patients: 50 },
+  basico: { teamSeats: 1, patients: null },
   pro: { teamSeats: 5, patients: null },
   enterprise: { teamSeats: null, patients: null },
 };

@@ -27,7 +27,7 @@ export function Navbar() {
     <>
       <div className="relative z-50 flex h-8 items-center justify-center bg-accent text-accent-foreground">
         <p className="text-xs font-medium sm:text-sm">
-          Prueba PraxisVet 2 meses gratis, sin tarjeta
+          Prueba PraxisVet 30 días gratis, sin tarjeta
           <Link
             href="#precios"
             className="ml-2 inline-flex items-center gap-1 underline underline-offset-2 hover:opacity-80"

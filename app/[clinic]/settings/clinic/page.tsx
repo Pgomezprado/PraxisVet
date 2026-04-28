@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { getClinicSettings } from "./actions";
+import { getClinicSettings, getTeamSchedulesOverview } from "./actions";
 import { ClinicForm } from "@/components/settings/clinic-form";
+import { TeamSchedulesOverview } from "@/components/settings/team-schedules-overview";
 
 const planLabels: Record<string, string> = {
   free: "Gratis",
@@ -18,7 +19,10 @@ export default async function ClinicSettingsPage({
 }) {
   const { clinic } = await params;
 
-  const result = await getClinicSettings(clinic);
+  const [result, schedulesResult] = await Promise.all([
+    getClinicSettings(clinic),
+    getTeamSchedulesOverview(clinic),
+  ]);
 
   if (!result.success) {
     return (
@@ -31,6 +35,7 @@ export default async function ClinicSettingsPage({
   }
 
   const org = result.data;
+  const teamSchedules = schedulesResult.success ? schedulesResult.data : [];
 
   const createdAt = new Date(org.created_at).toLocaleDateString("es-MX", {
     year: "numeric",
@@ -92,6 +97,8 @@ export default async function ClinicSettingsPage({
           </div>
         </div>
       </div>
+
+      <TeamSchedulesOverview members={teamSchedules} clinicSlug={clinic} />
     </div>
   );
 }

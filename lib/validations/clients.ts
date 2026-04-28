@@ -27,7 +27,11 @@ export const clientSchema = z.object({
   last_name: z.string().min(1, "El apellido es obligatorio"),
   email: z.string().email("Email invalido").optional().or(z.literal("")),
   phone: optionalPhoneField,
+  // Consentimiento explícito Ley 19.628: el caller decide si default true o
+  // false. La action setea timestamp/source automáticamente cuando pasa de
+  // false a true.
   whatsapp_opt_in: z.boolean().optional(),
+  whatsapp_consent_acknowledged: z.boolean().optional(),
   address: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
 });

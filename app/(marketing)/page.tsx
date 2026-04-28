@@ -141,13 +141,13 @@ const pricingTiers = [
     tagline: "Para el veterinario que recién se independiza.",
     price: "$29.000",
     priceHint: "CLP / mes",
-    cta: "Probar 2 meses gratis",
+    cta: "Probar 30 días gratis",
     ctaHref: "/auth/register",
     highlight: false,
-    trial: "2 meses de prueba, sin tarjeta",
+    trial: "30 días de prueba, sin tarjeta",
     features: [
       "1 veterinario",
-      "Hasta 50 pacientes",
+      "Pacientes ilimitados",
       "Agenda y ficha clínica",
       "Boleta y factura en PDF",
       "Soporte por correo",
@@ -158,10 +158,10 @@ const pricingTiers = [
     tagline: "Para la mayoría de las clínicas.",
     price: "$79.000",
     priceHint: "CLP / mes",
-    cta: "Probar 2 meses gratis",
+    cta: "Probar 30 días gratis",
     ctaHref: "/auth/register",
     highlight: true,
-    trial: "2 meses de prueba, sin tarjeta",
+    trial: "30 días de prueba, sin tarjeta",
     features: [
       "Hasta 5 miembros del equipo",
       "Pacientes ilimitados",
@@ -194,8 +194,8 @@ const pricingTiers = [
 
 const faqs = [
   {
-    q: "¿Cómo funcionan los 2 meses de prueba?",
-    a: "Los planes Básico y Pro vienen con 2 meses de prueba sin tarjeta de crédito. Usas todas las funcionalidades del plan. Antes de que termine, te avisamos por correo y WhatsApp para que elijas seguir o darte de baja — sin cargos sorpresa.",
+    q: "¿Cómo funcionan los 30 días de prueba?",
+    a: "Los planes Básico y Pro vienen con 30 días de prueba sin tarjeta de crédito. Usas todas las funcionalidades del plan. Antes de que termine, te avisamos por correo y WhatsApp para que elijas seguir o darte de baja — sin cargos sorpresa.",
   },
   {
     q: "¿Emite boletas electrónicas con el SII?",
@@ -497,7 +497,7 @@ export default function LandingPage() {
                     "h-12 px-8 text-base shadow-lg shadow-primary/20"
                   )}
                 >
-                  Probar 2 meses gratis
+                  Probar 30 días gratis
                   <ArrowRight className="ml-2 size-4" />
                 </Link>
                 <a
@@ -862,7 +862,7 @@ export default function LandingPage() {
 
           <p className="mt-10 text-center text-sm text-muted-foreground">
             Precios en pesos chilenos, IVA incluido. Básico y Pro incluyen
-            2 meses de prueba, sin tarjeta. Cancelas cuando quieras.
+            30 días de prueba, sin tarjeta. Cancelas cuando quieras.
           </p>
         </div>
       </section>
@@ -998,7 +998,7 @@ export default function LandingPage() {
                 .
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/80">
-                Prueba PraxisVet 2 meses gratis, sin tarjeta de crédito.
+                Prueba PraxisVet 30 días gratis, sin tarjeta de crédito.
                 Cuando tu clínica ya no se imagine sin ella, eliges el plan.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -1009,7 +1009,7 @@ export default function LandingPage() {
                     "h-12 px-8 text-base shadow-xl"
                   )}
                 >
-                  Empezar 2 meses gratis
+                  Empezar 30 días gratis
                   <ArrowRight className="ml-2 size-4" />
                 </Link>
                 <a

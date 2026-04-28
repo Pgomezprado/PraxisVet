@@ -48,13 +48,15 @@ export function ClientForm({ client }: ClientFormProps) {
       last_name: client?.last_name ?? "",
       email: client?.email ?? "",
       phone: client?.phone ?? "",
-      whatsapp_opt_in: client?.whatsapp_opt_in ?? true,
+      // Default false: consentimiento explícito (Ley 19.628). Si es edición,
+      // respetamos lo que ya tenía registrado.
+      whatsapp_opt_in: client?.whatsapp_opt_in ?? false,
       address: client?.address ?? "",
     },
   });
 
   const phoneValue = watch("phone") ?? "";
-  const whatsappOptIn = watch("whatsapp_opt_in") ?? true;
+  const whatsappOptIn = watch("whatsapp_opt_in") ?? false;
 
   async function onSubmit(data: ClientInput) {
     setLoading(true);
@@ -164,11 +166,13 @@ export function ClientForm({ client }: ClientFormProps) {
                   htmlFor="whatsapp_opt_in"
                   className="cursor-pointer text-sm font-medium"
                 >
-                  Recibir recordatorios por WhatsApp
+                  Acepta recibir recordatorios por WhatsApp
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Enviaremos recordatorios de citas y vacunaciones al número
-                  registrado. Puedes desactivarlo en cualquier momento.
+                  El tutor acepta recibir recordatorios de citas y
+                  notificaciones de la clínica al número ingresado. Puede
+                  enviar &ldquo;BAJA&rdquo; en cualquier momento para
+                  desactivarlo (Ley 19.628).
                 </p>
               </div>
             </div>

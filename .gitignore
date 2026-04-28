@@ -49,7 +49,12 @@ supabase/.temp/
 # Archivos personales / marketing / diseño (no ir al repo)
 *.pptx
 *.pdf
+*.xlsx
 /brand-guidelines.html
 /logo-concepts.html
 /logo-praxisvet*.svg
+
+# Contratos legales y datos de prospectos (NUNCA al repo público)
+docs/contratos/
+prospectos_*
 

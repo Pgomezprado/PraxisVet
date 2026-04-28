@@ -98,6 +98,18 @@ const { data: org, error: orgErr } = await s
 if (orgErr || !org) die(`Org "${ORG_SLUG}" no encontrada. Corre primero scripts/seed-dev.mjs`);
 console.log("✓ Org:", org.name, org.id);
 
+// La clínica demo nunca debe expirar: se usa para pruebas y demos comerciales.
+const { error: subErr } = await s
+  .from("organizations")
+  .update({
+    plan: "enterprise",
+    subscription_status: "active",
+    trial_ends_at: null,
+  })
+  .eq("id", org.id);
+if (subErr) die("activar suscripción demo", subErr);
+console.log("✓ Suscripción demo: enterprise · active (sin expiración)");
+
 // ---------------------------------------------------------------
 // 2) Miembros del equipo con login
 // ---------------------------------------------------------------

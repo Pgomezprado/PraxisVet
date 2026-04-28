@@ -27,6 +27,13 @@ const superadminAllowlist = [
   // Cron jobs corren como procesos de Vercel (auth via CRON_SECRET), no como
   // usuarios; necesitan service-role para recorrer todas las orgs.
   "app/api/cron/**",
+  // Webhooks externos (Twilio inbound) llegan sin sesión de usuario; el
+  // dispatch valida HMAC firma antes de cualquier mutación.
+  "app/api/webhooks/**",
+  // Notification dispatch (confirmación inmediata de cita): se invoca desde
+  // Server Actions como fire-and-forget. Necesita service-role porque la
+  // política de notificación es decisión de la org, no del usuario que agenda.
+  "lib/notifications/**",
   // Portal del tutor: el vínculo client_auth_links se completa ANTES de que
   // el usuario tenga permisos RLS (membership o linked_at). Service-role
   // solo se usa para ese upsert puntual.

@@ -10,17 +10,29 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Cron diario (corre 2 veces/día vía Vercel Cron).
+ * Cron diario (1x/día — Vercel Hobby).
  *
- * Para cada cita agendada para MAÑANA en una clínica con
- * `whatsapp_reminders_enabled=true`, envía un recordatorio WhatsApp al tutor
- * si tiene `whatsapp_opt_in=true` y `phone_e164` válido.
+ * Para cada cita agendada para MAÑANA en una clínica con master switch
+ * `whatsapp_reminders_enabled=true` y sub-toggle
+ * `whatsapp_appt_reminder_24h_enabled=true`, envía un recordatorio WhatsApp
+ * al tutor si tiene `whatsapp_opt_in=true` y `phone_e164` válido.
  *
- * Es idempotente: filtra por `reminder_sent=false` y marca `true` solo si el
- * envío fue aceptado por el provider. Re-intentar no duplica mensajes.
+ * Idempotencia: filtra por `reminder_sent=false` y marca `true` solo si el
+ * envío fue aceptado. Re-ejecutar no duplica.
+ *
+ * Rate limit: máx 50 envíos/org/ejecución. Si se alcanza, las citas restantes
+ * de esa org quedan sin marcar y se reintentarán mañana.
+ *
+ * Dry-run: si `WHATSAPP_DRY_RUN_TO` está set, todos los mensajes van a ese
+ * número y se loguea `payload.dry_run=true`.
+ *
+ * Kill switch: `WHATSAPP_KILL_SWITCH=true` corta todo el envío.
  *
  * Auth: Bearer CRON_SECRET (Vercel Cron lo inyecta cuando está configurado).
  */
+
+const MAX_PER_ORG_PER_RUN = 50;
+
 export async function GET(request: Request) {
   const expected = process.env.CRON_SECRET;
   if (!expected) {
@@ -35,6 +47,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  if (process.env.WHATSAPP_KILL_SWITCH === "true") {
+    return NextResponse.json({
+      ok: true,
+      killSwitch: true,
+      scanned: 0,
+      sent: 0,
+    });
+  }
+
   const provider = getWhatsAppProvider();
   if (!provider) {
     return NextResponse.json(
@@ -46,12 +67,13 @@ export async function GET(request: Request) {
     );
   }
 
+  const dryRunTo = process.env.WHATSAPP_DRY_RUN_TO?.trim() || null;
+
   const supabase = createAdminClient();
   const tomorrow = addDays(new Date(), 1);
   const tomorrowISO = format(tomorrow, "yyyy-MM-dd");
 
-  // Citas de mañana que todavía no han enviado recordatorio, con sus relaciones
-  // necesarias: tutor, mascota, profesional asignado y organización.
+  // Citas de mañana, master switch + sub-toggle 24h activos en la clínica.
   const { data: appointments, error } = await supabase
     .from("appointments")
     .select(
@@ -60,13 +82,14 @@ export async function GET(request: Request) {
       pets ( id, name ),
       clients ( id, first_name, phone_e164, whatsapp_opt_in ),
       organization_members!appointments_assigned_to_fkey ( first_name, last_name ),
-      organizations!inner ( id, name, whatsapp_reminders_enabled )
+      organizations!inner ( id, name, whatsapp_reminders_enabled, whatsapp_appt_reminder_24h_enabled )
     `
     )
     .eq("date", tomorrowISO)
     .eq("reminder_sent", false)
     .in("status", ["pending", "confirmed"])
-    .eq("organizations.whatsapp_reminders_enabled", true);
+    .eq("organizations.whatsapp_reminders_enabled", true)
+    .eq("organizations.whatsapp_appt_reminder_24h_enabled", true);
 
   if (error) {
     return NextResponse.json(
@@ -100,6 +123,10 @@ export async function GET(request: Request) {
   let sent = 0;
   let failed = 0;
   let skipped = 0;
+  let rateLimited = 0;
+
+  // Contador por org para rate limit duro intra-ejecución.
+  const sentByOrg = new Map<string, number>();
 
   for (const raw of (appointments ?? []) as unknown as Row[]) {
     scanned++;
@@ -117,6 +144,13 @@ export async function GET(request: Request) {
       continue;
     }
 
+    const orgCount = sentByOrg.get(org.id) ?? 0;
+    if (orgCount >= MAX_PER_ORG_PER_RUN) {
+      // Dejamos reminder_sent=false para reintento mañana (no quemamos la cita).
+      rateLimited++;
+      continue;
+    }
+
     const assignee = raw.organization_members;
     const professionalName = assignee?.first_name
       ? `${assignee.first_name}${
@@ -127,7 +161,14 @@ export async function GET(request: Request) {
     const dateLabel = format(new Date(raw.date + "T12:00:00"), "dd-MM");
     const timeLabel = raw.start_time.slice(0, 5);
 
-    const message = buildApptReminder24h(client.phone_e164, {
+    // Dry-run: solo redirige destinatario. La auditoría queda en
+    // notification_logs.payload (dry_run + real_to + tutor) — no contaminamos
+    // el mensaje porque WhatsApp templates solo permiten sustituir variables
+    // y el prefijo rompe la lectura del template real.
+    const realTo = client.phone_e164;
+    const sendTo = dryRunTo ?? realTo;
+
+    const message = buildApptReminder24h(sendTo, {
       tutorFirstName: client.first_name,
       petName: pet.name,
       professionalName,
@@ -144,6 +185,9 @@ export async function GET(request: Request) {
       date: dateLabel,
       time: timeLabel,
       professional: professionalName,
+      dry_run: Boolean(dryRunTo),
+      real_to: realTo,
+      sent_to: sendTo,
     };
 
     await supabase.from("notification_logs").insert({
@@ -165,13 +209,13 @@ export async function GET(request: Request) {
       continue;
     }
 
-    // Provider aceptó el envío (queued/sent). Marcamos la cita como enviada
-    // para no reintentar en la siguiente pasada del cron.
+    // Provider aceptó (queued/sent). Marcamos para no reintentar.
     await supabase
       .from("appointments")
       .update({ reminder_sent: true })
       .eq("id", raw.id);
     sent++;
+    sentByOrg.set(org.id, orgCount + 1);
   }
 
   return NextResponse.json({
@@ -181,5 +225,7 @@ export async function GET(request: Request) {
     sent,
     failed,
     skipped,
+    rateLimited,
+    dryRun: Boolean(dryRunTo),
   });
 }

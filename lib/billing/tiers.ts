@@ -23,10 +23,10 @@ export const pricingTiers: readonly PricingTier[] = [
     price: "$29.000",
     priceHint: "CLP / mes",
     highlight: false,
-    trial: "2 meses de prueba, sin tarjeta",
+    trial: "30 días de prueba, sin tarjeta",
     features: [
       "1 veterinario",
-      "Hasta 50 pacientes",
+      "Pacientes ilimitados",
       "Agenda y ficha clínica",
       "Boleta y factura en PDF",
       "Soporte por correo",
@@ -39,7 +39,7 @@ export const pricingTiers: readonly PricingTier[] = [
     price: "$79.000",
     priceHint: "CLP / mes",
     highlight: true,
-    trial: "2 meses de prueba, sin tarjeta",
+    trial: "30 días de prueba, sin tarjeta",
     features: [
       "Hasta 5 miembros del equipo",
       "Pacientes ilimitados",

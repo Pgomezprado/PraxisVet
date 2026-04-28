@@ -17,6 +17,22 @@ import {
   capabilityForAppointmentType,
 } from "@/lib/auth/capabilities";
 import { checkMemberAvailability } from "@/lib/auth/check-availability";
+import { sendApptConfirmation } from "@/lib/notifications/dispatch";
+
+/**
+ * Dispara confirmación WhatsApp sin bloquear el flujo del usuario.
+ * Cualquier fallo se loguea pero NO rompe la creación/cambio de status.
+ */
+function fireApptConfirmation(orgId: string, appointmentId: string): void {
+  // No await intencional: fire-and-forget. El dispatch loguea su propio error
+  // a notification_logs y no debe propagar excepciones a la UI.
+  sendApptConfirmation(orgId, appointmentId).catch((err) => {
+    console.error("[appointments] sendApptConfirmation failed", {
+      appointmentId,
+      err: err instanceof Error ? err.message : String(err),
+    });
+  });
+}
 
 export type AppointmentWithRelations = {
   id: string;
@@ -333,6 +349,12 @@ export async function updateAppointmentStatus(appointmentId: string, status: App
 
   if (error) {
     return { data: null, error: error.message };
+  }
+
+  // Confirmación WhatsApp cuando una cita pasa a "confirmed" (recepcionista
+  // o admin la confirma manualmente). No reenvía si ya se envió en el create.
+  if (data && parsed.data.status === "confirmed" && data.org_id) {
+    fireApptConfirmation(data.org_id, data.id);
   }
 
   revalidatePath(`/[clinic]/appointments`, "page");

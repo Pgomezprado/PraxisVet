@@ -170,6 +170,8 @@ export async function createClient(
 
   const { supabase } = await getAuthUser();
 
+  const optIn = parsed.data.whatsapp_opt_in === true;
+
   const { data, error } = await supabase
     .from("clients")
     .insert({
@@ -178,7 +180,9 @@ export async function createClient(
       last_name: parsed.data.last_name,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
-      whatsapp_opt_in: parsed.data.whatsapp_opt_in ?? true,
+      whatsapp_opt_in: optIn,
+      whatsapp_opt_in_at: optIn ? new Date().toISOString() : null,
+      whatsapp_opt_in_source: optIn ? "clinic_form" : null,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
     })
@@ -210,6 +214,8 @@ export async function createTutorWithPet(
 
   const { supabase } = await getAuthUser();
 
+  const optInNew = parsed.data.whatsapp_opt_in === true;
+
   const { data: client, error: clientError } = await supabase
     .from("clients")
     .insert({
@@ -218,7 +224,9 @@ export async function createTutorWithPet(
       last_name: parsed.data.last_name,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
-      whatsapp_opt_in: parsed.data.whatsapp_opt_in ?? true,
+      whatsapp_opt_in: optInNew,
+      whatsapp_opt_in_at: optInNew ? new Date().toISOString() : null,
+      whatsapp_opt_in_source: optInNew ? "clinic_form" : null,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
     })
@@ -278,17 +286,39 @@ export async function updateClient(
 
   const { supabase } = await getAuthUser();
 
+  // Necesitamos saber el estado previo del consentimiento para decidir si
+  // sobrescribimos timestamp/source (solo cuando pasa de false a true).
+  // Si pasa de true a false, conservamos el histórico (fecha original) por
+  // si necesitamos auditar la trazabilidad del consentimiento.
+  const { data: existing } = await supabase
+    .from("clients")
+    .select("whatsapp_opt_in, whatsapp_opt_in_at, whatsapp_opt_in_source")
+    .eq("id", clientId)
+    .maybeSingle();
+
+  const wasOptedIn = existing?.whatsapp_opt_in === true;
+  const willOptIn = parsed.data.whatsapp_opt_in === true;
+
+  const updatePayload: Record<string, unknown> = {
+    first_name: parsed.data.first_name,
+    last_name: parsed.data.last_name,
+    email: parsed.data.email || null,
+    phone: parsed.data.phone || null,
+    whatsapp_opt_in: willOptIn,
+    address: parsed.data.address || null,
+    notes: parsed.data.notes || null,
+  };
+
+  // Solo seteamos timestamp/source cuando es una ACTIVACIÓN nueva (no estaba
+  // y ahora sí). Si ya estaba, no tocamos para preservar la fecha original.
+  if (willOptIn && !wasOptedIn) {
+    updatePayload.whatsapp_opt_in_at = new Date().toISOString();
+    updatePayload.whatsapp_opt_in_source = "clinic_form";
+  }
+
   const { data, error } = await supabase
     .from("clients")
-    .update({
-      first_name: parsed.data.first_name,
-      last_name: parsed.data.last_name,
-      email: parsed.data.email || null,
-      phone: parsed.data.phone || null,
-      whatsapp_opt_in: parsed.data.whatsapp_opt_in ?? true,
-      address: parsed.data.address || null,
-      notes: parsed.data.notes || null,
-    })
+    .update(updatePayload)
     .eq("id", clientId)
     .select()
     .single();

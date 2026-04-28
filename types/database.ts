@@ -100,6 +100,12 @@ export interface OrganizationMember {
   created_at: string;
 }
 
+export type WhatsAppOptInSource =
+  | "clinic_form"
+  | "portal_self"
+  | "verbal_recorded"
+  | "imported";
+
 export interface Client {
   id: string;
   org_id: string;
@@ -110,6 +116,8 @@ export interface Client {
   phone: string | null;
   phone_e164: string | null;
   whatsapp_opt_in: boolean;
+  whatsapp_opt_in_at: string | null;
+  whatsapp_opt_in_source: WhatsAppOptInSource | null;
   address: string | null;
   notes: string | null;
   created_at: string;

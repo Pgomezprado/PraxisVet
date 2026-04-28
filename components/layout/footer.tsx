@@ -4,13 +4,13 @@ import { Globe, Mail, Lock } from "lucide-react";
 const footerLinks = {
   Producto: [
     { href: "/#funcionalidades", label: "Funcionalidades" },
-    { href: "/#precios", label: "Precios" },
+    { href: "/#precios", label: "Planes" },
     { href: "/#faq", label: "Preguntas frecuentes" },
     { href: "/#como-funciona", label: "Cómo funciona" },
   ],
   Empresa: [
-    { href: "mailto:contacto@praxisvet.cl", label: "Contacto" },
-    { href: "mailto:ventas@praxisvet.cl", label: "Ventas" },
+    { href: "mailto:gomezpablo.mayor@gmail.com", label: "Contacto" },
+    { href: "https://wa.me/56993589027", label: "WhatsApp" },
   ],
 };
 
@@ -41,7 +41,7 @@ export function Footer() {
                 <Globe className="size-4" />
               </a>
               <a
-                href="mailto:contacto@praxisvet.cl"
+                href="mailto:gomezpablo.mayor@gmail.com"
                 className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                 aria-label="Email"
               >

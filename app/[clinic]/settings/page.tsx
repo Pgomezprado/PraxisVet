@@ -3,7 +3,6 @@ import {
   Stethoscope,
   Users,
   Building2,
-  MessageCircle,
   ShieldCheck,
 } from "lucide-react";
 import {
@@ -31,12 +30,6 @@ const sections = [
     description: "Nombre, dirección y datos de contacto de tu clínica.",
     href: "clinic",
     icon: Building2,
-  },
-  {
-    title: "Notificaciones",
-    description: "Recordatorios automáticos por WhatsApp a tus clientes.",
-    href: "notifications",
-    icon: MessageCircle,
   },
   {
     title: "Portal del tutor",

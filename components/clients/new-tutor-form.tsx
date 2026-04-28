@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +45,6 @@ export function NewTutorForm() {
     register,
     handleSubmit,
     watch,
-    setValue,
     control,
     formState: { errors },
   } = useForm<NewTutorWithPetInput>({
@@ -54,9 +52,9 @@ export function NewTutorForm() {
     defaultValues: {
       first_name: "",
       last_name: "",
+      rut: "",
       email: "",
       phone: "",
-      whatsapp_opt_in: false,
       address: "",
       pet_name: "",
       pet_species: "",
@@ -72,8 +70,6 @@ export function NewTutorForm() {
 
   const watchedSpecies = watch("pet_species");
   const watchedSex = watch("pet_sex");
-  const watchedPhone = watch("phone") ?? "";
-  const watchedOptIn = watch("whatsapp_opt_in") ?? false;
   const breedSuggestions = getBreedSuggestions(watchedSpecies);
   const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
 
@@ -142,6 +138,17 @@ export function NewTutorForm() {
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="rut">RUT (opcional)</Label>
+            <Input
+              id="rut"
+              placeholder="ej: 12.345.678-9"
+              {...register("rut")}
+              aria-invalid={!!errors.rut}
+            />
+            <FieldError message={errors.rut?.message} />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="email">Email (opcional)</Label>
@@ -173,30 +180,6 @@ export function NewTutorForm() {
             />
           </div>
 
-          {watchedPhone.trim().length > 0 && (
-            <div className="flex items-start gap-3 rounded-md border bg-muted/30 p-3">
-              <Switch
-                id="whatsapp_opt_in"
-                checked={watchedOptIn}
-                onCheckedChange={(value) =>
-                  setValue("whatsapp_opt_in", value, { shouldDirty: true })
-                }
-              />
-              <div className="flex-1 space-y-0.5">
-                <Label
-                  htmlFor="whatsapp_opt_in"
-                  className="cursor-pointer text-sm font-medium"
-                >
-                  Acepta recibir recordatorios por WhatsApp
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  El tutor acepta recibir recordatorios de citas y
-                  notificaciones de la clínica al número ingresado. Puede
-                  enviar &ldquo;BAJA&rdquo; en cualquier momento (Ley 19.628).
-                </p>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 

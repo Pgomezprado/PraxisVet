@@ -14,7 +14,6 @@ import {
   canViewExams,
   canInterpretExam,
 } from "@/lib/auth/current-member";
-import { getWhatsAppProvider } from "@/lib/notifications";
 import type { ClinicalRecordExam, MemberRole } from "@/types";
 
 type ActionResult<T = void> =
@@ -466,9 +465,7 @@ export async function shareExamWithTutor(
     .from("clinical_record_exams")
     .select(
       `
-      id, org_id, pet_id, status, vet_interpretation, result_file_name,
-      pet:pets!pet_id (id, name, client_id, client:clients!client_id (id, first_name, phone_e164, whatsapp_opt_in)),
-      org:organizations!org_id (id, name, whatsapp_reminders_enabled)
+      id, org_id, pet_id, status, vet_interpretation, result_file_name
     `
     )
     .eq("id", examId)
@@ -511,44 +508,6 @@ export async function shareExamWithTutor(
       error:
         "No se pudo marcar el examen como compartido. Es posible que tu rol no tenga permisos.",
     };
-  }
-
-  // Intento de WhatsApp (best-effort; si no está configurado, no falla).
-  // TODO(F2): cuando esté aprobado el template "exam_ready" en Meta + agregado a
-  // lib/notifications/templates.ts, enviar aquí la notificación. Por ahora solo
-  // dejamos registro y el portal del tutor ya muestra el examen sin push.
-  try {
-    const provider = getWhatsAppProvider();
-    const petWithClient = (exam as unknown as {
-      pet: {
-        name: string;
-        client: {
-          first_name: string | null;
-          phone_e164: string | null;
-          whatsapp_opt_in: boolean;
-        };
-      };
-      org: { name: string; whatsapp_reminders_enabled: boolean };
-    }).pet;
-    const orgRow = (exam as unknown as {
-      org: { name: string; whatsapp_reminders_enabled: boolean };
-    }).org;
-
-    const orgEnabled = orgRow?.whatsapp_reminders_enabled ?? false;
-    const tutorOptIn = petWithClient?.client?.whatsapp_opt_in ?? false;
-    const tutorPhone = petWithClient?.client?.phone_e164 ?? null;
-
-    if (provider && orgEnabled && tutorOptIn && tutorPhone) {
-      // Template "exam_ready" aún no existe — ver TODO arriba.
-      // No intentamos sendTemplate sin builder tipado para no enviar payload mal armado.
-      console.info(
-        "[exams.shareWithTutor] WhatsApp configurado pero falta template exam_ready; se omite envío. examId=" +
-          examId
-      );
-    }
-  } catch (e) {
-    // Nunca dejar caer la acción por un fallo de notificación.
-    console.warn("[exams.shareWithTutor] notificación falló", e);
   }
 
   revalidatePath(

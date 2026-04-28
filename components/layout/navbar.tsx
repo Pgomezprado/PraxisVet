@@ -8,7 +8,7 @@ import { Menu, X, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { href: "#funcionalidades", label: "Funcionalidades" },
-  { href: "#precios", label: "Precios" },
+  { href: "#precios", label: "Planes" },
   { href: "#faq", label: "FAQ" },
   { href: "#como-funciona", label: "Cómo funciona" },
 ];
@@ -32,7 +32,7 @@ export function Navbar() {
             href="#precios"
             className="ml-2 inline-flex items-center gap-1 underline underline-offset-2 hover:opacity-80"
           >
-            Ver precios
+            Agendar demo
             <ArrowRight className="size-3" />
           </Link>
         </p>

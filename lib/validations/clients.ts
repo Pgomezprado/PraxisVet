@@ -22,16 +22,55 @@ const optionalPhoneField = z
     message: "Ingresa un móvil chileno válido (+56 9 XXXX XXXX)",
   });
 
+/**
+ * Valida dígito verificador de RUT chileno (módulo 11).
+ * Acepta cualquier formato (con/sin puntos, con/sin guion, k mayúscula o minúscula).
+ */
+export function validateRut(input: string): boolean {
+  const clean = input.replace(/[^0-9kK]/g, "").toUpperCase();
+  if (clean.length < 2) return false;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  if (!/^[0-9]+$/.test(body)) return false;
+
+  let sum = 0;
+  let factor = 2;
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i], 10) * factor;
+    factor = factor === 7 ? 2 : factor + 1;
+  }
+  const mod = 11 - (sum % 11);
+  const expected = mod === 11 ? "0" : mod === 10 ? "K" : String(mod);
+  return dv === expected;
+}
+
+/**
+ * Normaliza RUT chileno a formato canónico 12.345.678-9.
+ * Idempotente. Devuelve "" si el input está vacío.
+ */
+export function formatRut(input: string): string {
+  const clean = input.replace(/[^0-9kK]/g, "").toUpperCase();
+  if (clean.length < 2) return clean;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${withDots}-${dv}`;
+}
+
+const optionalRutField = z
+  .string()
+  .optional()
+  .or(z.literal(""))
+  .refine((val) => !val || validateRut(val), {
+    message: "RUT inválido. Verifica el dígito verificador.",
+  });
+
 export const clientSchema = z.object({
   first_name: z.string().min(1, "El nombre es obligatorio"),
   last_name: z.string().min(1, "El apellido es obligatorio"),
+  rut: optionalRutField,
   email: z.string().email("Email invalido").optional().or(z.literal("")),
   phone: optionalPhoneField,
-  // Consentimiento explícito Ley 19.628: el caller decide si default true o
-  // false. La action setea timestamp/source automáticamente cuando pasa de
-  // false a true.
-  whatsapp_opt_in: z.boolean().optional(),
-  whatsapp_consent_acknowledged: z.boolean().optional(),
   address: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
 });

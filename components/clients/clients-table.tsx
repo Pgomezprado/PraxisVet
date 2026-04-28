@@ -12,8 +12,12 @@ import {
 } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
+import { SortableHeader } from "@/components/ui/sortable-header";
 import { PetsInlinePreview } from "./pets-inline-preview";
-import type { ClientWithPetsPreview } from "@/app/[clinic]/clients/actions";
+import type {
+  ClientWithPetsPreview,
+  ClientsSortKey,
+} from "@/app/[clinic]/clients/actions";
 
 interface ClientsTableProps {
   clients: ClientWithPetsPreview[];
@@ -23,6 +27,7 @@ interface ClientsTableProps {
   totalItems: number;
   pageSize: number;
   search?: string;
+  sort?: ClientsSortKey;
 }
 
 export function ClientsTable({
@@ -33,6 +38,7 @@ export function ClientsTable({
   totalItems,
   pageSize,
   search,
+  sort,
 }: ClientsTableProps) {
   return (
     <div className="space-y-4">
@@ -67,10 +73,24 @@ export function ClientsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
+                <TableHead>
+                  <SortableHeader
+                    label="Nombre"
+                    ascValue="last_name_asc"
+                    descValue="last_name_desc"
+                    defaultDirection="asc"
+                  />
+                </TableHead>
                 <TableHead>Contacto</TableHead>
                 <TableHead>Mascotas</TableHead>
-                <TableHead>Registro</TableHead>
+                <TableHead>
+                  <SortableHeader
+                    label="Registro"
+                    ascValue="created_asc"
+                    descValue="created_desc"
+                    defaultDirection="desc"
+                  />
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -133,7 +153,7 @@ export function ClientsTable({
             totalItems={totalItems}
             pageSize={pageSize}
             baseUrl={`/${clinicSlug}/clients`}
-            searchParams={{ search }}
+            searchParams={{ search, sort }}
           />
         </>
       )}

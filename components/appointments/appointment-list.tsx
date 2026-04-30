@@ -9,13 +9,16 @@ import type { AppointmentStatus } from "@/types";
 
 const statusOptions: { value: string; label: string }[] = [
   { value: "all", label: "Todos los estados" },
-  { value: "pending", label: "Pendiente" },
+  { value: "upcoming", label: "Pendientes" },
+  { value: "pending", label: "Sin confirmar" },
   { value: "confirmed", label: "Confirmada" },
   { value: "in_progress", label: "En curso" },
   { value: "completed", label: "Completada" },
   { value: "cancelled", label: "Cancelada" },
   { value: "no_show", label: "No asistió" },
 ];
+
+const UPCOMING_STATUSES = new Set(["pending", "confirmed"]);
 
 export function AppointmentList({
   appointments,
@@ -31,7 +34,9 @@ export function AppointmentList({
   const filtered =
     statusFilter === "all"
       ? appointments
-      : appointments.filter((a) => a.status === statusFilter);
+      : statusFilter === "upcoming"
+        ? appointments.filter((a) => UPCOMING_STATUSES.has(a.status))
+        : appointments.filter((a) => a.status === statusFilter);
 
   return (
     <div className="space-y-4">

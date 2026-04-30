@@ -96,7 +96,13 @@ export default async function NewGroomingRecordPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link href={`/${clinic}/clients/${id}/pets/${petId}/grooming`}>
+        <Link
+          href={
+            defaultAppointmentId
+              ? `/${clinic}/appointments/${defaultAppointmentId}`
+              : `/${clinic}/clients/${id}/pets/${petId}/grooming`
+          }
+        >
           <Button variant="ghost" size="icon-sm">
             <ArrowLeft className="size-4" />
           </Button>

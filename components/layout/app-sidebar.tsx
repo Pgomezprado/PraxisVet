@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   CalendarDays,
   Users,
-  Receipt,
   Package,
   BarChart3,
   Settings,
@@ -55,12 +54,6 @@ const navItems: NavItem[] = [
     href: "/clients",
     icon: Users,
     roles: ["admin", "vet", "receptionist", "groomer"],
-  },
-  {
-    title: "Facturación",
-    href: "/billing",
-    icon: Receipt,
-    roles: ["admin", "receptionist"],
   },
   {
     title: "Inventario",

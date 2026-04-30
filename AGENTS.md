@@ -73,20 +73,24 @@ Si una decisión de producto contradice `CLINIC_FLOW.md`, primero se discute y s
 | Módulo | Estado | Notas |
 |---|---|---|
 | Auth + Onboarding | ✅ Construido | Login, registro, forgot-password, callback OAuth, flujo onboarding |
-| Clientes + Mascotas | ✅ Construido | CRUD completo, validación RUT, taxonomía de especies |
-| Citas (Appointments) | ✅ Construido | Estados completos incl. `ready_for_pickup`, vista semana/día |
+| Clientes + Mascotas | ✅ Construido | CRUD completo, validación RUT, taxonomía de especies, `pets.size` para grooming |
+| Citas (Appointments) | ✅ Construido | Estados completos incl. `ready_for_pickup`, flag `is_dangerous`, constraint de exclusión, vista semana/día |
 | Historial Clínico + Vacunas + Recetas | ✅ Construido | Examen físico, catálogo de vacunas, receta retenida con PDF |
 | Desparasitaciones | ✅ Construido | Módulo propio bajo cada mascota |
-| Peluquería (grooming flow) | ✅ Construido | Registros de grooming bajo mascota, schema migrado |
-| Settings / Servicios / Equipo | ✅ Construido | Configuración de clínica, servicios y gestión de miembros |
+| Exámenes (lab + imagenología) | ✅ Construido | Bajo ficha clínica; estados `solicitado`/`resultado_cargado`; archivos en bucket `exam-files`; exámenes compartibles al tutor via `shared_with_tutor_at` |
+| Peluquería (grooming flow) | ✅ Construido | Registros de grooming bajo mascota, pricing configurable por especie/talla/peso (`service_price_tiers`) |
+| Settings / Servicios / Equipo | ✅ Construido | Configuración de clínica, servicios, gestión de miembros, horarios profesionales, settings del portal tutor |
 | Sistema de Invitaciones | ✅ Construido | Tokens de invitación, email, flujo accept-invite |
-| Facturación (boleta/factura) | ✅ Construido | Generación PDF, estados, `document_type`, montos CLP |
+| Facturación (boleta/factura) | ✅ Construido | Generación PDF, estados incl. `partial_paid`, abonos parciales (`payments`), montos CLP |
 | Inventario | ✅ Construido | CRUD de productos y registro de movimientos de stock |
 | Super Admin Panel | ✅ Construido | Dashboard global, detalle de org, audit log, trial gateway |
-| Email Reminders (cron) | ✅ Construido | Recordatorios de trial via Resend + cron route |
+| Email Reminders (cron) | ✅ Construido | Recordatorios de trial + cumpleaños de mascotas via Resend + cron routes |
+| Analytics (panel admin) | ✅ Construido | Gráficos de citas, productividad por profesional, top servicios; periodos 1m/3m/año |
+| Portal del Tutor | ✅ Construido | Auth magic link; el dueño ve sus mascotas, historial de citas, vacunas, desparasitaciones, peluquería y exámenes compartidos; puede solicitar cita nueva |
+| Horarios Profesionales | ✅ Construido | Horario semanal recurrente + bloqueos puntuales (vacaciones, licencia) por profesional |
+| WhatsApp Recordatorios | ❌ Descartado | Construido (sprints 21-27 abr) y eliminado el 28 abr por no completar aprobación Meta. Migraciones: 20260421000002-3, 20260427000001, 20260428000001 (drop). |
 | **Integración SII real** | 🔲 Pendiente | MVP genera PDF; delegación a OpenFactura/Haulmer es post-MVP |
 | **Cierre de caja (cash_register UI)** | 🔲 Pendiente | Tabla `cash_registers` migrada, UI pendiente |
-| **Reportes y métricas clínica** | 🔲 Pendiente | Post-MVP |
 
 ---
 
@@ -100,7 +104,7 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 
 **Rol:** Estratega del producto. Decide qué se construye, para quién y en qué orden.
 
-> **Contexto actual (abril 2026):** El MVP está completo. Todos los módulos core están construidos. El foco ahora es (1) validar con usuarios reales, (2) completar los 3 pendientes post-MVP (integración SII real, UI de cierre de caja, reportes), y (3) convertir trials a clientes pagos.
+> **Contexto actual (abril 2026):** El MVP está completo y se lanzaron funcionalidades post-MVP: Portal del Tutor, Analytics, Exámenes, Horarios Profesionales, Pricing de Grooming, Abonos Parciales. La feature de WhatsApp Recordatorios fue descartada (falta aprobación Meta). El foco ahora es (1) validar con la clínica fundadora en piloto, (2) completar los 2 pendientes restantes (UI de cierre de caja, integración SII real), y (3) convertir trials a clientes pagos.
 
 **Responsabilidades:**
 - Validar que cada feature propuesta tenga sentido para al menos uno de los 3 segmentos (vet solo / pequeña / mediana) y no rompa ninguno de los flujos E2E.
@@ -126,6 +130,7 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 - Propuesta de telemedicina → fuera de MVP.
 - Feature que solo sirve a un segmento pero rompe la UX de los otros dos.
 - Propuesta de cambiar precios sin evaluar impacto en trials activos y clientes existentes.
+- Propuesta de reactivar WhatsApp Recordatorios → requiere aprobación de Meta primero; no entrar al sprint sin ese prerequisito.
 
 ---
 
@@ -157,6 +162,9 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 - Taxonomía de especies: `canino` / `felino` / `exótico` — así se muestran en selectores y fichas, nunca "perro/gato".
 - El trial banner (`components/billing/trial-banner.tsx`) ya existe; cualquier cambio de UX de trial coordinar con él.
 - Los 4 dashboards por rol (`admin-dashboard`, `vet-dashboard`, `receptionist-dashboard`, `groomer-dashboard`) ya están construidos en `components/dashboard/`. Los cambios deben ser consistentes con los widgets existentes en `components/dashboard/widgets/`.
+- El **Portal del Tutor** (`app/tutor/[clinic]/`) es una superficie pública separada — no comparte layout ni navegación con el panel de la clínica. Diseño orientado a móvil (el tutor abre el link desde el teléfono). El tutor NO ve diagnósticos, prescripciones ni anamnesis; solo vacunas, desparasitaciones, grooming y exámenes que el vet marcó como compartidos.
+- La flag `is_dangerous` en citas debe tener representación visual prominente y uniforme en todos los roles (badge rojo, ícono de advertencia).
+- El estado `partial_paid` en facturas necesita distinción visual clara respecto a `paid` y `sent`.
 
 ---
 
@@ -221,7 +229,9 @@ components/
 Los Server Actions no pueden retornar streams ni blobs. Las siguientes Route Handlers son excepciones aprobadas:
 - `app/api/[clinic]/invoices/[invoiceId]/pdf/route.ts` — generación de PDF de factura
 - `app/api/[clinic]/prescriptions/[recordId]/pdf/route.ts` — generación de PDF de receta
-- `app/api/cron/trial-reminders/route.ts` — cron job de Vercel (no puede ser Server Action)
+- `app/api/cron/trial-reminders/route.ts` — cron job de recordatorios de trial (Vercel Cron)
+- `app/api/cron/birthday-reminders/route.ts` — cron job de recordatorios de cumpleaños de mascotas (Vercel Cron)
+- Rutas de signed URLs para exámenes — los archivos en bucket `exam-files` requieren URLs firmadas efímeras; el frontend no puede generarlas sin un endpoint server-side
 
 Toda Route Handler aplica el mismo aislamiento de `org_id` y verificación de rol que un Server Action.
 
@@ -271,16 +281,39 @@ Toda Route Handler aplica el mismo aislamiento de `org_id` y verificación de ro
 | `organization_vaccine_preferences` | Opt-out de vacunas del catálogo por organización. | `org_isolation` estándar. |
 | `dewormings` | Desparasitaciones por mascota. RLS igual que `clinical_records` (admin + vet; groomer NO). | `vet_or_admin_only`. |
 | `reminders` | Recordatorios automáticos generados por triggers (vacunas, controles). | `org_isolation` estándar. |
+| `member_weekly_schedules` | Horario semanal recurrente por profesional (tramos por `day_of_week`). Escritura solo admins; lectura todos los miembros. | Admin escribe, todos leen. |
+| `member_schedule_blocks` | Bloqueos puntuales por rango `timestamptz` (vacaciones, licencias). Escritura solo admins. | Admin escribe, todos leen. |
+| `service_price_tiers` | Tiers de precio por servicio, segmentados por especie/talla/peso. Permite pricing configurable de grooming. | `org_isolation` estándar. |
+| `payments` | Abonos parciales de facturas. Trigger recalcula `invoices.amount_paid` y ajusta `invoices.status` automáticamente. | `org_isolation` estándar. |
+| `clinical_record_exams` | Exámenes (lab + imagenología) bajo ficha clínica. Estados: `solicitado` / `resultado_cargado`. Archivos en bucket privado `exam-files` (signed URLs). Campo `shared_with_tutor_at` controla visibilidad en portal tutor. | Admin: CRUD completo. Vet: SELECT + INSERT + UPDATE. Recepcionista: SELECT + INSERT + UPDATE (carga resultados del lab). Groomer: sin acceso. |
+| `sent_birthday_log` | Log de recordatorios de cumpleaños enviados. PK compuesta `(pet_id, sent_on)` garantiza idempotencia del cron. Inserts solo vía `service_role`. | Admin puede leer (debug). |
 
-**Columnas nuevas en `organizations` (trial gateway):**
+**Columnas nuevas en `organizations` (trial gateway + features):**
 ```sql
 organizations (
   -- columnas existentes...
-  plan                  text  -- 'basico' | 'pro' | 'enterprise'  (antes: 'free')
-  trial_started_at      timestamptz,
-  trial_ends_at         timestamptz,
-  subscription_status   text  -- 'trial' | 'active' | 'past_due' | 'expired' | 'cancelled'
+  plan                           text,        -- 'basico' | 'pro' | 'enterprise'  (antes: 'free')
+  trial_started_at               timestamptz,
+  trial_ends_at                  timestamptz,
+  subscription_status            text,        -- 'trial' | 'active' | 'past_due' | 'expired' | 'cancelled'
+  pet_birthday_reminders_enabled boolean NOT NULL DEFAULT true
 )
+```
+
+**Columnas nuevas en otras tablas:**
+```sql
+-- pets
+pets.size  text NULL  CHECK (size IN ('xs', 's', 'm', 'l', 'xl'))  -- talla para pricing de grooming
+
+-- appointments
+appointments.is_dangerous  boolean NOT NULL DEFAULT false  -- animal agresivo/peligroso
+
+-- invoices
+invoices.status      -- incluye 'partial_paid' además de los valores previos
+invoices.amount_paid numeric(10,2) NOT NULL DEFAULT 0  -- denormalizado por trigger desde payments
+
+-- clinical_record_exams
+clinical_record_exams.shared_with_tutor_at  timestamptz  -- NULL = no visible en portal tutor
 ```
 
 **Función de DB disponible:**
@@ -358,6 +391,7 @@ function validarRut(rut: string): boolean {
 Permisos por rol:
 [ ] Peluquero intenta acceder a clinical_records/:id → RLS devuelve vacío o 403.
 [ ] Peluquero intenta acceder a dewormings/:id → RLS devuelve vacío o 403.
+[ ] Peluquero intenta acceder a clinical_record_exams → RLS devuelve vacío o 403.
 [ ] Recepcionista intenta ver anamnesis de una consulta → campo no debe aparecer.
 [ ] Usuario de org A intenta acceder a datos de org B → RLS debe bloquear.
 [ ] Cita de tipo 'medical' asignada a un groomer → debe ser bloqueada.
@@ -381,6 +415,38 @@ Superadmin:
 [ ] Usuario sin fila en platform_admins intenta acceder a /superadmin → must redirect.
 [ ] is_platform_admin() devuelve false si mfa_enrolled_at IS NULL → MFA obligatorio.
 [ ] platform_admins: INSERT vía app autenticada → debe ser rechazado (solo service_role escribe).
+
+Portal del Tutor:
+[ ] Tutor solo ve mascotas de su org (RLS filtra por auth.uid() → client_id).
+[ ] Tutor no puede ver clinical_records, prescriptions ni anamnesis — ni por query directa a Supabase.
+[ ] Examen con shared_with_tutor_at IS NULL → no debe aparecer en el portal tutor.
+[ ] Tutor puede solicitar cita nueva → la cita queda en estado 'pending', no 'confirmed'.
+[ ] magic link expirado → redirigir a pantalla de error, no a dashboard de clínica.
+
+Exámenes:
+[ ] Groomer sin acceso a clinical_record_exams (SELECT directo devuelve vacío).
+[ ] Recepcionista puede INSERT + UPDATE en clinical_record_exams (carga resultado del lab).
+[ ] Vet no puede DELETE clinical_record_exams (solo admin).
+[ ] Archivo en bucket exam-files: acceso directo sin signed URL → debe fallar (bucket privado).
+
+Facturación parcial:
+[ ] INSERT en payments recalcula invoices.amount_paid correctamente.
+[ ] amount_paid >= total → status cambia a 'paid' automáticamente.
+[ ] 0 < amount_paid < total → status cambia a 'partial_paid'.
+[ ] Factura en estado 'draft' → trigger no debe cambiar su status.
+
+Appointment danger flag:
+[ ] is_dangerous = true → badge de advertencia visible en todos los roles (admin, vet, recep, groomer).
+[ ] Cambiar is_dangerous no altera otros campos de la cita.
+
+Horarios profesionales:
+[ ] Cita en horario bloqueado (member_schedule_blocks) → debe ser rechazada en validación.
+[ ] Doble booking en mismo horario → appointment_exclusion_constraint debe bloquearlo.
+[ ] Admin de org A no puede editar horarios de profesional de org B → RLS bloquea.
+
+Cumpleaños:
+[ ] Cron birthday-reminders no envía dos veces en el mismo día (PK de sent_birthday_log).
+[ ] Org con pet_birthday_reminders_enabled = false → cron no procesa sus mascotas.
 ```
 
 **No hace:**
@@ -433,4 +499,4 @@ Estas reglas no se negocian. Si una propuesta las rompe, se rechaza.
 
 ---
 
-*Versión 2.2 — 19 Abril 2026. Revisión completa de roles: CoFounder actualizado a fase post-MVP con pricing real (Básico/Pro/Enterprise) y trial gateway. Frontend corregido — `components/shared/` no existe, documentadas 3 rutas API legítimas, taxonomía de especies clínica. Backend documentado con tablas adicionales (platform_admins, invitations, vaccines_catalog, dewormings, reminders) y columnas de trial en organizations. QA ampliado con 12 nuevos casos de prueba (invitaciones, trial, superadmin). UXDesigner y UXWriter actualizados con taxonomía de especies y nombres de planes.*
+*Versión 2.3 — 29 Abril 2026. Estado del proyecto actualizado: Portal del Tutor ✅, Analytics ✅, Exámenes ✅, Horarios Profesionales ✅, Grooming Pricing ✅, Abonos Parciales ✅. WhatsApp Recordatorios marcado como descartado. Backend: 8 nuevas tablas documentadas (member_weekly_schedules, member_schedule_blocks, service_price_tiers, payments, clinical_record_exams, sent_birthday_log). Columnas nuevas: pets.size, appointments.is_dangerous, invoices.partial_paid+amount_paid, clinical_record_exams.shared_with_tutor_at, organizations.pet_birthday_reminders_enabled. Frontend: 2 nuevas rutas API legítimas (birthday-reminders cron, signed URLs exámenes). UXDesigner: notas de diseño para Portal Tutor, danger flag y partial_paid. CoFounder: contexto actualizado, señal de alarma WhatsApp. QA: 20 nuevos casos de prueba (portal tutor, exámenes, facturación parcial, danger flag, horarios, cumpleaños).*

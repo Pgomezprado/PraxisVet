@@ -6,7 +6,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCLP } from "@/lib/utils/format";
 import type { ProfessionalRow } from "@/app/[clinic]/analytics/queries";
 
 const roleLabels: Record<string, string> = {
@@ -47,11 +46,8 @@ export function ProfessionalProductivityTable({
                   <th className="px-4 py-3 text-right font-medium">
                     No asistió
                   </th>
-                  <th className="px-4 py-3 text-right font-medium">
-                    Asistencia
-                  </th>
                   <th className="px-6 py-3 text-right font-medium">
-                    Ingresos
+                    Asistencia
                   </th>
                 </tr>
               </thead>
@@ -90,7 +86,7 @@ export function ProfessionalProductivityTable({
                       <td className="px-4 py-3 text-right tabular-nums">
                         {row.noShow}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
+                      <td className="px-6 py-3 text-right tabular-nums">
                         {rate === null ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (
@@ -106,9 +102,6 @@ export function ProfessionalProductivityTable({
                             {rate}%
                           </span>
                         )}
-                      </td>
-                      <td className="px-6 py-3 text-right font-medium tabular-nums">
-                        {formatCLP(row.revenue)}
                       </td>
                     </tr>
                   );

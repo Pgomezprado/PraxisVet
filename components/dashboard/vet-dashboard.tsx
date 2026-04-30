@@ -99,12 +99,14 @@ export function VetDashboard({
         />
       </div>
 
-      <NextAppointmentCard
-        appointment={nextAppointment}
-        clinicSlug={clinicSlug}
-        emptyTitle="No tienes más citas hoy"
-        emptyDescription="Tu agenda está libre. Buen momento para actualizar historias clínicas."
-      />
+      {nextAppointment && (
+        <NextAppointmentCard
+          appointment={nextAppointment}
+          clinicSlug={clinicSlug}
+          emptyTitle="No tienes más citas hoy"
+          emptyDescription="Tu agenda está libre. Buen momento para actualizar historias clínicas."
+        />
+      )}
 
       <WeekAgenda
         title="Mi agenda de la semana"

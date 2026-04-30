@@ -58,3 +58,18 @@ supabase/.temp/
 docs/contratos/
 prospectos_*
 
+# Documentos operacionales / investigación (reuniones, demos, prospectos, investigación)
+docs/agenda-reunion-*.md
+docs/demo-reunion-*.md
+docs/cuestionario-*.md
+docs/prospeccion-*.csv
+docs/prospeccion-templates-*.md
+investigacion_*.md
+
+# SVGs boilerplate de Next.js (no usados en el proyecto)
+/public/file.svg
+/public/globe.svg
+/public/next.svg
+/public/vercel.svg
+/public/window.svg
+

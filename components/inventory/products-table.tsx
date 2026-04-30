@@ -225,8 +225,8 @@ export function ProductsTable({
             </DialogTitle>
             <DialogDescription>
               {toggleProduct?.active
-                ? `¿Desactivar ${toggleProduct.name}? No aparecerá en búsquedas ni se podrá usar en facturas.`
-                : `¿Reactivar ${toggleProduct?.name}? Volverá a estar disponible en búsquedas y facturas.`}
+                ? `¿Desactivar ${toggleProduct.name}? No aparecerá en búsquedas ni se podrá vender.`
+                : `¿Reactivar ${toggleProduct?.name}? Volverá a estar disponible en búsquedas.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

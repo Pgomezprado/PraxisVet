@@ -51,15 +51,54 @@ export type AppointmentWithRelations = {
     price: number | null;
     category: ServiceCategory | null;
   } | null;
+  /** ID de la ficha clínica asociada a la cita médica, si existe.
+   *  Permite saltar a `/records/{id}` en lugar de crear una nueva. */
+  linked_clinical_record_id: string | null;
+  /** ID del registro de peluquería asociado a la cita grooming, si existe. */
+  linked_grooming_record_id: string | null;
 };
 
+// PostgREST infiere el reverse-embed por el nombre de la tabla hija + la FK.
+// `clinical_records.appointment_id` y `grooming_records.appointment_id` son
+// los únicos FKs hacia appointments en cada tabla, así que el alias por
+// columna es suficiente y el join se acota con LIMIT 1.
 const SELECT_WITH_RELATIONS = `
       *,
       client:clients!client_id (id, first_name, last_name, phone),
       pet:pets!pet_id (id, name, species, breed),
       professional:organization_members!assigned_to (id, first_name, last_name, specialty, role),
-      service:services!service_id (id, name, duration_minutes, price, category)
+      service:services!service_id (id, name, duration_minutes, price, category),
+      clinical_records!appointment_id (id),
+      grooming_records!appointment_id (id)
     `;
+
+type RawAppointmentRow = Omit<
+  AppointmentWithRelations,
+  "linked_clinical_record_id" | "linked_grooming_record_id"
+> & {
+  clinical_records: { id: string }[] | null;
+  grooming_records: { id: string }[] | null;
+};
+
+function shapeAppointmentWithRelations(
+  raw: RawAppointmentRow
+): AppointmentWithRelations {
+  const clinicalLinked = raw.clinical_records?.[0]?.id ?? null;
+  const groomingLinked = raw.grooming_records?.[0]?.id ?? null;
+  // Removemos las arrays crudas para dejar el shape plano que consume la UI.
+  const {
+    clinical_records: _cr,
+    grooming_records: _gr,
+    ...rest
+  } = raw;
+  void _cr;
+  void _gr;
+  return {
+    ...rest,
+    linked_clinical_record_id: clinicalLinked,
+    linked_grooming_record_id: groomingLinked,
+  };
+}
 
 export async function getAppointments(
   orgId: string,
@@ -87,7 +126,10 @@ export async function getAppointments(
     return { data: null, error: error.message };
   }
 
-  return { data: data as unknown as AppointmentWithRelations[], error: null };
+  const shaped = (data ?? []).map((row) =>
+    shapeAppointmentWithRelations(row as unknown as RawAppointmentRow)
+  );
+  return { data: shaped, error: null };
 }
 
 export async function getAppointment(appointmentId: string) {
@@ -101,7 +143,9 @@ export async function getAppointment(appointmentId: string) {
       client:clients!client_id (id, first_name, last_name, phone, email),
       pet:pets!pet_id (id, name, species, breed, sex, birthdate),
       professional:organization_members!assigned_to (id, first_name, last_name, specialty, role),
-      service:services!service_id (id, name, duration_minutes, price, category)
+      service:services!service_id (id, name, duration_minutes, price, category),
+      clinical_records!appointment_id (id),
+      grooming_records!appointment_id (id)
     `
     )
     .eq("id", appointmentId)
@@ -111,7 +155,10 @@ export async function getAppointment(appointmentId: string) {
     return { data: null, error: error.message };
   }
 
-  return { data: data as unknown as AppointmentWithRelations, error: null };
+  return {
+    data: shapeAppointmentWithRelations(data as unknown as RawAppointmentRow),
+    error: null,
+  };
 }
 
 export async function createAppointment(orgId: string, formData: AppointmentInput) {
@@ -401,7 +448,10 @@ export async function getWeekAppointments(
     return { data: null, error: error.message };
   }
 
-  return { data: data as unknown as AppointmentWithRelations[], error: null };
+  const shaped = (data ?? []).map((row) =>
+    shapeAppointmentWithRelations(row as unknown as RawAppointmentRow)
+  );
+  return { data: shaped, error: null };
 }
 
 export async function checkConflicts(
@@ -436,7 +486,10 @@ export async function checkConflicts(
     return { data: null, error: error.message };
   }
 
-  return { data: conflicts as unknown as AppointmentWithRelations[], error: null };
+  const shaped = (conflicts ?? []).map((row) =>
+    shapeAppointmentWithRelations(row as unknown as RawAppointmentRow)
+  );
+  return { data: shaped, error: null };
 }
 
 export async function getMemberDayAvailability(

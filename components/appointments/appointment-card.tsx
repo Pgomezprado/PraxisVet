@@ -71,10 +71,40 @@ export function AppointmentCard({
   async function handleStatusChange(newStatus: AppointmentStatus) {
     setLoading(true);
     const result = await updateAppointmentStatus(appointment.id, newStatus);
-    setLoading(false);
-    if (!result.error) {
-      router.refresh();
+
+    if (result.error) {
+      setLoading(false);
+      return;
     }
+
+    if (newStatus === "in_progress") {
+      const base = `/${clinicSlug}/clients/${appointment.client.id}/pets/${appointment.pet.id}`;
+      // Si la cita ya tenía una ficha asociada (escenario raro pero posible si
+      // se reabrió o si el vet ya empezó la consulta), evitamos crear un
+      // duplicado y vamos directo al detalle existente.
+      let target: string;
+      if (
+        appointment.type === "grooming" &&
+        appointment.linked_grooming_record_id
+      ) {
+        target = `${base}/grooming/${appointment.linked_grooming_record_id}`;
+      } else if (
+        appointment.type !== "grooming" &&
+        appointment.linked_clinical_record_id
+      ) {
+        target = `${base}/records/${appointment.linked_clinical_record_id}`;
+      } else {
+        target =
+          appointment.type === "grooming"
+            ? `${base}/grooming/new?appointment=${appointment.id}`
+            : `${base}/records/new?appointment=${appointment.id}`;
+      }
+      router.push(target);
+      return;
+    }
+
+    setLoading(false);
+    router.refresh();
   }
 
   return (

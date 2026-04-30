@@ -58,10 +58,12 @@ export function StatusActions({
   appointmentId,
   currentStatus,
   clinicSlug,
+  startRedirect,
 }: {
   appointmentId: string;
   currentStatus: AppointmentStatus;
   clinicSlug: string;
+  startRedirect?: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
@@ -73,13 +75,19 @@ export function StatusActions({
   async function handleStatusChange(newStatus: AppointmentStatus) {
     setLoading(newStatus);
     const result = await updateAppointmentStatus(appointmentId, newStatus);
-    setLoading(null);
 
     if (result.error) {
+      setLoading(null);
       alert(result.error);
       return;
     }
 
+    if (newStatus === "in_progress" && startRedirect) {
+      router.push(startRedirect);
+      return;
+    }
+
+    setLoading(null);
     router.refresh();
   }
 
@@ -150,7 +158,7 @@ export function StatusActions({
             </DialogTitle>
             <DialogDescription>
               {isCompleted
-                ? "Esta cita ya está completada. Si la eliminas, también desaparecerá del historial del paciente y de los reportes. La factura y la ficha clínica asociadas (si existen) NO se borran."
+                ? "Esta cita ya está completada. Si la eliminas, también desaparecerá del historial del paciente y de los reportes. La ficha clínica asociada (si existe) NO se borra."
                 : "Esta acción no se puede deshacer. La cita será eliminada permanentemente."}
             </DialogDescription>
           </DialogHeader>

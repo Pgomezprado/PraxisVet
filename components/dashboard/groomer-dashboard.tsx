@@ -2,6 +2,7 @@ import {
   Scissors,
   CheckCircle2,
   CalendarDays,
+  Clock,
   Plus,
 } from "lucide-react";
 import type { Organization, OrganizationMember } from "@/types";
@@ -9,7 +10,6 @@ import { HeroGreeting } from "./widgets/hero-greeting";
 import { KpiCard } from "./widgets/kpi-card";
 import { QuickActions } from "./widgets/quick-actions";
 import { DayAgenda } from "./widgets/day-agenda";
-import { NextAppointmentCard } from "./widgets/next-appointment-card";
 import { formatCountdown, minutesUntil } from "@/lib/utils/format";
 import type { TodayAppointment } from "@/app/[clinic]/dashboard/queries";
 
@@ -65,7 +65,7 @@ export function GroomerDashboard({
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           title="Servicios hoy"
           value={stats.total}
@@ -74,6 +74,15 @@ export function GroomerDashboard({
           tone="teal"
           href={todayHref}
           ariaLabel="Ver agenda del día"
+        />
+        <KpiCard
+          title="Pendientes"
+          value={stats.pending}
+          description="Por iniciar"
+          icon={Clock}
+          tone="sky"
+          href={`${todayHref}&status=upcoming`}
+          ariaLabel="Ver servicios pendientes"
         />
         <KpiCard
           title="En proceso"
@@ -94,13 +103,6 @@ export function GroomerDashboard({
           ariaLabel="Ver servicios completados hoy"
         />
       </div>
-
-      <NextAppointmentCard
-        appointment={nextAppointment}
-        clinicSlug={clinicSlug}
-        emptyTitle="No tienes más servicios hoy"
-        emptyDescription="Tu agenda está libre. Aprovecha para organizar tu estación."
-      />
 
       <DayAgenda
         title="Mi agenda de peluquería"

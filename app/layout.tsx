@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -160,6 +161,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <TooltipProvider>{children}</TooltipProvider>
+        <Toaster
+          position="top-right"
+          theme="dark"
+          richColors
+          closeButton
+        />
         <Analytics />
       </body>
     </html>

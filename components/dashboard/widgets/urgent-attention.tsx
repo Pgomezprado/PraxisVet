@@ -9,12 +9,10 @@ import {
 import {
   AlertTriangle,
   Package,
-  Receipt,
   CheckCircle2,
   Clock,
   ArrowRight,
 } from "lucide-react";
-import { formatCLP } from "@/lib/utils/format";
 import type { UrgentAttention } from "@/app/[clinic]/dashboard/queries";
 
 export function UrgentAttentionWidget({
@@ -31,18 +29,6 @@ export function UrgentAttentionWidget({
     href: string;
     tone: "red" | "amber" | "sky";
   }> = [];
-
-  if (data.overdueInvoices.count > 0) {
-    items.push({
-      icon: Receipt,
-      label: `${data.overdueInvoices.count} factura${
-        data.overdueInvoices.count > 1 ? "s" : ""
-      } vencida${data.overdueInvoices.count > 1 ? "s" : ""}`,
-      value: formatCLP(data.overdueInvoices.total),
-      href: `/${clinicSlug}/billing`,
-      tone: "red",
-    });
-  }
 
   if (data.lowStock.count > 0) {
     items.push({
@@ -109,7 +95,7 @@ export function UrgentAttentionWidget({
             <CheckCircle2 className="mb-2 size-8 text-primary" />
             <p className="text-sm font-medium">Sin pendientes urgentes</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              No hay facturas vencidas, stock bajo ni citas sin confirmar.
+              No hay stock bajo ni citas sin confirmar.
             </p>
           </div>
         ) : (

@@ -1,11 +1,9 @@
 import {
   CalendarDays,
   Users,
-  DollarSign,
   Bell,
   Plus,
   UserPlus,
-  Receipt,
 } from "lucide-react";
 import type { Organization, OrganizationMember } from "@/types";
 import { HeroGreeting } from "./widgets/hero-greeting";
@@ -13,24 +11,19 @@ import { KpiCard } from "./widgets/kpi-card";
 import { QuickActions } from "./widgets/quick-actions";
 import { DayAgenda } from "./widgets/day-agenda";
 import { UrgentAttentionWidget } from "./widgets/urgent-attention";
-import { PendingPaymentsWidget } from "./widgets/pending-payments";
 import { WaitingRoomWidget } from "./widgets/waiting-room";
-import { formatCLP } from "@/lib/utils/format";
 import type {
   TodayAppointment,
   UrgentAttention,
-  PendingPayment,
 } from "@/app/[clinic]/dashboard/queries";
 
 export function ReceptionistDashboard({
   organization,
   member,
   counts,
-  dayRevenue,
   agenda,
   waitingRoom,
   urgent,
-  pendingPayments,
 }: {
   organization: Organization;
   member: OrganizationMember;
@@ -38,20 +31,17 @@ export function ReceptionistDashboard({
     appointmentsToday: number;
     totalClients: number;
   };
-  dayRevenue: number;
   agenda: TodayAppointment[];
   waitingRoom: TodayAppointment[];
   urgent: UrgentAttention;
-  pendingPayments: PendingPayment[];
 }) {
   const clinicSlug = organization.slug;
   const todayDate = new Date().toISOString().split("T")[0];
   const todayHref = `/${clinicSlug}/appointments?view=day&date=${todayDate}`;
-  const pendingTotal = pendingPayments.reduce((s, p) => s + p.total, 0);
 
   const highlights = `${counts.appointmentsToday} cita${
     counts.appointmentsToday === 1 ? "" : "s"
-  } · ${waitingRoom.length} en sala · ${formatCLP(pendingTotal)} por cobrar`;
+  } · ${waitingRoom.length} en sala`;
 
   return (
     <div className="space-y-8">
@@ -73,18 +63,12 @@ export function ReceptionistDashboard({
                 icon: UserPlus,
                 variant: "secondary",
               },
-              {
-                label: "Cobro",
-                href: `/${clinicSlug}/billing/new`,
-                icon: Receipt,
-                variant: "outline",
-              },
             ]}
           />
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         <KpiCard
           title="Citas hoy"
           value={counts.appointmentsToday}
@@ -102,15 +86,6 @@ export function ReceptionistDashboard({
           tone="amber"
           href={`${todayHref}&status=in_progress`}
           ariaLabel="Ver pacientes en sala"
-        />
-        <KpiCard
-          title="Cobros hoy"
-          value={formatCLP(dayRevenue)}
-          description="Ingresado"
-          icon={DollarSign}
-          tone="emerald"
-          href={`/${clinicSlug}/billing`}
-          ariaLabel="Ver cobros"
         />
         <KpiCard
           title="Clientes"
@@ -147,11 +122,6 @@ export function ReceptionistDashboard({
         }}
         clinicSlug={clinicSlug}
         maxHeight
-      />
-
-      <PendingPaymentsWidget
-        payments={pendingPayments}
-        clinicSlug={clinicSlug}
       />
     </div>
   );

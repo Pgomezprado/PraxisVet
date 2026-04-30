@@ -70,12 +70,6 @@ const bigFeatures = [
 
 const smallFeatures = [
   {
-    icon: Receipt,
-    title: "Boleta y factura en PDF",
-    description:
-      "Genera boleta o factura en PDF desde la consulta, con RUT del cliente y totales en CLP. Receta retenida lista para medicamentos controlados. Emisión SII nativa llega pronto vía partner autorizado.",
-  },
-  {
     icon: Package,
     title: "Inventario con alertas",
     description:
@@ -200,10 +194,6 @@ const faqs = [
   {
     q: "¿Cómo funcionan los 30 días de prueba?",
     a: "Tu cuenta se crea con 30 días de prueba sin tarjeta de crédito. Usas todas las funcionalidades. Antes de que termine, te avisamos por correo para que elijas seguir o darte de baja — sin cargos sorpresa.",
-  },
-  {
-    q: "¿Emite boletas electrónicas con el SII?",
-    a: "Hoy PraxisVet genera boleta y factura en PDF con RUT, montos en CLP y receta retenida. La emisión SII nativa (folio y timbre electrónico) llega en v1.1 vía partner autorizado (OpenFactura o Haulmer). Mientras tanto, puedes seguir usando tu emisor actual (mepymes SII, Bsale, Defontana) y exportar los cobros para evitar doble digitación.",
   },
   {
     q: "¿Qué pasa con mis datos si cancelo?",
@@ -793,7 +783,7 @@ export default function LandingPage() {
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
                 Cada clínica tiene su propio ritmo: equipo, volumen de fichas
-                y forma de facturar. Te mostramos PraxisVet con tus datos, no
+                y flujo diario. Te mostramos PraxisVet con tus datos, no
                 con una demo de juguete.
               </p>
 
@@ -808,8 +798,8 @@ export default function LandingPage() {
                       desc: "Cargamos tu equipo (vets, recepción, peluquería) y te mostramos la jornada completa: agendamiento, llegada, atención y retiro.",
                     },
                     {
-                      title: "Boleta y factura en CLP, con RUT",
-                      desc: "Cómo se emite el documento desde la consulta y cómo queda lista la receta retenida cuando corresponde.",
+                      title: "Ficha clínica con receta retenida",
+                      desc: "SOAP, vacunas, desparasitaciones y receta retenida lista cuando corresponde, todo desde la consulta.",
                     },
                     {
                       title: "Migración asistida sin perder datos",
@@ -839,10 +829,6 @@ export default function LandingPage() {
                   Hecho en Chile
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Receipt className="size-3.5 text-primary/80" />
-                  Boleta y factura SII
-                </span>
-                <span className="inline-flex items-center gap-1.5">
                   <Clock className="size-3.5 text-primary/80" />
                   Sin permanencia
                 </span>
@@ -867,7 +853,7 @@ export default function LandingPage() {
                 <p className="mt-2 text-sm text-muted-foreground">
                   Sin vendedor de por medio. Conversamos cómo trabaja tu
                   clínica y armamos un plan que calce con tu equipo y tu
-                  facturación.
+                  jornada diaria.
                 </p>
 
                 <div className="mt-6 space-y-3">

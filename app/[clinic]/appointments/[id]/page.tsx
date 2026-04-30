@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   ClipboardList,
   Plus,
-  Receipt,
   Scissors,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -111,6 +110,17 @@ export default async function AppointmentDetailPage({
         appointmentId={appointment.id}
         currentStatus={appointment.status}
         clinicSlug={clinic}
+        startRedirect={
+          appointment.status === "confirmed"
+            ? isGrooming
+              ? linkedGroomingRecord
+                ? `/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/grooming/${linkedGroomingRecord.id}`
+                : `/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/grooming/new?appointment=${appointment.id}`
+              : linkedRecord
+                ? `/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/records/${linkedRecord.id}`
+                : `/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/records/new?appointment=${appointment.id}`
+            : undefined
+        }
       />
 
       {!isGrooming && (appointment.status === "completed" || appointment.status === "in_progress") && (
@@ -189,30 +199,6 @@ export default async function AppointmentDetailPage({
             </CardContent>
           </Card>
         )}
-
-      {appointment.status === "completed" && (
-        <Card>
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <Receipt className="size-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Facturación</p>
-                <p className="text-xs text-muted-foreground">
-                  Genera una factura a partir de esta cita.
-                </p>
-              </div>
-            </div>
-            <Link
-              href={`/${clinic}/billing/new?appointment=${appointment.id}&client=${appointment.client.id}`}
-            >
-              <Button size="sm">
-                <Receipt className="size-3.5" data-icon="inline-start" />
-                Generar factura
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>

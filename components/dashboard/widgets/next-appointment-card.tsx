@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -8,12 +12,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Stethoscope, Scissors, Clock } from "lucide-react";
+import {
+  ArrowRight,
+  Stethoscope,
+  Scissors,
+  Clock,
+  Loader2,
+} from "lucide-react";
 import {
   formatTime,
   minutesUntil,
   formatCountdown,
 } from "@/lib/utils/format";
+import { updateAppointmentStatus } from "@/app/[clinic]/appointments/actions";
 import type { TodayAppointment } from "@/app/[clinic]/dashboard/queries";
 
 export function NextAppointmentCard({
@@ -27,6 +38,10 @@ export function NextAppointmentCard({
   emptyTitle?: string;
   emptyDescription?: string;
 }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   if (!appointment) {
     return (
       <Card className="border-dashed">
@@ -47,6 +62,34 @@ export function NextAppointmentCard({
   const Icon = isGrooming ? Scissors : Stethoscope;
   const countdown = formatCountdown(minutesUntil(appointment.start_time));
   const actionLabel = isGrooming ? "Iniciar servicio" : "Iniciar consulta";
+
+  async function handleStart() {
+    if (!appointment || !appointment.client || !appointment.pet) return;
+    setLoading(true);
+    setError(null);
+
+    const result = await updateAppointmentStatus(appointment.id, "in_progress");
+    if (result.error) {
+      setLoading(false);
+      setError(result.error);
+      return;
+    }
+
+    const base = `/${clinicSlug}/clients/${appointment.client.id}/pets/${appointment.pet.id}`;
+    let target: string;
+    if (isGrooming && appointment.linked_grooming_record_id) {
+      target = `${base}/grooming/${appointment.linked_grooming_record_id}`;
+    } else if (!isGrooming && appointment.linked_clinical_record_id) {
+      target = `${base}/records/${appointment.linked_clinical_record_id}`;
+    } else {
+      target = isGrooming
+        ? `${base}/grooming/new?appointment=${appointment.id}`
+        : `${base}/records/new?appointment=${appointment.id}`;
+    }
+    router.push(target);
+  }
+
+  const canStart = !!appointment.client && !!appointment.pet;
 
   return (
     <Card className="border-primary/40 bg-primary/5">
@@ -87,15 +130,28 @@ export function NextAppointmentCard({
             {appointment.reason}
           </p>
         )}
+        {error && (
+          <p className="mb-3 text-xs text-destructive">{error}</p>
+        )}
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/${clinicSlug}/appointments/${appointment.id}`}
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={handleStart}
+            disabled={loading || !canStart}
           >
-            <Button size="sm" className="gap-2">
-              {actionLabel}
-              <ArrowRight className="size-3.5" />
-            </Button>
-          </Link>
+            {loading ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                Iniciando...
+              </>
+            ) : (
+              <>
+                {actionLabel}
+                <ArrowRight className="size-3.5" />
+              </>
+            )}
+          </Button>
           {appointment.pet && appointment.client && (
             <Link
               href={`/${clinicSlug}/clients/${appointment.client.id}/pets/${appointment.pet.id}`}

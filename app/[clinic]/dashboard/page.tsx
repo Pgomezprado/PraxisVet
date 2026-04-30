@@ -6,12 +6,9 @@ import { GroomerDashboard } from "@/components/dashboard/groomer-dashboard";
 import {
   getDashboardCounts,
   getDayAgenda,
-  getDayRevenue,
-  getMonthRevenue,
   getMyDayStats,
   getNextAppointment,
   getOnboardingStatus,
-  getPendingPayments,
   getRecentClients,
   getUrgentAttention,
   getWaitingRoom,
@@ -70,15 +67,11 @@ export default async function DashboardPage({
 
   // Fetch data según rol — reusa la misma instancia de supabase.
   if (member.role === "admin") {
-    const [counts, monthRevenue, dayRevenue, agenda, recentClients, urgent, pendingPayments, onboarding] =
+    const [counts, recentClients, urgent, onboarding] =
       await Promise.all([
         getDashboardCounts(supabase, org.id),
-        getMonthRevenue(supabase, org.id),
-        getDayRevenue(supabase, org.id),
-        getDayAgenda(supabase, org.id),
         getRecentClients(supabase, org.id, 5),
         getUrgentAttention(supabase, org.id),
-        getPendingPayments(supabase, org.id, 5),
         getOnboardingStatus(supabase, org.id),
       ]);
 
@@ -87,12 +80,8 @@ export default async function DashboardPage({
         organization={org}
         member={member}
         counts={counts}
-        monthRevenue={monthRevenue}
-        dayRevenue={dayRevenue}
-        agenda={agenda}
         recentClients={recentClients}
         urgent={urgent}
-        pendingPayments={pendingPayments}
         onboarding={onboarding}
       />
     );
@@ -100,7 +89,7 @@ export default async function DashboardPage({
 
   if (member.role === "vet") {
     const [stats, agenda, nextAppointment] = await Promise.all([
-      getMyDayStats(supabase, org.id, member.id),
+      getMyDayStats(supabase, org.id, member.id, { type: "medical" }),
       getWeekAgenda(supabase, org.id, {
         assignedTo: member.id,
         type: "medical",
@@ -123,14 +112,12 @@ export default async function DashboardPage({
   }
 
   if (member.role === "receptionist") {
-    const [counts, dayRevenue, agenda, waitingRoom, urgent, pendingPayments] =
+    const [counts, agenda, waitingRoom, urgent] =
       await Promise.all([
         getDashboardCounts(supabase, org.id),
-        getDayRevenue(supabase, org.id),
         getDayAgenda(supabase, org.id),
         getWaitingRoom(supabase, org.id),
         getUrgentAttention(supabase, org.id),
-        getPendingPayments(supabase, org.id, 5),
       ]);
 
     return (
@@ -141,18 +128,16 @@ export default async function DashboardPage({
           appointmentsToday: counts.appointmentsToday,
           totalClients: counts.totalClients,
         }}
-        dayRevenue={dayRevenue}
         agenda={agenda}
         waitingRoom={waitingRoom}
         urgent={urgent}
-        pendingPayments={pendingPayments}
       />
     );
   }
 
   if (member.role === "groomer") {
     const [stats, agenda, nextAppointment] = await Promise.all([
-      getMyDayStats(supabase, org.id, member.id),
+      getMyDayStats(supabase, org.id, member.id, { type: "grooming" }),
       getDayAgenda(supabase, org.id, {
         assignedTo: member.id,
         type: "grooming",

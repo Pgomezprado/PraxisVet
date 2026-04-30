@@ -29,7 +29,7 @@ export function Footer() {
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
               La plataforma integral para clínicas veterinarias en Chile:
-              gestión médica, peluquería y facturación SII en un solo lugar.
+              gestión médica, peluquería y agenda en un solo lugar.
             </p>
 
             <div className="flex items-center gap-3">

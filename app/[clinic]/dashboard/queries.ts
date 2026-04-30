@@ -20,6 +20,10 @@ export type TodayAppointment = {
   client: { id: string; first_name: string; last_name: string } | null;
   assignee: { id: string; first_name: string | null; last_name: string | null } | null;
   service: { id: string; name: string } | null;
+  /** ID de la ficha clínica asociada, si la cita ya tiene una creada. */
+  linked_clinical_record_id: string | null;
+  /** ID del registro de peluquería asociado, si existe. */
+  linked_grooming_record_id: string | null;
 };
 
 type RawAppointment = {
@@ -43,6 +47,8 @@ type RawAppointment = {
     last_name: string | null;
   } | null;
   services: { id: string; name: string } | null;
+  clinical_records: { id: string }[] | null;
+  grooming_records: { id: string }[] | null;
 };
 
 function shapeAppointment(raw: RawAppointment): TodayAppointment {
@@ -58,6 +64,8 @@ function shapeAppointment(raw: RawAppointment): TodayAppointment {
     client: raw.clients,
     assignee: raw.organization_members,
     service: raw.services,
+    linked_clinical_record_id: raw.clinical_records?.[0]?.id ?? null,
+    linked_grooming_record_id: raw.grooming_records?.[0]?.id ?? null,
   };
 }
 
@@ -65,16 +73,14 @@ const APPOINTMENT_SELECT = `
   id, date, start_time, end_time, status, type, reason,
   pets ( id, name, species, photo_url ),
   clients ( id, first_name, last_name ),
-  organization_members!appointments_assigned_to_fkey ( id, first_name, last_name ),
-  services ( id, name )
+  organization_members!assigned_to ( id, first_name, last_name ),
+  services ( id, name ),
+  clinical_records!appointment_id ( id ),
+  grooming_records!appointment_id ( id )
 `;
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
-}
-
-function monthStartISO(): string {
-  return `${todayISO().slice(0, 7)}-01`;
 }
 
 function nowISO(): string {
@@ -129,7 +135,6 @@ export type OnboardingStatus = {
   productsActive: number;
   clientsTotal: number;
   clientsWithRut: number;
-  invoicesEmitted: number;
   appointmentsTotal: number;
   membersTotal: number;
   membersLinked: number;
@@ -145,7 +150,6 @@ export async function getOnboardingStatus(
     productsAct,
     clientsAll,
     clientsRut,
-    invoices,
     appts,
     membersAll,
     membersUser,
@@ -177,11 +181,6 @@ export async function getOnboardingStatus(
       .not("rut", "is", null)
       .neq("rut", ""),
     supabase
-      .from("invoices")
-      .select("*", { count: "exact", head: true })
-      .eq("org_id", orgId)
-      .neq("status", "cancelled"),
-    supabase
       .from("appointments")
       .select("*", { count: "exact", head: true })
       .eq("org_id", orgId),
@@ -204,41 +203,10 @@ export async function getOnboardingStatus(
     productsActive: productsAct.count ?? 0,
     clientsTotal: clientsAll.count ?? 0,
     clientsWithRut: clientsRut.count ?? 0,
-    invoicesEmitted: invoices.count ?? 0,
     appointmentsTotal: appts.count ?? 0,
     membersTotal: membersAll.count ?? 0,
     membersLinked: membersUser.count ?? 0,
   };
-}
-
-export async function getMonthRevenue(
-  supabase: Supabase,
-  orgId: string
-): Promise<number> {
-  const today = todayISO();
-  const { data } = await supabase
-    .from("invoices")
-    .select("total")
-    .eq("org_id", orgId)
-    .eq("status", "paid")
-    .gte("created_at", monthStartISO())
-    .lte("created_at", `${today}T23:59:59`);
-  return (data ?? []).reduce((sum, i) => sum + (Number(i.total) || 0), 0);
-}
-
-export async function getDayRevenue(
-  supabase: Supabase,
-  orgId: string
-): Promise<number> {
-  const today = todayISO();
-  const { data } = await supabase
-    .from("invoices")
-    .select("total, paid_at")
-    .eq("org_id", orgId)
-    .eq("status", "paid")
-    .gte("paid_at", `${today}T00:00:00`)
-    .lte("paid_at", `${today}T23:59:59`);
-  return (data ?? []).reduce((sum, i) => sum + (Number(i.total) || 0), 0);
 }
 
 // ============================================
@@ -353,7 +321,6 @@ export async function getRecentClients(
 // ============================================
 
 export type UrgentAttention = {
-  overdueInvoices: { count: number; total: number };
   lowStock: { count: number };
   unconfirmedAppointments: { count: number };
 };
@@ -364,13 +331,7 @@ export async function getUrgentAttention(
 ): Promise<UrgentAttention> {
   const today = todayISO();
 
-  const [overdue, pendingToday, lowStockRaw] = await Promise.all([
-    supabase
-      .from("invoices")
-      .select("total")
-      .eq("org_id", orgId)
-      .in("status", ["overdue", "sent"])
-      .lt("due_date", today),
+  const [pendingToday, lowStockRaw] = await Promise.all([
     supabase
       .from("appointments")
       .select("id", { count: "exact", head: true })
@@ -383,12 +344,6 @@ export async function getUrgentAttention(
       .eq("org_id", orgId),
   ]);
 
-  const overdueItems = overdue.data ?? [];
-  const overdueTotal = overdueItems.reduce(
-    (s, i) => s + (Number(i.total) || 0),
-    0
-  );
-
   const lowStockCount = (lowStockRaw.data ?? []).filter((row) => {
     const product = Array.isArray(row.products) ? row.products[0] : row.products;
     if (!product || !product.active) return false;
@@ -397,60 +352,9 @@ export async function getUrgentAttention(
   }).length;
 
   return {
-    overdueInvoices: { count: overdueItems.length, total: overdueTotal },
     lowStock: { count: lowStockCount },
     unconfirmedAppointments: { count: pendingToday.count ?? 0 },
   };
-}
-
-// ============================================
-// Cobros pendientes hoy
-// ============================================
-
-export type PendingPayment = {
-  id: string;
-  invoice_number: string;
-  total: number;
-  due_date: string | null;
-  status: string;
-  client: { id: string; first_name: string; last_name: string } | null;
-};
-
-export async function getPendingPayments(
-  supabase: Supabase,
-  orgId: string,
-  limit = 5
-): Promise<PendingPayment[]> {
-  const today = todayISO();
-  const { data } = await supabase
-    .from("invoices")
-    .select(
-      `
-      id, invoice_number, total, due_date, status,
-      clients ( id, first_name, last_name )
-    `
-    )
-    .eq("org_id", orgId)
-    .in("status", ["sent", "overdue"])
-    .lte("due_date", today)
-    .order("due_date", { ascending: true })
-    .limit(limit);
-
-  return ((data ?? []) as unknown as Array<{
-    id: string;
-    invoice_number: string;
-    total: number;
-    due_date: string | null;
-    status: string;
-    clients: { id: string; first_name: string; last_name: string } | null;
-  }>).map((row) => ({
-    id: row.id,
-    invoice_number: row.invoice_number,
-    total: Number(row.total) || 0,
-    due_date: row.due_date,
-    status: row.status,
-    client: row.clients,
-  }));
 }
 
 // ============================================
@@ -460,7 +364,8 @@ export async function getPendingPayments(
 export async function getMyDayStats(
   supabase: Supabase,
   orgId: string,
-  memberId: string
+  memberId: string,
+  opts: { type?: "medical" | "grooming" } = {}
 ): Promise<{
   total: number;
   completed: number;
@@ -468,12 +373,16 @@ export async function getMyDayStats(
   pending: number;
 }> {
   const today = todayISO();
-  const { data } = await supabase
+  let query = supabase
     .from("appointments")
     .select("status")
     .eq("org_id", orgId)
     .eq("date", today)
     .eq("assigned_to", memberId);
+
+  if (opts.type) query = query.eq("type", opts.type);
+
+  const { data } = await query;
 
   const rows = data ?? [];
   return {

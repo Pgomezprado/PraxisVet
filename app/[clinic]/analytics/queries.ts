@@ -84,88 +84,7 @@ function enumerateBuckets(
 }
 
 // ============================================
-// 1) Ingresos por período + comparación año anterior
-// ============================================
-
-export type RevenuePoint = {
-  bucket: string;
-  current: number;
-  previous: number;
-};
-
-export type RevenueSeries = {
-  points: RevenuePoint[];
-  totalCurrent: number;
-  totalPrevious: number;
-  deltaPct: number | null;
-};
-
-export async function getRevenueSeries(
-  supabase: Supabase,
-  orgId: string,
-  range: PeriodRange
-): Promise<RevenueSeries> {
-  const [current, previous] = await Promise.all([
-    supabase
-      .from("invoices")
-      .select("total, paid_at")
-      .eq("org_id", orgId)
-      .eq("status", "paid")
-      .gte("paid_at", range.start.toISOString())
-      .lte("paid_at", range.end.toISOString()),
-    supabase
-      .from("invoices")
-      .select("total, paid_at")
-      .eq("org_id", orgId)
-      .eq("status", "paid")
-      .gte("paid_at", range.compareStart.toISOString())
-      .lte("paid_at", range.compareEnd.toISOString()),
-  ]);
-
-  const keys = enumerateBuckets(range.start, range.end, range.bucket);
-  const currentMap = new Map<string, number>(keys.map((k) => [k, 0]));
-  const previousMap = new Map<string, number>(keys.map((k) => [k, 0]));
-
-  for (const row of current.data ?? []) {
-    if (!row.paid_at) continue;
-    const d = new Date(row.paid_at);
-    const key = bucketKey(d, range.bucket);
-    currentMap.set(key, (currentMap.get(key) ?? 0) + (Number(row.total) || 0));
-  }
-
-  // Para el período anterior, re-mapeamos al bucket equivalente del actual
-  // desplazando +1 año, para que el gráfico alinee puntos por posición.
-  for (const row of previous.data ?? []) {
-    if (!row.paid_at) continue;
-    const d = new Date(row.paid_at);
-    d.setFullYear(d.getFullYear() + 1);
-    const key = bucketKey(d, range.bucket);
-    if (previousMap.has(key)) {
-      previousMap.set(
-        key,
-        (previousMap.get(key) ?? 0) + (Number(row.total) || 0)
-      );
-    }
-  }
-
-  const points = keys.map((k) => ({
-    bucket: k,
-    current: currentMap.get(k) ?? 0,
-    previous: previousMap.get(k) ?? 0,
-  }));
-
-  const totalCurrent = points.reduce((s, p) => s + p.current, 0);
-  const totalPrevious = points.reduce((s, p) => s + p.previous, 0);
-  const deltaPct =
-    totalPrevious === 0
-      ? null
-      : ((totalCurrent - totalPrevious) / totalPrevious) * 100;
-
-  return { points, totalCurrent, totalPrevious, deltaPct };
-}
-
-// ============================================
-// 2) Citas: agendadas vs realizadas vs no-show
+// Citas: agendadas vs realizadas vs no-show
 // ============================================
 
 export type AppointmentsBreakdown = {
@@ -254,74 +173,7 @@ export async function getAppointmentsBreakdown(
 }
 
 // ============================================
-// 3) Top servicios y productos (MVP: por description, sin FK)
-// ============================================
-
-export type TopItem = {
-  key: string; // description
-  itemType: "service" | "product";
-  revenue: number;
-  quantity: number;
-};
-
-export type TopItemsResult = {
-  services: TopItem[];
-  products: TopItem[];
-};
-
-export async function getTopServicesProducts(
-  supabase: Supabase,
-  orgId: string,
-  range: PeriodRange,
-  limit = 5
-): Promise<TopItemsResult> {
-  // Traemos invoice_items cuya invoice esté pagada y dentro del rango.
-  const { data } = await supabase
-    .from("invoice_items")
-    .select(
-      "description, quantity, total, item_type, invoices!inner(status, paid_at, org_id)"
-    )
-    .eq("invoices.org_id", orgId)
-    .eq("invoices.status", "paid")
-    .gte("invoices.paid_at", range.start.toISOString())
-    .lte("invoices.paid_at", range.end.toISOString());
-
-  type Agg = { revenue: number; quantity: number };
-  const services = new Map<string, Agg>();
-  const products = new Map<string, Agg>();
-
-  for (const row of (data ?? []) as Array<{
-    description: string;
-    quantity: number;
-    total: number;
-    item_type: "service" | "product" | null;
-  }>) {
-    if (!row.item_type) continue;
-    const key = (row.description ?? "").trim() || "(sin descripción)";
-    const bucket = row.item_type === "service" ? services : products;
-    const current = bucket.get(key) ?? { revenue: 0, quantity: 0 };
-    current.revenue += Number(row.total) || 0;
-    current.quantity += Number(row.quantity) || 0;
-    bucket.set(key, current);
-  }
-
-  const toTop = (
-    map: Map<string, Agg>,
-    type: "service" | "product"
-  ): TopItem[] =>
-    Array.from(map.entries())
-      .map(([key, v]) => ({ key, itemType: type, ...v }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, limit);
-
-  return {
-    services: toTop(services, "service"),
-    products: toTop(products, "product"),
-  };
-}
-
-// ============================================
-// 4) Productividad por profesional
+// Productividad por profesional
 // ============================================
 
 export type ProfessionalRow = {
@@ -332,7 +184,6 @@ export type ProfessionalRow = {
   completed: number;
   scheduled: number;
   noShow: number;
-  revenue: number;
 };
 
 export async function getProfessionalProductivity(
@@ -343,8 +194,7 @@ export async function getProfessionalProductivity(
   const startDate = range.start.toISOString().slice(0, 10);
   const endDate = range.end.toISOString().slice(0, 10);
 
-  // 1) Todas las citas del período con su assigned_to
-  const [apptsRes, membersRes, invoicesRes] = await Promise.all([
+  const [apptsRes, membersRes] = await Promise.all([
     supabase
       .from("appointments")
       .select("id, assigned_to, status, date")
@@ -357,56 +207,29 @@ export async function getProfessionalProductivity(
       .select("id, first_name, last_name, role, active")
       .eq("org_id", orgId)
       .in("role", ["vet", "groomer"]),
-    supabase
-      .from("invoices")
-      .select("total, appointment_id, status, paid_at")
-      .eq("org_id", orgId)
-      .eq("status", "paid")
-      .gte("paid_at", range.start.toISOString())
-      .lte("paid_at", range.end.toISOString())
-      .not("appointment_id", "is", null),
   ]);
 
   const membersById = new Map(
     (membersRes.data ?? []).map((m) => [m.id, m])
   );
 
-  // 2) Map appointment_id → assigned_to
-  const apptToAssignee = new Map<string, string>();
   const stats = new Map<
     string,
-    { completed: number; scheduled: number; noShow: number; revenue: number }
+    { completed: number; scheduled: number; noShow: number }
   >();
 
   for (const a of apptsRes.data ?? []) {
     if (!a.assigned_to) continue;
-    apptToAssignee.set(a.id, a.assigned_to);
 
     const bucket = stats.get(a.assigned_to) ?? {
       completed: 0,
       scheduled: 0,
       noShow: 0,
-      revenue: 0,
     };
     if (a.status !== "cancelled") bucket.scheduled += 1;
     if (a.status === "completed") bucket.completed += 1;
     if (a.status === "no_show") bucket.noShow += 1;
     stats.set(a.assigned_to, bucket);
-  }
-
-  // 3) Sumar revenue por profesional vía appointment_id en invoice
-  for (const inv of invoicesRes.data ?? []) {
-    if (!inv.appointment_id) continue;
-    const assignee = apptToAssignee.get(inv.appointment_id);
-    if (!assignee) continue;
-    const bucket = stats.get(assignee) ?? {
-      completed: 0,
-      scheduled: 0,
-      noShow: 0,
-      revenue: 0,
-    };
-    bucket.revenue += Number(inv.total) || 0;
-    stats.set(assignee, bucket);
   }
 
   const rows: ProfessionalRow[] = [];
@@ -422,5 +245,5 @@ export async function getProfessionalProductivity(
     });
   }
 
-  return rows.sort((a, b) => b.revenue - a.revenue);
+  return rows.sort((a, b) => b.completed - a.completed);
 }

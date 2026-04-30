@@ -1,15 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PeriodSelector } from "./_components/period-selector";
-import { RevenueChart } from "@/components/analytics/revenue-chart";
 import { AppointmentsChart } from "@/components/analytics/appointments-chart";
-import { TopItemsChart } from "@/components/analytics/top-items-chart";
 import { ProfessionalProductivityTable } from "@/components/analytics/professional-productivity-table";
 import {
   getAppointmentsBreakdown,
   getProfessionalProductivity,
-  getRevenueSeries,
-  getTopServicesProducts,
   resolvePeriod,
   type AnalyticsPeriod,
 } from "./queries";
@@ -57,10 +53,8 @@ export default async function AnalyticsPage({
 
   const orgId = membership.org_id;
 
-  const [revenue, appointments, topItems, productivity] = await Promise.all([
-    getRevenueSeries(supabase, orgId, range),
+  const [appointments, productivity] = await Promise.all([
     getAppointmentsBreakdown(supabase, orgId, range),
-    getTopServicesProducts(supabase, orgId, range, 5),
     getProfessionalProductivity(supabase, orgId, range),
   ]);
 
@@ -76,15 +70,7 @@ export default async function AnalyticsPage({
         <PeriodSelector current={period} />
       </div>
 
-      <RevenueChart series={revenue} periodLabel={range.label} />
-
       <AppointmentsChart data={appointments} periodLabel={range.label} />
-
-      <TopItemsChart
-        services={topItems.services}
-        products={topItems.products}
-        periodLabel={range.label}
-      />
 
       <ProfessionalProductivityTable
         rows={productivity}

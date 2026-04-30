@@ -44,6 +44,29 @@ import { Plus, Trash2, Printer } from "lucide-react";
 import { RequestExamSheet } from "@/app/[clinic]/clients/[id]/pets/[petId]/exams/_components/request-exam-sheet";
 import { ExamList } from "@/components/exams/exam-list";
 import type { ExamWithPeople } from "@/components/exams/types";
+import { requestExam } from "@/app/[clinic]/clients/[id]/pets/[petId]/exams/actions";
+import { updateAppointmentStatus } from "@/app/[clinic]/appointments/actions";
+import { EXAM_TYPE_OPTIONS } from "@/components/exams/exam-type-labels";
+import type { ExamType } from "@/types";
+import { toast } from "sonner";
+
+interface InlineExamRow {
+  // Cadena vacía representa "sin tipo seleccionado". Forzamos el cast a ExamType
+  // sólo a nivel de tipo para no propagar `string` por toda la UI; el filtro
+  // antes de enviar (pendingExams) descarta filas con type === "" como protección
+  // anti-duplicado fantasma.
+  type: ExamType | "";
+  custom_type_label: string;
+  indications: string;
+}
+
+function emptyExamRow(): InlineExamRow {
+  return {
+    type: "",
+    custom_type_label: "",
+    indications: "",
+  };
+}
 
 interface InlinePrescriptionRow {
   medication: string;
@@ -182,12 +205,26 @@ export function RecordForm({
     if (medAutocompleteOpenIdx === index) setMedAutocompleteOpenIdx(null);
   }
 
+  const [inlineExams, setInlineExams] = useState<InlineExamRow[]>([]);
+  function updateExamRow(index: number, patch: Partial<InlineExamRow>) {
+    setInlineExams((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row))
+    );
+  }
+  function addExamRow() {
+    setInlineExams((prev) => [...prev, emptyExamRow()]);
+  }
+  function removeExamRow(index: number) {
+    setInlineExams((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const isEditing = !!record;
   const draftKey = `praxisvet:draft:record:v2:${organization.id}:${petId}`;
   const [recoverableDraft, setRecoverableDraft] = useState<DraftPayload | null>(
     null
   );
   const draftTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wantsPdfRef = useRef<boolean>(false);
 
   const {
     register,
@@ -335,7 +372,6 @@ export function RecordForm({
 
   const [reason, anamnesis, diagnosis, treatment, observations] = watchedValues;
 
-  const hasDiagTreatment = !!(diagnosis || treatment);
   const hasObservations = !!observations;
 
   async function onSubmit(data: ClinicalRecordInput) {
@@ -371,6 +407,7 @@ export function RecordForm({
     if (!result.success) {
       setError(result.error);
       setLoading(false);
+      wantsPdfRef.current = false;
       return;
     }
 
@@ -434,23 +471,101 @@ export function RecordForm({
       }
     }
 
+    if (!isEditing && canRequestExams && orgId) {
+      const pendingExams = inlineExams.filter((row) => {
+        if (row.type === "") return false;
+        if (row.type === "otro")
+          return row.custom_type_label.trim().length > 0;
+        return true;
+      });
+      for (const row of pendingExams) {
+        // pendingExams ya descartó filas con type === "", por lo que el cast
+        // a ExamType aquí es seguro.
+        const examResult = await requestExam(
+          orgId,
+          clinicSlug,
+          clientId,
+          petId,
+          {
+            type: row.type as ExamType,
+            custom_type_label: row.custom_type_label.trim(),
+            indications: row.indications.trim(),
+            clinical_record_id: recordId,
+          }
+        );
+        if (!examResult.success) {
+          const label =
+            row.type === "otro"
+              ? row.custom_type_label.trim() || "Otro"
+              : row.type;
+          warnings.push(`Examen "${label}" no solicitado: ${examResult.error}`);
+        }
+      }
+    }
+
+    if (!isEditing && data.appointment_id) {
+      const closeResult = await updateAppointmentStatus(
+        data.appointment_id,
+        "completed"
+      );
+      if (closeResult.error) {
+        warnings.push(
+          `Cita no se cerró automáticamente: ${closeResult.error}`
+        );
+      }
+    }
+
     if (warnings.length > 0) {
       setPostSaveWarning(
         `${warnings.join(" ")} La ficha sí se guardó; registra estos datos manualmente.`
       );
       setLoading(false);
+      wantsPdfRef.current = false;
       return;
     }
 
-    if (createdPrescriptions > 0 && typeof window !== "undefined") {
-      window.open(
-        `/api/${clinicSlug}/prescriptions/${recordId}/pdf`,
-        "_blank",
-        "noopener,noreferrer"
+    const closedAppointment = !isEditing && !!data.appointment_id;
+
+    if (
+      wantsPdfRef.current &&
+      createdPrescriptions > 0 &&
+      typeof window !== "undefined"
+    ) {
+      const pdfUrl = `/api/${clinicSlug}/prescriptions/${recordId}/pdf`;
+      const anchor = document.createElement("a");
+      anchor.href = pdfUrl;
+      anchor.target = "_blank";
+      anchor.rel = "noopener";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      wantsPdfRef.current = false;
+      toast.success("Ficha guardada · Receta lista para imprimir");
+      // Quedarse en la ficha recién creada (no volver a /appointments)
+      router.push(
+        `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${recordId}`
       );
+      return;
     }
 
-    router.push(`/${clinicSlug}/appointments`);
+    toast.success(
+      closedAppointment
+        ? "Ficha guardada · Cita completada"
+        : "Ficha guardada"
+    );
+
+    if (isEditing) {
+      // En edición ya estamos en la ficha; mantenemos el comportamiento
+      // existente de volver a la agenda para no obligar al vet a navegar.
+      router.push(`/${clinicSlug}/appointments`);
+      return;
+    }
+
+    // Unificamos el destino del happy path a la ficha recién creada,
+    // consistente con el flujo de "imprimir receta".
+    router.push(
+      `/${clinicSlug}/clients/${clientId}/pets/${petId}/records/${recordId}`
+    );
   }
 
   return (
@@ -767,36 +882,22 @@ export function RecordForm({
               </div>
             </CollapsibleSection>
 
-            {/* Diagnóstico y tratamiento - expandida por default */}
+            {/* Diagnóstico - expandida por default. Sigue el orden SOAP: el plan
+                diagnóstico (incluyendo exámenes solicitados) va antes del plan
+                terapéutico. */}
             <CollapsibleSection
-              title="Diagnóstico y tratamiento"
+              title="Diagnóstico"
               defaultOpen
-              hasContent={hasDiagTreatment}
-              preview={
-                diagnosis
-                  ? diagnosis.slice(0, 60)
-                  : treatment
-                    ? treatment.slice(0, 60)
-                    : ""
-              }
+              hasContent={!!diagnosis}
+              preview={diagnosis ? diagnosis.slice(0, 60) : ""}
             >
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="diagnosis">Diagnóstico</Label>
-                  <AutoTextarea
-                    id="diagnosis"
-                    placeholder="Diagnóstico presuntivo o definitivo..."
-                    {...register("diagnosis")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="treatment">Tratamiento</Label>
-                  <AutoTextarea
-                    id="treatment"
-                    placeholder="Medicamentos, procedimientos, indicaciones..."
-                    {...register("treatment")}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="diagnosis">Diagnóstico</Label>
+                <AutoTextarea
+                  id="diagnosis"
+                  placeholder="Diagnóstico presuntivo o definitivo..."
+                  {...register("diagnosis")}
+                />
               </div>
             </CollapsibleSection>
 
@@ -804,13 +905,19 @@ export function RecordForm({
             {canRequestExams && (
               <CollapsibleSection
                 title="Exámenes solicitados"
-                hasContent={(recordExams?.length ?? 0) > 0}
+                hasContent={
+                  (recordExams?.length ?? 0) > 0 || inlineExams.length > 0
+                }
                 preview={
                   recordExams && recordExams.length > 0
                     ? `${recordExams.length} examen${recordExams.length === 1 ? "" : "es"}`
-                    : ""
+                    : inlineExams.length > 0
+                      ? `${inlineExams.length} por solicitar`
+                      : ""
                 }
-                defaultOpen={(recordExams?.length ?? 0) > 0}
+                defaultOpen={
+                  (recordExams?.length ?? 0) > 0 || inlineExams.length > 0
+                }
               >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -818,7 +925,7 @@ export function RecordForm({
                       Solicita exámenes asociados a esta consulta.
                       Aparecerán también en la pestaña Exámenes de la mascota.
                     </p>
-                    {isEditing && record && orgId ? (
+                    {isEditing && record && orgId && (
                       <RequestExamSheet
                         orgId={orgId}
                         petId={petId}
@@ -827,15 +934,9 @@ export function RecordForm({
                         clinicalRecordId={record.id}
                         triggerVariant="outline"
                       />
-                    ) : (
-                      <span
-                        className="text-xs text-muted-foreground italic"
-                        title="Guarda la ficha primero para solicitar exámenes"
-                      >
-                        Guarda la ficha primero
-                      </span>
                     )}
                   </div>
+
                   {recordExams && recordExams.length > 0 && (
                     <ExamList
                       exams={recordExams}
@@ -844,9 +945,135 @@ export function RecordForm({
                       canDelete={false}
                     />
                   )}
+
+                  {!isEditing && (
+                    <div className="space-y-3">
+                      {inlineExams.length === 0 && (
+                        <p className="text-sm text-muted-foreground italic">
+                          Todavía no has agregado exámenes. Se solicitarán al
+                          guardar la ficha.
+                        </p>
+                      )}
+
+                      {inlineExams.map((row, index) => (
+                        <div
+                          key={index}
+                          className="rounded-md border border-border/60 bg-background/50 p-3 space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Examen #{index + 1}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeExamRow(index)}
+                              className="h-7 px-2 text-destructive hover:text-destructive"
+                              aria-label={`Eliminar examen ${index + 1}`}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor={`exam_type_${index}`}>
+                              Tipo de examen
+                            </Label>
+                            <Select
+                              id={`exam_type_${index}`}
+                              value={row.type}
+                              onChange={(e) =>
+                                updateExamRow(index, {
+                                  type: (e.target.value === ""
+                                    ? ""
+                                    : (e.target.value as ExamType)),
+                                })
+                              }
+                            >
+                              <option value="">
+                                Selecciona tipo de examen…
+                              </option>
+                              {EXAM_TYPE_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+
+                          {row.type === "otro" && (
+                            <div className="space-y-1">
+                              <Label htmlFor={`exam_custom_${index}`}>
+                                Detalle del examen
+                              </Label>
+                              <Input
+                                id={`exam_custom_${index}`}
+                                placeholder="Ej: Test de Leishmania"
+                                value={row.custom_type_label}
+                                onChange={(e) =>
+                                  updateExamRow(index, {
+                                    custom_type_label: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            <Label htmlFor={`exam_indications_${index}`}>
+                              Indicaciones / sospecha clínica{" "}
+                              <span className="text-xs text-muted-foreground">
+                                (opcional)
+                              </span>
+                            </Label>
+                            <Textarea
+                              id={`exam_indications_${index}`}
+                              rows={2}
+                              placeholder="Ej: descartar anemia regenerativa..."
+                              value={row.indications}
+                              onChange={(e) =>
+                                updateExamRow(index, {
+                                  indications: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addExamRow}
+                      >
+                        <Plus className="size-4" />
+                        Agregar examen
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CollapsibleSection>
             )}
+
+            {/* Tratamiento - expandida por default. Va después de exámenes
+                porque pertenece al plan terapéutico (SOAP: plan = dx + tx). */}
+            <CollapsibleSection
+              title="Tratamiento"
+              defaultOpen
+              hasContent={!!treatment}
+              preview={treatment ? treatment.slice(0, 60) : ""}
+            >
+              <div className="space-y-2">
+                <Label htmlFor="treatment">Tratamiento</Label>
+                <AutoTextarea
+                  id="treatment"
+                  placeholder="Medicamentos, procedimientos, indicaciones..."
+                  {...register("treatment")}
+                />
+              </div>
+            </CollapsibleSection>
 
             {/* Seccion 5: Observaciones - colapsada por default */}
             <CollapsibleSection
@@ -983,9 +1210,8 @@ export function RecordForm({
               >
                 <div className="space-y-3">
                   <p className="text-xs text-muted-foreground">
-                    Agrega los medicamentos que estás recetando. Usa el botón{" "}
-                    <strong>Imprimir receta</strong> al final para guardar la
-                    ficha y abrir el PDF listo para imprimir.
+                    Guardamos la ficha y abrimos la receta en una pestaña lista
+                    para imprimir o descargar como PDF.
                   </p>
 
                   {inlinePrescriptions.length === 0 && (
@@ -1174,6 +1400,9 @@ export function RecordForm({
                     <Button
                       type="submit"
                       size="sm"
+                      onClick={() => {
+                        wantsPdfRef.current = true;
+                      }}
                       disabled={
                         loading ||
                         !inlinePrescriptions.some(
@@ -1182,7 +1411,7 @@ export function RecordForm({
                       }
                     >
                       <Printer className="size-4" />
-                      {loading ? "Guardando..." : "Imprimir receta"}
+                      {loading ? "Guardando..." : "Guardar e imprimir receta"}
                     </Button>
                   </div>
                 </div>
@@ -1236,12 +1465,12 @@ export function RecordForm({
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={loading}>
                 {loading
-                  ? isEditing
-                    ? "Guardando..."
-                    : "Creando..."
+                  ? "Guardando..."
                   : isEditing
                     ? "Guardar cambios"
-                    : "Crear ficha"}
+                    : defaultAppointmentId
+                      ? "Guardar ficha y completar cita"
+                      : "Crear ficha"}
               </Button>
               <Button
                 type="button"

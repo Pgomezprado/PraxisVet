@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Scissors, User, PawPrint, FileText, Pencil } from "lucide-react";
+import { ArrowLeft, Calendar, Scissors, User, PawPrint, FileText, Pencil, DollarSign } from "lucide-react";
+import { formatCLP } from "@/lib/utils/format";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getCurrentMember, canViewGrooming } from "@/lib/auth/current-member";
@@ -121,6 +122,24 @@ export default async function GroomingRecordDetailPage({
           </CardHeader>
           <CardContent>
             <p className="text-base font-medium capitalize">{dateLabel}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <DollarSign className="size-4 text-muted-foreground" />
+              Valor del servicio
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-base font-medium">
+              {typeof record.price === "number" ? (
+                formatCLP(record.price)
+              ) : (
+                <span className="text-muted-foreground">Sin valor</span>
+              )}
+            </p>
           </CardContent>
         </Card>
       </div>

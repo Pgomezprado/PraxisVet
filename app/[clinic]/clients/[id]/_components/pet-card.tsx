@@ -72,6 +72,10 @@ export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
   const { member } = useClinic();
   const canSeeClinical = member.role === "admin" || member.role === "vet";
   const canSeeGrooming = member.role === "admin" || member.role === "groomer";
+  // Recepcionista puede crear peluquería histórica al onboardear, pero no
+  // ver el listado: la RLS de SELECT permanece admin+groomer (link directo
+  // a /grooming/new para evitar que choque con el listado vacío).
+  const canCreateGroomingHistorical = member.role === "receptionist";
   const canSeeExams =
     member.role === "admin" ||
     member.role === "vet" ||
@@ -201,6 +205,20 @@ export function PetCard({ pet, clientId, clinicSlug, orgId }: PetCardProps) {
           >
             <Scissors className="size-3" data-icon="inline-start" />
             Peluquería
+          </Button>
+        )}
+        {canCreateGroomingHistorical && (
+          <Button
+            variant="outline"
+            size="xs"
+            render={
+              <Link
+                href={`/${clinicSlug}/clients/${clientId}/pets/${pet.id}/grooming/new?historical=1`}
+              />
+            }
+          >
+            <Scissors className="size-3" data-icon="inline-start" />
+            Peluquería histórica
           </Button>
         )}
         <Button

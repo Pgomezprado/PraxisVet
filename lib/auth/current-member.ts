@@ -45,6 +45,18 @@ export function canViewGrooming(role: MemberRole): boolean {
 }
 
 /**
+ * Quién puede registrar peluquería *histórica* desde la ficha del cliente.
+ * El recepcionista necesita esta capacidad para onboardear nuevos tutores
+ * sin cambiar de rol, pero NO puede ver, editar ni borrar registros existentes
+ * (RLS de SELECT/UPDATE/DELETE permanece admin+groomer).
+ */
+export function canCreateGroomingHistorical(role: MemberRole): boolean {
+  return (
+    role === "admin" || role === "groomer" || role === "receptionist"
+  );
+}
+
+/**
  * Quién puede ver/listar exámenes de una mascota.
  * Recepcionista necesita acceso porque sube resultados que llegan del laboratorio.
  * Peluquero NO ve exámenes (mismo criterio que ficha clínica).

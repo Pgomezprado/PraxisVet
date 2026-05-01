@@ -52,27 +52,36 @@ export function LoginForm() {
       return;
     }
 
-    const { data: membership } = await supabase
-      .from("organization_members")
-      .select("organizations ( slug )")
-      .limit(1)
-      .single();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const org = membership?.organizations as unknown as { slug: string } | null;
-
-    if (org?.slug) {
-      router.push(`/${org.slug}/dashboard`);
-      return;
-    }
-
+    // Platform admins van directo al panel global, sin pasar por una clínica.
+    // Importante chequear esto ANTES de organization_members: las policies
+    // elevadas hacen que un platform admin vea filas de TODAS las orgs.
     const { data: platformAdmin } = await supabase
       .from("platform_admins")
       .select("user_id")
+      .eq("user_id", user?.id ?? "")
       .is("revoked_at", null)
       .maybeSingle();
 
     if (platformAdmin) {
       router.push("/superadmin");
+      return;
+    }
+
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organizations ( slug )")
+      .eq("user_id", user?.id ?? "")
+      .limit(1)
+      .maybeSingle();
+
+    const org = membership?.organizations as unknown as { slug: string } | null;
+
+    if (org?.slug) {
+      router.push(`/${org.slug}/dashboard`);
       return;
     }
 

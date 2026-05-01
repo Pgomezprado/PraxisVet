@@ -7,7 +7,11 @@ import { getGroomers } from "../actions";
 import { getPetWithClient } from "../../records/actions";
 import { getAppointment } from "@/app/[clinic]/appointments/actions";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, canViewGrooming } from "@/lib/auth/current-member";
+import {
+  getCurrentMember,
+  canCreateGroomingHistorical,
+  canViewGrooming,
+} from "@/lib/auth/current-member";
 
 export default async function NewGroomingRecordPage({
   params,
@@ -20,9 +24,12 @@ export default async function NewGroomingRecordPage({
   const { appointment: appointmentId } = await searchParams;
 
   const member = await getCurrentMember(clinic);
-  if (!member || !canViewGrooming(member.role)) {
+  if (!member || !canCreateGroomingHistorical(member.role)) {
     notFound();
   }
+  // El recepcionista solo puede crear el registro; no ve el listado ni el
+  // detalle. Tras guardar lo regresamos a la ficha del cliente.
+  const isHistoricalOnly = !canViewGrooming(member.role);
 
   const supabase = await createClient();
   const {
@@ -100,7 +107,9 @@ export default async function NewGroomingRecordPage({
           href={
             defaultAppointmentId
               ? `/${clinic}/appointments/${defaultAppointmentId}`
-              : `/${clinic}/clients/${id}/pets/${petId}/grooming`
+              : isHistoricalOnly
+                ? `/${clinic}/clients/${id}`
+                : `/${clinic}/clients/${id}/pets/${petId}/grooming`
           }
         >
           <Button variant="ghost" size="icon-sm">
@@ -109,7 +118,9 @@ export default async function NewGroomingRecordPage({
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Nuevo servicio de peluquería
+            {isHistoricalOnly
+              ? "Registrar peluquería histórica"
+              : "Nuevo servicio de peluquería"}
           </h1>
           <p className="text-sm text-muted-foreground">
             {petResult.data.name} · {petResult.data.client.first_name}{" "}
@@ -118,6 +129,12 @@ export default async function NewGroomingRecordPage({
         </div>
       </div>
 
+      {isHistoricalOnly && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
+          Estás registrando una sesión histórica para mantener el historial de la mascota. Una vez guardada, solo el peluquero o admin podrá verla y editarla.
+        </div>
+      )}
+
       <GroomingRecordForm
         petId={petId}
         petName={petResult.data.name}
@@ -125,6 +142,11 @@ export default async function NewGroomingRecordPage({
         groomers={groomers}
         defaultAppointmentId={defaultAppointmentId}
         defaultGroomerId={defaultGroomerId}
+        successRedirect={
+          isHistoricalOnly
+            ? `/${clinic}/clients/${id}`
+            : undefined
+        }
       />
     </div>
   );

@@ -63,6 +63,8 @@ interface GroomingRecordFormProps {
   };
   defaultAppointmentId?: string;
   defaultGroomerId?: string;
+  /** Si se especifica, el formulario redirige aquí tras crear (en vez de ir al detalle). */
+  successRedirect?: string;
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -78,6 +80,7 @@ export function GroomingRecordForm({
   record,
   defaultAppointmentId,
   defaultGroomerId,
+  successRedirect,
 }: GroomingRecordFormProps) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
@@ -124,7 +127,8 @@ export function GroomingRecordForm({
     }
 
     router.push(
-      `/${clinicSlug}/clients/${clientId}/pets/${petId}/grooming/${result.data.id}`
+      successRedirect ??
+        `/${clinicSlug}/clients/${clientId}/pets/${petId}/grooming/${result.data.id}`
     );
   }
 

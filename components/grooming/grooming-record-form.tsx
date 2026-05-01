@@ -27,6 +27,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Loader2, Scissors } from "lucide-react";
+import { formatCLP } from "@/lib/utils/format";
 
 interface Groomer {
   id: string;
@@ -58,6 +59,7 @@ interface GroomingRecordFormProps {
     date: string;
     service_performed: string | null;
     observations: string | null;
+    price: number | null;
   };
   defaultAppointmentId?: string;
   defaultGroomerId?: string;
@@ -99,10 +101,12 @@ export function GroomingRecordForm({
       date: record?.date ?? new Date().toISOString().split("T")[0],
       service_performed: record?.service_performed ?? "",
       observations: record?.observations ?? "",
+      price: record?.price ?? null,
     },
   });
 
   const servicePerformed = watch("service_performed");
+  const priceValue = watch("price");
 
   async function onSubmit(data: GroomingRecordInput) {
     setError(null);
@@ -216,6 +220,47 @@ export function GroomingRecordForm({
               </div>
             )}
             <FieldError message={errors.service_performed?.message} />
+          </div>
+
+          <div>
+            <Label htmlFor="price">
+              Valor del servicio{" "}
+              <span className="text-xs font-normal text-muted-foreground">
+                (opcional)
+              </span>
+            </Label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                $
+              </span>
+              <Input
+                id="price"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1000}
+                placeholder="25000"
+                className="pl-7"
+                {...register("price", {
+                  setValueAs: (v) => {
+                    if (v === "" || v === null || v === undefined) return null;
+                    const n = Number(v);
+                    return Number.isFinite(n) ? Math.round(n) : null;
+                  },
+                })}
+                aria-invalid={!!errors.price}
+              />
+            </div>
+            {typeof priceValue === "number" && priceValue > 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Equivale a {formatCLP(priceValue)}.
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Déjalo vacío si el servicio fue de cortesía.
+              </p>
+            )}
+            <FieldError message={errors.price?.message} />
           </div>
 
           <div>

@@ -28,6 +28,7 @@ export type GroomingRecordListItem = {
   date: string;
   service_performed: string | null;
   observations: string | null;
+  price: number | null;
   created_at: string;
   groomer: {
     id: string;
@@ -45,6 +46,7 @@ export type GroomingRecordDetail = {
   date: string;
   service_performed: string | null;
   observations: string | null;
+  price: number | null;
   created_at: string;
   groomer: {
     id: string;
@@ -74,7 +76,7 @@ export async function getGroomingRecords(
     .from("grooming_records")
     .select(
       `
-      id, pet_id, appointment_id, date, service_performed, observations, created_at,
+      id, pet_id, appointment_id, date, service_performed, observations, price, created_at,
       groomer:organization_members!groomer_id (id, first_name, last_name)
     `
     )
@@ -147,6 +149,7 @@ export async function createGroomingRecord(
       date: parsed.data.date,
       service_performed: parsed.data.service_performed,
       observations: parsed.data.observations || null,
+      price: parsed.data.price ?? null,
     })
     .select("id")
     .single();
@@ -207,6 +210,7 @@ export async function updateGroomingRecord(
       date: parsed.data.date,
       service_performed: parsed.data.service_performed,
       observations: parsed.data.observations || null,
+      price: parsed.data.price ?? null,
     })
     .eq("id", recordId)
     .select("id")

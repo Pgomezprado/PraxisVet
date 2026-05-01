@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Plus, ArrowLeft, PawPrint, Scissors } from "lucide-react";
+import { formatCLP } from "@/lib/utils/format";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentMember, canViewGrooming } from "@/lib/auth/current-member";
@@ -139,13 +140,20 @@ export default async function GroomingPage({
                       {groomerName && ` · ${groomerName}`}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={`${basePath}/${r.id}`} />}
-                  >
-                    Ver detalle
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {typeof r.price === "number" && (
+                      <span className="rounded-md bg-primary/10 px-2 py-1 text-sm font-semibold text-primary">
+                        {formatCLP(r.price)}
+                      </span>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      render={<Link href={`${basePath}/${r.id}`} />}
+                    >
+                      Ver detalle
+                    </Button>
+                  </div>
                 </CardHeader>
                 {r.observations && (
                   <CardContent>

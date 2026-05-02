@@ -1,19 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { loadEnv, assertNotProd } from "./lib/db-guard.mjs";
 
-const env = Object.fromEntries(
-  readFileSync(resolve(process.cwd(), ".env.local"), "utf8")
-    .split("\n")
-    .filter((l) => l && !l.startsWith("#") && l.includes("="))
-    .map((l) => {
-      const i = l.indexOf("=");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
-    }),
-);
+const env = loadEnv();
 
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 const key = env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Guard: seed-dev solo corre contra dev
+assertNotProd(url, env, "seed-dev");
+
 const supabase = createClient(url, key, { auth: { persistSession: false } });
 
 const EMAIL = "admin@praxisvet.dev";

@@ -28,11 +28,20 @@
 import { Client } from "pg";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
+import {
+  loadEnv,
+  hostOf,
+  scanDestructive,
+  confirmOrAbort,
+  assertDevProdDistinct,
+} from "./lib/db-guard.mjs";
 
 const args = process.argv.slice(2);
 const envFlag = args.find((a) => a.startsWith("--env="))?.split("=")[1] ?? "dev";
 const dryRun = args.includes("--dry-run");
 const initBaseline = args.includes("--init-baseline");
+const allowDestructive = args.includes("--allow-destructive");
+const autoYes = args.includes("--yes");
 
 if (!["dev", "prod"].includes(envFlag)) {
   console.error("--env debe ser 'dev' o 'prod'");
@@ -40,21 +49,10 @@ if (!["dev", "prod"].includes(envFlag)) {
 }
 
 // Load .env.local
-const env = (() => {
-  try {
-    return Object.fromEntries(
-      readFileSync(resolve(process.cwd(), ".env.local"), "utf8")
-        .split("\n")
-        .filter((l) => l && !l.startsWith("#") && l.includes("="))
-        .map((l) => {
-          const i = l.indexOf("=");
-          return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^"|"$/g, "")];
-        })
-    );
-  } catch {
-    return {};
-  }
-})();
+const env = loadEnv();
+
+// Guard: dev y prod no pueden ser el mismo host (config corrupta)
+assertDevProdDistinct(env);
 
 const urlByEnv = {
   dev:
@@ -144,6 +142,40 @@ try {
     console.log("\n(dry-run: no se aplicó nada)");
     await client.end();
     process.exit(0);
+  }
+
+  // ---------------------------------------------------------------
+  // Guard: detectar SQL destructivo en migraciones pendientes
+  // ---------------------------------------------------------------
+  const destructive = [];
+  for (const f of pending) {
+    const sqlContent = readFileSync(join(MIGRATIONS_DIR, f), "utf8");
+    const findings = scanDestructive(sqlContent);
+    if (findings.length > 0) {
+      destructive.push({ file: f, findings });
+    }
+  }
+  if (destructive.length > 0) {
+    console.log(`\n⚠️  Migraciones con SQL destructivo:`);
+    for (const d of destructive) {
+      console.log(`   ${d.file} → ${d.findings.join(", ")}`);
+    }
+    if (!allowDestructive) {
+      console.error(
+        `\n   Bloqueado. Para aplicar, pasa --allow-destructive --yes.`,
+      );
+      await client.end();
+      process.exit(1);
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Guard: confirmación obligatoria en prod
+  // ---------------------------------------------------------------
+  if (envFlag === "prod" && !autoYes) {
+    console.log(`\n⚠️  Vas a aplicar ${pending.length} migración(es) en PRODUCCIÓN`);
+    console.log(`   Host: ${u.hostname}`);
+    await confirmOrAbort(`   ¿Continuar?`);
   }
 
   for (const f of pending) {

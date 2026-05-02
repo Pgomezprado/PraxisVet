@@ -13,22 +13,19 @@
 import { Client } from "pg";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  loadEnv,
+  hostOf,
+  scanDestructive,
+  confirmOrAbort,
+} from "./lib/db-guard.mjs";
 
-const env = (() => {
-  try {
-    return Object.fromEntries(
-      readFileSync(resolve(process.cwd(), ".env.local"), "utf8")
-        .split("\n")
-        .filter((l) => l && !l.startsWith("#") && l.includes("="))
-        .map((l) => {
-          const i = l.indexOf("=");
-          return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^"|"$/g, "")];
-        }),
-    );
-  } catch {
-    return {};
-  }
-})();
+const args = process.argv.slice(2);
+const relPath = args.find((a) => !a.startsWith("--"));
+const allowDestructive = args.includes("--allow-destructive");
+const autoYes = args.includes("--yes");
+
+const env = loadEnv();
 
 const connectionString =
   process.env.SUPABASE_DB_URL ||
@@ -43,13 +40,36 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const relPath = process.argv[2];
 if (!relPath) {
-  console.error("Uso: node scripts/apply-sql.mjs <ruta-al-sql>");
+  console.error(
+    "Uso: node scripts/apply-sql.mjs <ruta-al-sql> [--allow-destructive] [--yes]",
+  );
   process.exit(1);
 }
 
 const sql = readFileSync(resolve(process.cwd(), relPath), "utf8");
+
+// ---------------------------------------------------------------
+// Guard 1: bloqueo de SQL destructivo
+// ---------------------------------------------------------------
+const findings = scanDestructive(sql);
+if (findings.length > 0) {
+  console.error(
+    `\n⚠️  ${relPath} contiene SQL destructivo: ${findings.join(", ")}`,
+  );
+  if (!allowDestructive) {
+    console.error(
+      `   Bloqueado. Si REALMENTE quieres aplicarlo, pasa --allow-destructive --yes.`,
+    );
+    process.exit(1);
+  }
+  if (!autoYes) {
+    console.error(
+      `\n   Target: ${hostOf(connectionString)}`,
+    );
+    await confirmOrAbort(`   ¿Aplicar SQL destructivo contra esta base?`);
+  }
+}
 
 const u = new URL(connectionString);
 const client = new Client({

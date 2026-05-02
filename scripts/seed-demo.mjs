@@ -22,16 +22,9 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { loadEnv, assertNotProd } from "./lib/db-guard.mjs";
 
-const env = Object.fromEntries(
-  readFileSync(resolve(process.cwd(), ".env.local"), "utf8")
-    .split("\n")
-    .filter((l) => l && !l.startsWith("#") && l.includes("="))
-    .map((l) => {
-      const i = l.indexOf("=");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^"|"$/g, "")];
-    }),
-);
+const env = loadEnv();
 
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 const key = env.SUPABASE_SERVICE_ROLE_KEY;
@@ -39,6 +32,9 @@ if (!url || !key) {
   console.error("Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en .env.local");
   process.exit(1);
 }
+
+// Guard: este script borra y reinserta. Bloqueado contra producción.
+assertNotProd(url, env, "seed-demo");
 
 const s = createClient(url, key, { auth: { persistSession: false } });
 

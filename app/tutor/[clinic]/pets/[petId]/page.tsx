@@ -9,6 +9,7 @@ import {
   Scissors,
   FlaskConical,
   Download,
+  Sparkles,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -157,6 +158,30 @@ export default async function TutorPetDetailPage({
           </div>
         </div>
       </div>
+
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card ring-1 ring-primary/20">
+        <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <Sparkles className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-heading text-base font-semibold leading-tight">
+                La historia de {pet.name}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Cada visita, vacuna y momento guardados en orden.
+              </p>
+            </div>
+          </div>
+          <Button
+            className="w-full sm:w-auto"
+            render={<Link href={`/tutor/${clinic}/pets/${pet.id}/historia`} />}
+          >
+            Ver la historia de {pet.name}
+          </Button>
+        </CardContent>
+      </Card>
 
       <HealthCardButton
         clinicSlug={clinic}

@@ -31,6 +31,21 @@ import {
   getPetVaccinations,
   getTutorPet,
 } from "../../queries";
+import { listHealthCards } from "../../actions";
+import { HealthCardButton } from "../../_components/health-card-button";
+
+// Marca como "vigente" / "por_vencer" / "vencida" un item con next_due_date.
+function classifyDue(nextDueDate: string | null, warningDays = 30) {
+  if (!nextDueDate) return "vigente" as const;
+  const due = new Date(nextDueDate + "T12:00:00");
+  const now = new Date();
+  const days = Math.floor(
+    (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  if (days < 0) return "vencida" as const;
+  if (days <= warningDays) return "por_vencer" as const;
+  return "vigente" as const;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -42,15 +57,49 @@ export default async function TutorPetDetailPage({
   const { clinic, petId } = await params;
   const supabase = await createClient();
 
-  const [pet, vaccinations, dewormings, groomings, appointments, sharedExams] =
-    await Promise.all([
-      getTutorPet(supabase, petId),
-      getPetVaccinations(supabase, petId),
-      getPetDewormings(supabase, petId),
-      getPetGroomingRecords(supabase, petId),
-      getPetAppointments(supabase, petId),
-      getPetSharedExams(supabase, petId),
-    ]);
+  const [
+    pet,
+    vaccinations,
+    dewormings,
+    groomings,
+    appointments,
+    sharedExams,
+    healthCardsResult,
+    orgRow,
+  ] = await Promise.all([
+    getTutorPet(supabase, petId),
+    getPetVaccinations(supabase, petId),
+    getPetDewormings(supabase, petId),
+    getPetGroomingRecords(supabase, petId),
+    getPetAppointments(supabase, petId),
+    getPetSharedExams(supabase, petId),
+    listHealthCards({ petId }),
+    supabase
+      .from("organizations")
+      .select("name")
+      .eq("slug", clinic)
+      .maybeSingle(),
+  ]);
+
+  const initialHealthCards =
+    healthCardsResult.success ? healthCardsResult.data : [];
+  const clinicName =
+    (orgRow.data as { name: string } | null)?.name ?? "tu clínica";
+
+  // Estadísticas para el preview del Sheet de cartola.
+  const vaccineStats = vaccinations.reduce(
+    (acc, v) => {
+      const s = classifyDue(v.next_due_date);
+      if (s === "vigente") acc.vigentes += 1;
+      else if (s === "por_vencer") acc.porVencer += 1;
+      else acc.vencidas += 1;
+      return acc;
+    },
+    { vigentes: 0, porVencer: 0, vencidas: 0 }
+  );
+  const dewormingsAtDay =
+    dewormings.length > 0 &&
+    dewormings.some((d) => classifyDue(d.next_due_date) !== "vencida");
 
   const examTypeLabels: Record<string, string> = {
     hemograma: "Hemograma",
@@ -108,6 +157,18 @@ export default async function TutorPetDetailPage({
           </div>
         </div>
       </div>
+
+      <HealthCardButton
+        clinicSlug={clinic}
+        clinicName={clinicName}
+        petId={pet.id}
+        petName={pet.name}
+        petSpecies={formatSpecies(pet.species)}
+        petAge={age}
+        vaccineStats={vaccineStats}
+        dewormingsAtDay={dewormingsAtDay}
+        initialCards={initialHealthCards}
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

@@ -109,6 +109,7 @@ export default async function AppointmentDetailPage({
       <StatusActions
         appointmentId={appointment.id}
         currentStatus={appointment.status}
+        appointmentType={appointment.type}
         clinicSlug={clinic}
         startRedirect={
           appointment.status === "confirmed"
@@ -122,6 +123,19 @@ export default async function AppointmentDetailPage({
             : undefined
         }
       />
+
+      {/* Pista para peluquería confirmada: aclara dónde se registra el precio
+          (la admin de Paws & Hair preguntó por esto el primer día de trial). */}
+      {isGrooming && appointment.status === "confirmed" && (
+        <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+          <Scissors className="mt-0.5 size-3.5 shrink-0 text-primary" />
+          <p>
+            Al presionar <strong className="text-foreground">Iniciar peluquería</strong>{" "}
+            se abre el registro del servicio para anotar baño/corte realizado,{" "}
+            <strong className="text-foreground">precio cobrado</strong> y observaciones.
+          </p>
+        </div>
+      )}
 
       {!isGrooming && (appointment.status === "completed" || appointment.status === "in_progress") && (
         <Card>
@@ -171,19 +185,38 @@ export default async function AppointmentDetailPage({
                 <div>
                   <p className="text-sm font-medium">Registro de peluquería</p>
                   <p className="text-xs text-muted-foreground">
-                    {linkedGroomingRecord
-                      ? "Este servicio ya está registrado."
-                      : "Deja observaciones opcionales del servicio realizado."}
+                    {linkedGroomingRecord ? (
+                      <>
+                        {linkedGroomingRecord.service_performed ?? "Servicio sin descripción"}
+                        {typeof linkedGroomingRecord.price === "number" &&
+                        linkedGroomingRecord.price > 0 ? (
+                          <>
+                            {" · "}
+                            <span className="font-medium text-foreground">
+                              {new Intl.NumberFormat("es-CL", {
+                                style: "currency",
+                                currency: "CLP",
+                                maximumFractionDigits: 0,
+                              }).format(linkedGroomingRecord.price)}
+                            </span>
+                          </>
+                        ) : (
+                          " · sin precio registrado"
+                        )}
+                      </>
+                    ) : (
+                      "Registra el servicio realizado y el precio cobrado."
+                    )}
                   </p>
                 </div>
               </div>
               {linkedGroomingRecord ? (
                 <Link
-                  href={`/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/grooming/${linkedGroomingRecord.id}`}
+                  href={`/${clinic}/clients/${appointment.client.id}/pets/${appointment.pet.id}/grooming/${linkedGroomingRecord.id}/edit`}
                 >
                   <Button variant="outline" size="sm">
-                    <Scissors className="size-3.5" data-icon="inline-start" />
-                    Ver servicio
+                    <Pencil className="size-3.5" data-icon="inline-start" />
+                    Editar
                   </Button>
                 </Link>
               ) : (

@@ -275,7 +275,7 @@ export async function getLinkedGroomingRecord(appointmentId: string) {
 
   const { data } = await supabase
     .from("grooming_records")
-    .select("id")
+    .select("id, price, service_performed")
     .eq("appointment_id", appointmentId)
     .maybeSingle();
 

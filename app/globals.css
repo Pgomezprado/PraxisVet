@@ -49,6 +49,11 @@
 }
 
 :root {
+  /* color-scheme le indica al browser cómo renderizar los controles nativos
+   * (<select>, <option>, scrollbars, input date, etc.). Sin esto, Chrome/Edge
+   * en Windows light mostraba el dropdown de <select> con fondo blanco y el
+   * texto blanco del theme dark — ilegible para Paws & Hair. */
+  color-scheme: light;
   /* Palette: Verde forestal — primary #03A64A, accent eléctrico #05F26C, dark surface #132426 */
   --background: oklch(0.965 0.015 155);
   --foreground: oklch(0.22 0.015 200);
@@ -86,6 +91,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   /* Palette: Verde forestal dark — casi negro con tinte verde, acentos eléctricos */
   --background: oklch(0.15 0.02 160);
   --foreground: oklch(0.96 0.01 155);

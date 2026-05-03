@@ -4,5 +4,5 @@
   <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
   <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
   <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
-  <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="#132426" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
+  <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="white" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
 </svg>

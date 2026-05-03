@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { updateAppointmentStatus, deleteAppointment } from "@/app/[clinic]/appointments/actions";
-import type { AppointmentStatus } from "@/types";
+import type { AppointmentStatus, AppointmentType } from "@/types";
 import {
   CheckCircle,
   XCircle,
@@ -25,43 +25,59 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
-const transitions: Record<
-  AppointmentStatus,
-  { label: string; to: AppointmentStatus; icon: typeof CheckCircle; variant: "default" | "outline" | "destructive" }[]
-> = {
-  pending: [
-    { label: "Confirmar", to: "confirmed", icon: CheckCircle, variant: "default" },
-    { label: "Cancelar", to: "cancelled", icon: XCircle, variant: "destructive" },
-  ],
-  confirmed: [
-    { label: "Iniciar consulta", to: "in_progress", icon: Play, variant: "default" },
-    { label: "Cancelar", to: "cancelled", icon: XCircle, variant: "destructive" },
-    { label: "No asistió", to: "no_show", icon: Ban, variant: "outline" },
-  ],
-  in_progress: [
-    { label: "Listo para retiro", to: "ready_for_pickup", icon: Clock, variant: "outline" },
-    { label: "Completar", to: "completed", icon: CheckCircle, variant: "default" },
-  ],
-  ready_for_pickup: [
-    { label: "Completar", to: "completed", icon: CheckCircle, variant: "default" },
-  ],
-  completed: [],
-  cancelled: [
-    { label: "Reabrir", to: "pending", icon: Clock, variant: "outline" },
-  ],
-  no_show: [
-    { label: "Reabrir", to: "pending", icon: Clock, variant: "outline" },
-  ],
+type Transition = {
+  label: string;
+  to: AppointmentStatus;
+  icon: typeof CheckCircle;
+  variant: "default" | "outline" | "destructive";
 };
+
+// Las transiciones son las mismas para medical y grooming, pero el copy
+// cambia: "Iniciar consulta" no aplica a peluquería, donde se inicia un
+// "servicio". Mantenemos ambas variantes para no confundir al peluquero.
+function buildTransitions(
+  type: AppointmentType
+): Record<AppointmentStatus, Transition[]> {
+  const startLabel =
+    type === "grooming" ? "Iniciar peluquería" : "Iniciar consulta";
+
+  return {
+    pending: [
+      { label: "Confirmar", to: "confirmed", icon: CheckCircle, variant: "default" },
+      { label: "Cancelar", to: "cancelled", icon: XCircle, variant: "destructive" },
+    ],
+    confirmed: [
+      { label: startLabel, to: "in_progress", icon: Play, variant: "default" },
+      { label: "Cancelar", to: "cancelled", icon: XCircle, variant: "destructive" },
+      { label: "No asistió", to: "no_show", icon: Ban, variant: "outline" },
+    ],
+    in_progress: [
+      { label: "Listo para retiro", to: "ready_for_pickup", icon: Clock, variant: "outline" },
+      { label: "Completar", to: "completed", icon: CheckCircle, variant: "default" },
+    ],
+    ready_for_pickup: [
+      { label: "Completar", to: "completed", icon: CheckCircle, variant: "default" },
+    ],
+    completed: [],
+    cancelled: [
+      { label: "Reabrir", to: "pending", icon: Clock, variant: "outline" },
+    ],
+    no_show: [
+      { label: "Reabrir", to: "pending", icon: Clock, variant: "outline" },
+    ],
+  };
+}
 
 export function StatusActions({
   appointmentId,
   currentStatus,
+  appointmentType,
   clinicSlug,
   startRedirect,
 }: {
   appointmentId: string;
   currentStatus: AppointmentStatus;
+  appointmentType: AppointmentType;
   clinicSlug: string;
   startRedirect?: string;
 }) {
@@ -70,7 +86,7 @@ export function StatusActions({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const available = transitions[currentStatus] ?? [];
+  const available = buildTransitions(appointmentType)[currentStatus] ?? [];
 
   async function handleStatusChange(newStatus: AppointmentStatus) {
     setLoading(newStatus);

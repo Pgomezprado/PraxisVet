@@ -12,7 +12,6 @@ import {
   getProfessionalDayAppointments,
   getMemberDayAvailability,
   getMemberWeeklySchedule,
-  getProfessionals,
 } from "@/app/[clinic]/appointments/actions";
 import type { AppointmentWithRelations } from "@/app/[clinic]/appointments/actions";
 import type { MemberRole } from "@/types";
@@ -43,6 +42,10 @@ type Professional = {
   last_name: string | null;
   specialty: string | null;
   role: MemberRole;
+  // Capabilities EXTRA (no incluye las cubiertas por su rol base). Sirven
+  // para que un vet con can_groom aparezca al elegir cita de peluquería sin
+  // esperar otra round-trip al servidor.
+  capabilities?: string[];
 };
 
 type ServiceOption = {
@@ -140,35 +143,20 @@ export function AppointmentForm({
   const watchedStartTime = watch("start_time");
   const watchedEndTime = watch("end_time");
 
-  // Lista de profesionales filtrada por tipo de cita. Inicialmente filtra por
-  // rol base (fallback sincrónico). En cada cambio de tipo, refresca desde el
-  // servidor que respeta también las capabilities explícitas (un vet con
-  // can_groom debe aparecer al elegir grooming).
-  const [capabilityProfessionals, setCapabilityProfessionals] = useState<
-    Professional[] | null
-  >(null);
-
+  // Lista de profesionales filtrada por tipo de cita. Resolvemos
+  // sincrónicamente combinando rol base + member_capabilities — eliminamos
+  // la carrera previa donde el vet con can_groom tardaba ~500ms en aparecer
+  // (o nunca aparecía si la refetch fallaba en silencio).
   const filteredProfessionals = useMemo(() => {
-    if (capabilityProfessionals) return capabilityProfessionals;
-    if (watchedType === "grooming") {
-      return professionals.filter((p) => p.role === "groomer" || p.role === "admin");
-    }
-    return professionals.filter((p) => p.role === "vet" || p.role === "admin");
-  }, [capabilityProfessionals, professionals, watchedType]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setCapabilityProfessionals(null);
-    getProfessionals(orgId, watchedType).then((res) => {
-      if (cancelled) return;
-      if (!res.error && res.data) {
-        setCapabilityProfessionals(res.data as Professional[]);
-      }
+    const requiredCap = watchedType === "grooming" ? "can_groom" : "can_vet";
+    const baseRoles = watchedType === "grooming"
+      ? new Set(["groomer", "admin"])
+      : new Set(["vet", "admin"]);
+    return professionals.filter((p) => {
+      if (baseRoles.has(p.role)) return true;
+      return (p.capabilities ?? []).includes(requiredCap);
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [orgId, watchedType]);
+  }, [professionals, watchedType]);
 
   const filteredServices = useMemo(() => {
     if (watchedType === "grooming") {

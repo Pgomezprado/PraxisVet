@@ -12,10 +12,28 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getTeamMembers } from "./actions";
+import { getTeamMembers, getOrgCapabilitiesMap } from "./actions";
 import { MemberStatusToggle } from "@/components/team/member-status-toggle";
 import { roleLabels } from "@/lib/validations/team-members";
-import type { MemberRole, OrganizationMember } from "@/types";
+import type { MemberCapability, MemberRole, OrganizationMember } from "@/types";
+
+// Mismo criterio que lib/auth/capabilities.ts: el rol base ya cubre su
+// capability "natural" — sólo mostramos badge cuando el miembro tiene una
+// capacidad EXTRA respecto a su rol.
+function extraCapabilityLabel(
+  role: MemberRole,
+  capabilities: MemberCapability[]
+): string | null {
+  if (role === "admin") return null;
+  const hasExtraVet =
+    capabilities.includes("can_vet") && role !== "vet";
+  const hasExtraGroom =
+    capabilities.includes("can_groom") && role !== "groomer";
+  if (hasExtraVet && hasExtraGroom) return "+ Consultas y peluquería";
+  if (hasExtraVet) return "+ Consultas médicas";
+  if (hasExtraGroom) return "+ Peluquería";
+  return null;
+}
 
 const roleIcons: Record<MemberRole, typeof Shield> = {
   admin: Shield,
@@ -50,8 +68,12 @@ export default async function TeamPage({
     notFound();
   }
 
-  const result = await getTeamMembers(org.id);
+  const [result, capsResult] = await Promise.all([
+    getTeamMembers(org.id),
+    getOrgCapabilitiesMap(org.id),
+  ]);
   const members = result.success ? result.data : [];
+  const capabilitiesMap = capsResult.success ? capsResult.data : {};
 
   const activeMembers = members.filter((m) => m.active);
   const inactiveMembers = members.filter((m) => !m.active);
@@ -103,12 +125,14 @@ export default async function TeamPage({
             title="Miembros activos"
             members={activeMembers}
             clinic={clinic}
+            capabilitiesMap={capabilitiesMap}
           />
           {inactiveMembers.length > 0 && (
             <MemberList
               title="Inactivos"
               members={inactiveMembers}
               clinic={clinic}
+              capabilitiesMap={capabilitiesMap}
               muted
             />
           )}
@@ -122,11 +146,13 @@ function MemberList({
   title,
   members,
   clinic,
+  capabilitiesMap,
   muted,
 }: {
   title: string;
   members: OrganizationMember[];
   clinic: string;
+  capabilitiesMap: Record<string, MemberCapability[]>;
   muted?: boolean;
 }) {
   return (
@@ -169,11 +195,25 @@ function MemberList({
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-2">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <Icon className="size-3" />
                       {roleLabels[member.role]}
                     </span>
+                    {(() => {
+                      const extra = extraCapabilityLabel(
+                        member.role,
+                        capabilitiesMap[member.id] ?? []
+                      );
+                      return extra ? (
+                        <Badge
+                          variant="secondary"
+                          className="h-5 gap-1 px-1.5 text-[10px] font-medium"
+                        >
+                          {extra}
+                        </Badge>
+                      ) : null;
+                    })()}
                     {member.specialty && (
                       <>
                         <span className="text-xs text-muted-foreground">·</span>

@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180" role="img" aria-label="PraxisVet">
+  <!-- Apple Touch Icon — fondo oscuro con esquinas redondeadas (iOS las aplica automáticamente) -->
   <rect width="180" height="180" fill="#132426"/>
   <circle cx="90" cy="90" r="72" fill="#03A64A"/>
+  <!-- Pata blanca centrada -->
   <ellipse cx="90" cy="108" rx="29" ry="22" fill="white"/>
   <ellipse cx="57" cy="81" rx="16" ry="19" fill="white"/>
   <ellipse cx="90" cy="68" rx="16" ry="19" fill="white"/>

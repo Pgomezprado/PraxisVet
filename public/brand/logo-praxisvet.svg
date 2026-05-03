@@ -1,12 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="140 145 680 200">
-  <rect x="140" y="145" width="680" height="200" fill="#132426"/>
-  <polygon points="170,210 230,175 290,210 290,280 230,315 170,280"
-    fill="none" stroke="#05F26C" stroke-width="12" stroke-linejoin="round"/>
-  <ellipse cx="230" cy="258" rx="22" ry="18" fill="#05F26C"/>
-  <ellipse cx="203" cy="232" rx="11" ry="13" fill="#05F26C"/>
-  <ellipse cx="230" cy="222" rx="11" ry="13" fill="#05F26C"/>
-  <ellipse cx="257" cy="232" rx="11" ry="13" fill="#05F26C"/>
-  <text x="315" y="272"
-    font-family="'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif"
-    font-size="88" font-weight="600" fill="#05F26C" letter-spacing="-1">PraxisVet</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80" role="img" aria-label="PraxisVet">
+  <circle cx="40" cy="40" r="36" fill="#132426"/>
+  <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+  <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+  <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+  <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+  <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="#132426" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
 </svg>

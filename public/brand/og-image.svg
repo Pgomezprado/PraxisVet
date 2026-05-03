@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="PraxisVet — Software Veterinario">
+  <!-- Open Graph Image 1200x630 -->
+  <rect width="1200" height="630" fill="#132426"/>
+
+  <!-- Acento verde lateral -->
+  <rect x="0" y="0" width="8" height="630" fill="#05F26C"/>
+
+  <!-- Círculo verde grande decorativo fondo -->
+  <circle cx="1050" cy="315" r="340" fill="#03A64A" fill-opacity="0.08"/>
+  <circle cx="1050" cy="315" r="220" fill="#03A64A" fill-opacity="0.08"/>
+
+  <!-- Ícono pata centrado-izquierda -->
+  <circle cx="200" cy="290" r="120" fill="#03A64A"/>
+  <ellipse cx="200" cy="315" rx="46" ry="36" fill="white"/>
+  <ellipse cx="155" cy="268" rx="25" ry="30" fill="white"/>
+  <ellipse cx="200" cy="252" rx="25" ry="30" fill="white"/>
+  <ellipse cx="245" cy="268" rx="25" ry="30" fill="white"/>
+
+  <!-- Wordmark grande -->
+  <text x="360" y="320" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="120" font-weight="700" fill="white" letter-spacing="-2">Praxis<tspan fill="#05F26C">Vet</tspan></text>
+
+  <!-- Tagline -->
+  <text x="362" y="378" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="28" font-weight="400" fill="white" fill-opacity="0.6" letter-spacing="4">SOFTWARE VETERINARIO · CHILE</text>
+
+  <!-- URL -->
+  <text x="362" y="460" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="400" fill="#05F26C" fill-opacity="0.8">praxisvet.cl</text>
+</svg>

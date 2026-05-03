@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80" role="img" aria-label="PraxisVet">
+  <!-- Círculo oscuro -->
   <circle cx="40" cy="40" r="36" fill="#132426"/>
+  <!-- Pata blanca -->
   <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
   <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
   <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
   <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
-  <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="white" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
+  <!-- Wordmark (fondo transparente) -->
+  <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="#132426" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
 </svg>

@@ -1,7 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80" role="img" aria-label="PraxisVet">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <!-- Círculo oscuro -->
   <circle cx="40" cy="40" r="40" fill="#132426"/>
+
+  <!-- Pata blanca: almohadilla central -->
   <ellipse cx="40" cy="49" rx="13" ry="10" fill="white"/>
+  <!-- Dedito izquierdo -->
   <ellipse cx="25" cy="36" rx="7" ry="8.5" fill="white"/>
+  <!-- Dedito central -->
   <ellipse cx="40" cy="30" rx="7" ry="8.5" fill="white"/>
+  <!-- Dedito derecho -->
   <ellipse cx="55" cy="36" rx="7" ry="8.5" fill="white"/>
 </svg>

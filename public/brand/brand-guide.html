@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PraxisVet — Brand Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:     #132426;
+    --green:    #03A64A;
+    --electric: #05F26C;
+    --white:    #FFFFFF;
+    --gray-50:  #F7F9F7;
+    --gray-100: #E8EDE8;
+    --gray-400: #8A9A8A;
+    --gray-700: #3A4A3A;
+    --radius:   12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--gray-50);
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--dark);
+    padding: 64px 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-logo { display: flex; align-items: center; gap: 20px; }
+  .header-text h1 { font-size: 14px; font-weight: 500; color: var(--electric); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+  .header-text p { font-size: 13px; color: rgba(255,255,255,0.4); }
+  .header-meta { text-align: right; }
+  .header-meta span { display: block; font-size: 12px; color: rgba(255,255,255,0.3); }
+  .header-meta strong { color: rgba(255,255,255,0.6); font-weight: 500; }
+
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
+  .section { padding: 72px 0 0; }
+  .section:last-child { padding-bottom: 80px; }
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--green); margin-bottom: 8px;
+  }
+  .section-title { font-size: 28px; font-weight: 700; color: var(--dark); margin-bottom: 32px; }
+  .divider { height: 1px; background: var(--gray-100); margin: 72px 0 0; }
+
+  /* CARDS */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-100);
+    overflow: hidden;
+  }
+  .card-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gray-400); padding: 16px 24px 12px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .card-body { padding: 32px 24px; }
+  .card-desc { font-size: 13px; color: var(--gray-400); padding: 12px 24px 16px; }
+
+  /* LOGO GRID */
+  .logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .logo-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .preview-light { background: white; display: flex; align-items: center; justify-content: center; padding: 40px 32px; min-height: 140px; }
+  .preview-dark  { background: var(--dark); display: flex; align-items: center; justify-content: center; padding: 40px 32px; min-height: 140px; }
+  .preview-green { background: var(--green); display: flex; align-items: center; justify-content: center; padding: 40px 32px; min-height: 140px; }
+  .preview-gray  { background: var(--gray-50); display: flex; align-items: center; justify-content: center; padding: 40px 32px; min-height: 140px; border: 1px solid var(--gray-100); }
+
+  /* ICON GRID */
+  .icon-row { display: flex; gap: 24px; align-items: flex-start; }
+  .icon-item { text-align: center; }
+  .icon-item span { display: block; font-size: 11px; color: var(--gray-400); margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .icon-preview { display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); overflow: hidden; }
+
+  /* COLORS */
+  .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .color-swatch { border-radius: var(--radius); overflow: hidden; }
+  .swatch-block { height: 100px; }
+  .swatch-info { padding: 14px 16px; background: white; border: 1px solid var(--gray-100); border-top: none; border-radius: 0 0 var(--radius) var(--radius); }
+  .swatch-name { font-size: 13px; font-weight: 600; color: var(--dark); margin-bottom: 2px; }
+  .swatch-hex  { font-size: 12px; color: var(--gray-400); font-family: 'SF Mono', 'Fira Code', monospace; margin-bottom: 4px; }
+  .swatch-use  { font-size: 11px; color: var(--gray-400); }
+
+  /* TYPOGRAPHY */
+  .type-row { display: flex; flex-direction: column; gap: 24px; }
+  .type-sample { padding: 24px; background: var(--gray-50); border-radius: var(--radius-sm); border: 1px solid var(--gray-100); }
+  .type-meta { font-size: 11px; color: var(--gray-400); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+
+  /* DO / DONT */
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .do-card   { border: 1.5px solid #03A64A22; background: #03A64A08; border-radius: var(--radius); padding: 24px; }
+  .dont-card { border: 1.5px solid #E2484822; background: #E2484808; border-radius: var(--radius); padding: 24px; }
+  .rule-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; padding: 3px 10px; border-radius: 100px; margin-bottom: 16px;
+  }
+  .badge-do   { background: #03A64A22; color: #03A64A; }
+  .badge-dont { background: #E2484822; color: #E24848; }
+  .rule-item { font-size: 13px; color: var(--gray-700); padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+  .rule-item:last-child { border-bottom: none; }
+  .rule-item::before { margin-right: 8px; }
+  .do-card   .rule-item::before { content: "✓"; color: #03A64A; }
+  .dont-card .rule-item::before { content: "✗"; color: #E24848; }
+
+  /* USAGE EXAMPLES */
+  .usage-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .usage-card { border-radius: var(--radius); overflow: hidden; }
+  .usage-preview { height: 140px; display: flex; align-items: center; justify-content: center; }
+  .usage-label { font-size: 12px; color: var(--gray-400); padding: 12px 16px; background: white; border: 1px solid var(--gray-100); border-top: none; }
+
+  /* CLEARSPACE */
+  .clearspace-demo {
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px; background: var(--gray-50); border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-100);
+  }
+  .clearspace-inner {
+    position: relative; display: inline-flex;
+    outline: 1.5px dashed var(--green); outline-offset: 24px;
+  }
+  .clearspace-label {
+    font-size: 11px; color: var(--green); margin-top: 40px; text-align: center; letter-spacing: 1px;
+  }
+
+  /* FOOTER */
+  .footer {
+    background: var(--dark); padding: 40px 80px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 80px;
+  }
+  .footer p { font-size: 12px; color: rgba(255,255,255,0.3); }
+  .footer strong { color: rgba(255,255,255,0.5); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="56" height="56">
+      <circle cx="40" cy="40" r="40" fill="#03A64A"/>
+      <ellipse cx="40" cy="49" rx="13" ry="10" fill="white"/>
+      <ellipse cx="25" cy="36" rx="7" ry="8.5" fill="white"/>
+      <ellipse cx="40" cy="30" rx="7" ry="8.5" fill="white"/>
+      <ellipse cx="55" cy="36" rx="7" ry="8.5" fill="white"/>
+    </svg>
+    <div class="header-text">
+      <h1>Brand Guide</h1>
+      <p>PraxisVet · PRAXIS SpA · praxisvet.cl</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span>Versión <strong>2.0</strong></span>
+    <span>Mayo <strong>2026</strong></span>
+    <span>Uso <strong>interno</strong></span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 1. LOGOTIPO -->
+  <div class="section">
+    <p class="section-label">01</p>
+    <h2 class="section-title">Logotipo</h2>
+
+    <div class="logo-grid">
+      <div class="card">
+        <div class="card-label">Versión principal — fondo claro</div>
+        <div class="preview-light" style="min-height:160px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="260">
+            <circle cx="40" cy="40" r="36" fill="#132426"/>
+            <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+            <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+            <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="#132426" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
+          </svg>
+        </div>
+        <div class="card-desc">Uso principal. Fondo blanco o gris muy claro.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Versión principal — fondo oscuro</div>
+        <div class="preview-dark" style="min-height:160px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="260">
+            <circle cx="40" cy="40" r="36" fill="#03A64A"/>
+            <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+            <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+            <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="white" letter-spacing="-0.5">Praxis<tspan fill="#05F26C">Vet</tspan></text>
+          </svg>
+        </div>
+        <div class="card-desc">Uso sobre fondos oscuros (#132426 o similares).</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Versión blanca — fondos de color</div>
+        <div class="preview-green" style="min-height:160px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="260">
+            <circle cx="40" cy="40" r="36" fill="white" fill-opacity="0.2"/>
+            <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+            <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+            <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter','Helvetica Neue',Arial,sans-serif" font-size="38" font-weight="700" fill="white" letter-spacing="-0.5">PraxisVet</text>
+          </svg>
+        </div>
+        <div class="card-desc">Uso sobre fondo verde o fotográfico.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Solo ícono — app, favicon, badge</div>
+        <div class="preview-gray" style="min-height:160px; gap: 24px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="72" height="72">
+            <circle cx="40" cy="40" r="40" fill="#132426"/>
+            <ellipse cx="40" cy="49" rx="13" ry="10" fill="white"/>
+            <ellipse cx="25" cy="36" rx="7" ry="8.5" fill="white"/>
+            <ellipse cx="40" cy="30" rx="7" ry="8.5" fill="white"/>
+            <ellipse cx="55" cy="36" rx="7" ry="8.5" fill="white"/>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="48" height="48">
+            <circle cx="40" cy="40" r="40" fill="#03A64A"/>
+            <ellipse cx="40" cy="49" rx="13" ry="10" fill="white"/>
+            <ellipse cx="25" cy="36" rx="7" ry="8.5" fill="white"/>
+            <ellipse cx="40" cy="30" rx="7" ry="8.5" fill="white"/>
+            <ellipse cx="55" cy="36" rx="7" ry="8.5" fill="white"/>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+            <circle cx="16" cy="16" r="16" fill="#132426"/>
+            <ellipse cx="16" cy="20" rx="5" ry="4" fill="white"/>
+            <ellipse cx="10" cy="14" rx="3" ry="3.5" fill="white"/>
+            <ellipse cx="16" cy="12" rx="3" ry="3.5" fill="white"/>
+            <ellipse cx="22" cy="14" rx="3" ry="3.5" fill="white"/>
+          </svg>
+        </div>
+        <div class="card-desc">Tamaños: 80px · 48px · 32px (favicon). Siempre con pata blanca.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 2. PALETA DE COLORES -->
+  <div class="section">
+    <p class="section-label">02</p>
+    <h2 class="section-title">Paleta de colores</h2>
+
+    <div class="color-grid">
+      <div class="color-swatch">
+        <div class="swatch-block" style="background:#132426;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Dark Teal</div>
+          <div class="swatch-hex">#132426</div>
+          <div class="swatch-use">Fondo principal · texto · ícono oscuro</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background:#03A64A;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Praxis Green</div>
+          <div class="swatch-hex">#03A64A</div>
+          <div class="swatch-use">Color primario · "Vet" · botones · links</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background:#05F26C;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Electric Green</div>
+          <div class="swatch-hex">#05F26C</div>
+          <div class="swatch-use">Acento eléctrico · "Vet" en dark · highlights</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background:#FFFFFF; border: 1px solid #E8EDE8;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">White</div>
+          <div class="swatch-hex">#FFFFFF</div>
+          <div class="swatch-use">Pata del ícono · texto sobre oscuro · fondos</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+      <div class="color-swatch">
+        <div class="swatch-block" style="background:#0A6B30;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Deep Green</div>
+          <div class="swatch-hex">#0A6B30</div>
+          <div class="swatch-use">Hover de botones · variante oscura</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background:#E8F5ED;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Mint</div>
+          <div class="swatch-hex">#E8F5ED</div>
+          <div class="swatch-use">Fondos de success · badges verdes</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background:#F7F9F7;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Off White</div>
+          <div class="swatch-hex">#F7F9F7</div>
+          <div class="swatch-use">Fondo de página · cards secundarias</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 3. TIPOGRAFÍA -->
+  <div class="section">
+    <p class="section-label">03</p>
+    <h2 class="section-title">Tipografía</h2>
+
+    <div class="card">
+      <div class="card-label">Fuente principal — Plus Jakarta Sans</div>
+      <div class="card-body">
+        <div class="type-row">
+          <div class="type-sample">
+            <p class="type-meta">Display · 48px · 700 Bold</p>
+            <p style="font-size:48px; font-weight:700; color:#132426; letter-spacing:-1px; line-height:1.1;">Salud animal inteligente</p>
+          </div>
+          <div class="type-sample">
+            <p class="type-meta">H1 · 32px · 700 Bold</p>
+            <p style="font-size:32px; font-weight:700; color:#132426; letter-spacing:-0.5px;">Gestión veterinaria moderna</p>
+          </div>
+          <div class="type-sample">
+            <p class="type-meta">H2 · 24px · 600 SemiBold</p>
+            <p style="font-size:24px; font-weight:600; color:#132426;">Citas · Fichas clínicas · Facturación</p>
+          </div>
+          <div class="type-sample">
+            <p class="type-meta">Body · 16px · 400 Regular</p>
+            <p style="font-size:16px; font-weight:400; color:#3A4A3A; line-height:1.7;">PraxisVet es el software de gestión veterinaria diseñado para clínicas chilenas. Administra citas, fichas clínicas, peluquería y facturación en un solo lugar.</p>
+          </div>
+          <div class="type-sample">
+            <p class="type-meta">Label · 11px · 600 · Uppercase · tracking 3px</p>
+            <p style="font-size:11px; font-weight:600; color:#03A64A; letter-spacing:3px; text-transform:uppercase;">Software Veterinario · Chile</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; padding:20px 24px; background:white; border-radius:var(--radius); border:1px solid var(--gray-100);">
+      <p style="font-size:13px; color:var(--gray-400);">Fallback stack: <code style="font-family:monospace; font-size:12px; background:var(--gray-50); padding:2px 6px; border-radius:4px;">'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', Arial, sans-serif</code></p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 4. ESPACIO DE RESPIRO -->
+  <div class="section">
+    <p class="section-label">04</p>
+    <h2 class="section-title">Espacio de respiro</h2>
+
+    <div class="card">
+      <div class="card-label">Clearspace mínimo — equivalente a la altura de la "P"</div>
+      <div class="card-body">
+        <div class="clearspace-demo">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+            <div class="clearspace-inner">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="220">
+                <circle cx="40" cy="40" r="36" fill="#132426"/>
+                <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+                <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+                <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+                <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+                <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter',Arial,sans-serif" font-size="38" font-weight="700" fill="#132426" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
+              </svg>
+            </div>
+            <p style="font-size:12px; color:var(--green); letter-spacing:1px; text-transform:uppercase;">← espacio mínimo 24px en todos los lados →</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 5. REGLAS DE USO -->
+  <div class="section">
+    <p class="section-label">05</p>
+    <h2 class="section-title">Reglas de uso</h2>
+
+    <div class="rules-grid">
+      <div class="do-card">
+        <span class="rule-badge badge-do">Correcto</span>
+        <div class="rule-item">Usar el logo sobre fondos blancos o muy claros</div>
+        <div class="rule-item">Usar la versión dark sobre fondos oscuros (#132426)</div>
+        <div class="rule-item">Usar la versión blanca sobre fondos de color sólido</div>
+        <div class="rule-item">Respetar el clearspace mínimo de 24px</div>
+        <div class="rule-item">Usar el ícono solo cuando el espacio es reducido (≤ 40px)</div>
+        <div class="rule-item">Mantener la proporción original del logo</div>
+      </div>
+      <div class="dont-card">
+        <span class="rule-badge badge-dont">Incorrecto</span>
+        <div class="rule-item">Cambiar los colores de la marca</div>
+        <div class="rule-item">Estirar o distorsionar el logo</div>
+        <div class="rule-item">Aplicar sombras, brillos o efectos</div>
+        <div class="rule-item">Usar el logo sobre fondos con bajo contraste</div>
+        <div class="rule-item">Separar el ícono del wordmark arbitrariamente</div>
+        <div class="rule-item">Usar tipografía distinta a Plus Jakarta Sans</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 6. APLICACIONES -->
+  <div class="section">
+    <p class="section-label">06</p>
+    <h2 class="section-title">Aplicaciones</h2>
+
+    <div class="usage-grid">
+      <div class="usage-card">
+        <div class="usage-preview" style="background:#132426;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="200">
+            <circle cx="40" cy="40" r="36" fill="#03A64A"/>
+            <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+            <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+            <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter',Arial,sans-serif" font-size="38" font-weight="700" fill="white" letter-spacing="-0.5">Praxis<tspan fill="#05F26C">Vet</tspan></text>
+          </svg>
+        </div>
+        <div class="usage-label">Navbar / Sidebar de la app</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-preview" style="background:white; border:1px solid var(--gray-100);">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="200">
+            <circle cx="40" cy="40" r="36" fill="#132426"/>
+            <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+            <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+            <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter',Arial,sans-serif" font-size="38" font-weight="700" fill="#132426" letter-spacing="-0.5">Praxis<tspan fill="#03A64A">Vet</tspan></text>
+          </svg>
+        </div>
+        <div class="usage-label">Pantalla de login / Email</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-preview" style="background:var(--gray-50); border:1px solid var(--gray-100); gap:16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="44" height="44">
+            <circle cx="40" cy="40" r="40" fill="#132426"/>
+            <ellipse cx="40" cy="49" rx="13" ry="10" fill="white"/>
+            <ellipse cx="25" cy="36" rx="7" ry="8.5" fill="white"/>
+            <ellipse cx="40" cy="30" rx="7" ry="8.5" fill="white"/>
+            <ellipse cx="55" cy="36" rx="7" ry="8.5" fill="white"/>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+            <circle cx="16" cy="16" r="16" fill="#132426"/>
+            <ellipse cx="16" cy="20" rx="5" ry="4" fill="white"/>
+            <ellipse cx="10" cy="14" rx="3" ry="3.5" fill="white"/>
+            <ellipse cx="16" cy="12" rx="3" ry="3.5" fill="white"/>
+            <ellipse cx="22" cy="14" rx="3" ry="3.5" fill="white"/>
+          </svg>
+        </div>
+        <div class="usage-label">App icon · Favicon · Tab del navegador</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-preview" style="background:#132426;">
+          <div style="text-align:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="52" height="52" style="display:block;margin:0 auto 8px;">
+              <circle cx="40" cy="40" r="40" fill="#03A64A"/>
+              <ellipse cx="40" cy="49" rx="13" ry="10" fill="white"/>
+              <ellipse cx="25" cy="36" rx="7" ry="8.5" fill="white"/>
+              <ellipse cx="40" cy="30" rx="7" ry="8.5" fill="white"/>
+              <ellipse cx="55" cy="36" rx="7" ry="8.5" fill="white"/>
+            </svg>
+            <p style="color:white;font-size:13px;font-weight:700;">PraxisVet</p>
+            <p style="color:rgba(255,255,255,0.4);font-size:10px;">SOFTWARE VETERINARIO</p>
+          </div>
+        </div>
+        <div class="usage-label">PDF · Encabezado de documentos</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-preview" style="background:white; border:1px solid var(--gray-100); padding:16px;">
+          <div style="background:#132426; border-radius:8px; padding:12px 20px; display:flex; align-items:center; gap:10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="28" height="28">
+              <circle cx="40" cy="40" r="40" fill="#03A64A"/>
+              <ellipse cx="40" cy="49" rx="13" ry="10" fill="white"/>
+              <ellipse cx="25" cy="36" rx="7" ry="8.5" fill="white"/>
+              <ellipse cx="40" cy="30" rx="7" ry="8.5" fill="white"/>
+              <ellipse cx="55" cy="36" rx="7" ry="8.5" fill="white"/>
+            </svg>
+            <span style="color:white;font-size:14px;font-weight:700;">Praxis<span style="color:#05F26C;">Vet</span></span>
+          </div>
+        </div>
+        <div class="usage-label">Portal del Tutor · Móvil</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-preview" style="background:#03A64A;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="200">
+            <circle cx="40" cy="40" r="36" fill="white" fill-opacity="0.2"/>
+            <ellipse cx="40" cy="48" rx="11" ry="9" fill="white"/>
+            <ellipse cx="27" cy="36" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="40" cy="31" rx="6" ry="7.5" fill="white"/>
+            <ellipse cx="53" cy="36" rx="6" ry="7.5" fill="white"/>
+            <text x="90" y="48" font-family="'Plus Jakarta Sans','Inter',Arial,sans-serif" font-size="38" font-weight="700" fill="white" letter-spacing="-0.5">PraxisVet</text>
+          </svg>
+        </div>
+        <div class="usage-label">Marketing · Banners · Redes sociales</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>© 2026 <strong>PRAXIS SpA</strong> · RUT 78.383.804-4 · praxisvet.cl</p>
+  <p>Brand Guide v2.0 · Mayo 2026 · <strong>Confidencial</strong></p>
+</div>
+
+</body>
+</html>

@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
+  allowedDevOrigins: ["192.168.1.157", "192.168.0.0/16", "10.0.0.0/8"],
   images: {
     remotePatterns: [
       {
@@ -32,6 +33,15 @@ const nextConfig: NextConfig = {
           {
             key: "X-Frame-Options",
             value: "SAMEORIGIN",
+          },
+        ],
+      },
+      {
+        source: "/c/:path*",
+        headers: [
+          {
+            key: "X-Robots-Tag",
+            value: "noindex, nofollow, noarchive, nosnippet",
           },
         ],
       },

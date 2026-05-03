@@ -172,3 +172,62 @@
 .animation-delay-800 { animation-delay: 800ms; }
 .animation-delay-1000 { animation-delay: 1000ms; }
 .animation-delay-1200 { animation-delay: 1200ms; }
+
+/* =============================================================
+   Print styles para Cartola Sanitaria pública (/c/[token]).
+   El tutor o el hotel puede "Guardar como PDF" desde el navegador.
+   ============================================================= */
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 14mm;
+  }
+  /* Ocultar todo lo que no sea la cartola */
+  body * {
+    visibility: hidden !important;
+  }
+  .health-card,
+  .health-card * {
+    visibility: visible !important;
+  }
+  .health-card {
+    position: absolute !important;
+    inset: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    color: #0a0f0c !important;
+    background: #ffffff !important;
+  }
+  .health-card__actions,
+  [data-slot="toaster"],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+  /* Forzar fondos claros en impresión incluso en dark mode */
+  .health-card__pet,
+  .health-card__section,
+  .health-card section[class*="rounded-"] {
+    background: #ffffff !important;
+    border-color: #e2e8e6 !important;
+    box-shadow: none !important;
+  }
+  .health-card * {
+    color: #0a0f0c !important;
+    border-color: #e2e8e6 !important;
+  }
+  /* Conservar color en chips de estado para que se entiendan en papel */
+  .health-card .text-emerald-500 { color: #059669 !important; }
+  .health-card .text-amber-500   { color: #d97706 !important; }
+  .health-card .text-red-500     { color: #dc2626 !important; }
+  .health-card .bg-emerald-500\/15 { background: #d1fae5 !important; }
+  .health-card .bg-amber-500\/15   { background: #fef3c7 !important; }
+  .health-card .bg-red-500\/15     { background: #fee2e2 !important; }
+  /* Evitar partir bloques entre páginas */
+  .health-card__section,
+  .health-card__pet {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

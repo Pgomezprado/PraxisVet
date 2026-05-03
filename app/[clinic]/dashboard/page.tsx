@@ -14,7 +14,7 @@ import {
   getWaitingRoom,
   getWeekAgenda,
 } from "./queries";
-import type { Organization, OrganizationMember } from "@/types";
+import type { MemberCapability, Organization, OrganizationMember } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -87,16 +87,33 @@ export default async function DashboardPage({
     );
   }
 
+  // Capacidades extras (member_capabilities). Si una vet tiene can_groom o un
+  // groomer tiene can_vet, su dashboard debe mostrar AMBOS tipos de cita —
+  // no solo las de su rol base. Sin esto, sus citas de la otra disciplina se
+  // vuelven invisibles desde su panel.
+  const { data: caps } = await supabase
+    .from("member_capabilities")
+    .select("capability")
+    .eq("member_id", member.id);
+  const capabilities = (caps ?? []).map(
+    (r) => r.capability as MemberCapability
+  );
+
   if (member.role === "vet") {
+    // Una vet con can_groom atiende ambos tipos → omitimos el filtro de tipo
+    // para que su dashboard incluya también sus citas de peluquería.
+    const typeFilter = capabilities.includes("can_groom")
+      ? undefined
+      : ("medical" as const);
     const [stats, agenda, nextAppointment] = await Promise.all([
-      getMyDayStats(supabase, org.id, member.id, { type: "medical" }),
+      getMyDayStats(supabase, org.id, member.id, { type: typeFilter }),
       getWeekAgenda(supabase, org.id, {
         assignedTo: member.id,
-        type: "medical",
+        type: typeFilter,
       }),
       getNextAppointment(supabase, org.id, {
         assignedTo: member.id,
-        type: "medical",
+        type: typeFilter,
       }),
     ]);
 
@@ -136,15 +153,20 @@ export default async function DashboardPage({
   }
 
   if (member.role === "groomer") {
+    // Simétrico al vet: un groomer con can_vet también atiende consultas, así
+    // que dejamos pasar ambos tipos cuando aplica.
+    const typeFilter = capabilities.includes("can_vet")
+      ? undefined
+      : ("grooming" as const);
     const [stats, agenda, nextAppointment] = await Promise.all([
-      getMyDayStats(supabase, org.id, member.id, { type: "grooming" }),
+      getMyDayStats(supabase, org.id, member.id, { type: typeFilter }),
       getDayAgenda(supabase, org.id, {
         assignedTo: member.id,
-        type: "grooming",
+        type: typeFilter,
       }),
       getNextAppointment(supabase, org.id, {
         assignedTo: member.id,
-        type: "grooming",
+        type: typeFilter,
       }),
     ]);
 

@@ -660,19 +660,46 @@ export async function getProfessionals(
       .map(({ member_capabilities: _omit, ...rest }) => rest),
   ];
 
+  // Cargamos las capabilities explícitas de TODOS los miembros incluidos —
+  // así el cliente puede filtrar sincrónicamente al cambiar el tipo de cita
+  // sin esperar otra round-trip ni mostrar listas estaladas.
+  const { data: caps, error: capsError } = await supabase
+    .from("member_capabilities")
+    .select("member_id, capability")
+    .eq("org_id", orgId)
+    .in("member_id", merged.map((m) => m.id));
+
+  if (capsError) {
+    return { data: null, error: capsError.message };
+  }
+
+  const capsByMember = new Map<string, string[]>();
+  for (const row of caps ?? []) {
+    const id = row.member_id as string;
+    const cap = row.capability as string;
+    const list = capsByMember.get(id) ?? [];
+    list.push(cap);
+    capsByMember.set(id, list);
+  }
+
+  const mergedWithCaps = merged.map((m) => ({
+    ...m,
+    capabilities: capsByMember.get(m.id) ?? [],
+  }));
+
   if (!appointmentType) {
-    return { data: merged, error: null };
+    return { data: mergedWithCaps, error: null };
   }
 
   // Filtrar por capability específica del tipo de cita.
   const allowedIds = await filterMembersByCapability(
     supabase,
-    merged.map((m) => m.id),
+    mergedWithCaps.map((m) => m.id),
     capabilityForAppointmentType(appointmentType)
   );
   const allowedSet = new Set(allowedIds);
   return {
-    data: merged.filter((m) => allowedSet.has(m.id)),
+    data: mergedWithCaps.filter((m) => allowedSet.has(m.id)),
     error: null,
   };
 }

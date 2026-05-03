@@ -263,6 +263,33 @@ export async function getMemberCapabilities(
   };
 }
 
+// Devuelve un mapa { memberId -> capabilities[] } para todos los miembros de
+// la org. Usado por el listado de equipo y el form de citas para evitar N+1
+// queries y para mostrar el doble rol de un solo viaje.
+export async function getOrgCapabilitiesMap(
+  orgId: string
+): Promise<ActionResult<Record<string, MemberCapability[]>>> {
+  const { supabase } = await getAuthContext();
+
+  const { data, error } = await supabase
+    .from("member_capabilities")
+    .select("member_id, capability")
+    .eq("org_id", orgId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  const map: Record<string, MemberCapability[]> = {};
+  for (const row of data ?? []) {
+    const memberId = row.member_id as string;
+    const cap = row.capability as MemberCapability;
+    if (!map[memberId]) map[memberId] = [];
+    map[memberId].push(cap);
+  }
+  return { success: true, data: map };
+}
+
 export async function updateMemberCapabilities(
   memberId: string,
   clinicSlug: string,

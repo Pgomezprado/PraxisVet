@@ -24,7 +24,7 @@ export default async function PetRecordsPage({
     getRecords(petId),
     getCurrentMember(clinic),
   ]);
-  const showReminders = !!member && canViewClinical(member.role);
+  const showReminders = !!member && canViewClinical(member);
 
   if (petResult.error || !petResult.data) {
     return (

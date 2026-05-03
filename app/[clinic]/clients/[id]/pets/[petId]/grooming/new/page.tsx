@@ -24,12 +24,12 @@ export default async function NewGroomingRecordPage({
   const { appointment: appointmentId } = await searchParams;
 
   const member = await getCurrentMember(clinic);
-  if (!member || !canCreateGroomingHistorical(member.role)) {
+  if (!member || !canCreateGroomingHistorical(member)) {
     notFound();
   }
   // El recepcionista solo puede crear el registro; no ve el listado ni el
   // detalle. Tras guardar lo regresamos a la ficha del cliente.
-  const isHistoricalOnly = !canViewGrooming(member.role);
+  const isHistoricalOnly = !canViewGrooming(member);
 
   const supabase = await createClient();
   const {

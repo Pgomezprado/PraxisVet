@@ -15,7 +15,7 @@ export default async function NewDewormingPage({
   const { clinic, id, petId } = await params;
 
   const member = await getCurrentMember(clinic);
-  if (!member || !canViewClinical(member.role)) {
+  if (!member || !canViewClinical(member)) {
     notFound();
   }
 

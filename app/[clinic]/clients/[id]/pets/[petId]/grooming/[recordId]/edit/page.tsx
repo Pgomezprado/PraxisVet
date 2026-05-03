@@ -19,7 +19,7 @@ export default async function EditGroomingRecordPage({
   const { clinic, id, petId, recordId } = await params;
 
   const member = await getCurrentMember(clinic);
-  if (!member || !canViewGrooming(member.role)) {
+  if (!member || !canViewGrooming(member)) {
     notFound();
   }
 

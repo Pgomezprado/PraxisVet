@@ -34,7 +34,7 @@ export default async function GroomingPage({
   const { clinic, id, petId } = await params;
 
   const member = await getCurrentMember(clinic);
-  if (!member || !canViewGrooming(member.role)) {
+  if (!member || !canViewGrooming(member)) {
     notFound();
   }
 

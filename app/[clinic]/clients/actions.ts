@@ -270,6 +270,7 @@ export async function createTutorWithPet(
       birthdate: parsed.data.pet_birthdate || null,
       microchip: parsed.data.pet_microchip || null,
       reproductive_status: parsed.data.pet_reproductive_status || null,
+      size: parsed.data.pet_size || null,
       notes: parsed.data.pet_notes || null,
       photo_url: parsed.data.pet_photo_url ?? null,
     })

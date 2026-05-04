@@ -11,6 +11,7 @@ import {
   SEX_OPTIONS,
   getReproductiveStatusOptions,
 } from "@/lib/validations/clients";
+import { SIZE_OPTIONS } from "@/lib/validations/services";
 import { getBreedSuggestions } from "@/lib/constants/breeds";
 import { useClinic } from "@/lib/context/clinic-context";
 import { createTutorWithPet } from "@/app/[clinic]/clients/actions";
@@ -64,6 +65,7 @@ export function NewTutorForm() {
       pet_birthdate: "",
       pet_microchip: "",
       pet_reproductive_status: "",
+      pet_size: "",
       pet_notes: "",
     },
   });
@@ -309,13 +311,29 @@ export function NewTutorForm() {
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="pet_microchip">Microchip (opcional)</Label>
-            <Input
-              id="pet_microchip"
-              placeholder="ej: 985112345678901"
-              {...register("pet_microchip")}
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="pet_size">Talla (opcional)</Label>
+              <Select id="pet_size" {...register("pet_size")}>
+                <option value="">Seleccionar talla</option>
+                {SIZE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Usado para tarifas de peluquería.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="pet_microchip">Microchip (opcional)</Label>
+              <Input
+                id="pet_microchip"
+                placeholder="ej: 985112345678901"
+                {...register("pet_microchip")}
+              />
+            </div>
           </div>
 
           <div>

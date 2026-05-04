@@ -177,6 +177,7 @@ export const newTutorWithPetSchema = clientSchema.extend({
     .enum(["intact", "sterilized"])
     .optional()
     .or(z.literal("")),
+  pet_size: z.enum(["xs", "s", "m", "l", "xl"]).optional().or(z.literal("")),
   pet_notes: z.string().optional().or(z.literal("")),
   pet_photo_url: z.string().url().nullable().optional(),
 });

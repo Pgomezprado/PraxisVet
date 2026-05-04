@@ -367,11 +367,16 @@ export default async function AppointmentDetailPage({
               <span className="text-sm text-muted-foreground">Duracion</span>
               <span className="text-sm font-medium">{appointment.service.duration_minutes} min</span>
             </div>
-            {appointment.service.price != null && (
+            {appointment.service.price != null && !isGrooming && (
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Precio</span>
                 <span className="text-sm font-medium">${appointment.service.price}</span>
               </div>
+            )}
+            {isGrooming && (
+              <p className="text-xs text-muted-foreground">
+                El precio se define al cierre del servicio según la lista vigente.
+              </p>
             )}
           </CardContent>
         </Card>

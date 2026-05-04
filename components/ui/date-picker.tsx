@@ -166,12 +166,15 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
       });
     }, []);
 
-    // Sincronizar el mes con la fecha seleccionada al abrir
+    // Sincronizar el mes con la fecha seleccionada al abrir.
+    // Dep: selectedTime (timestamp primitivo, estable) en vez de selectedDate
+    // (objeto Date nuevo en cada render) — si no, el effect re-corre en cada
+    // re-render del popover y pisa la navegación del usuario con ‹ › « ».
     useEffect(() => {
-      if (open && selectedDate) {
-        setMonth(selectedDate);
+      if (open && selectedTime) {
+        setMonth(new Date(selectedTime));
       }
-    }, [open, selectedDate]);
+    }, [open, selectedTime]);
 
     // Posicionar: primera pasada con estimación, segunda pasada con altura real
     // después de que el portal rendereó el popover en el DOM.

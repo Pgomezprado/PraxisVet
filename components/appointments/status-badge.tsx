@@ -60,3 +60,16 @@ export function StatusBadge({
 export function getStatusLabel(status: AppointmentStatus): string {
   return statusConfig[status]?.label ?? status;
 }
+
+// Estados terminales: la cita ya cerró su ciclo y no bloquea el horario.
+// Se atenúan visualmente en las vistas de agenda para que no compitan
+// con las citas activas (ver migración 20260504000001).
+const TERMINAL_STATUSES = new Set<AppointmentStatus>([
+  "completed",
+  "cancelled",
+  "no_show",
+]);
+
+export function isTerminalStatus(status: AppointmentStatus): boolean {
+  return TERMINAL_STATUSES.has(status);
+}

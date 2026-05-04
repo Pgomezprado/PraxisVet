@@ -19,6 +19,8 @@ import {
   Scissors,
 } from "lucide-react";
 import { formatTime } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
+import { isTerminalStatus } from "@/components/appointments/status-badge";
 import type { TodayAppointment } from "@/app/[clinic]/dashboard/queries";
 import type { AppointmentStatus } from "@/types/database";
 
@@ -146,11 +148,17 @@ export function WeekAgenda({
                         statusConfig.pending;
                       const TypeIcon =
                         apt.type === "grooming" ? Scissors : Stethoscope;
+                      const terminal = isTerminalStatus(
+                        apt.status as AppointmentStatus
+                      );
                       return (
                         <li key={apt.id}>
                           <Link
                             href={`/${clinicSlug}/appointments/${apt.id}`}
-                            className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/50"
+                            className={cn(
+                              "flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/50",
+                              terminal && "opacity-60"
+                            )}
                           >
                             <div className="flex min-w-0 flex-1 items-center gap-3">
                               <span className="min-w-18 text-sm font-semibold tabular-nums text-primary">

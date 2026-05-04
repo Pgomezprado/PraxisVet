@@ -396,9 +396,9 @@ export default async function TutorPetDetailPage({
                         )}
                       </div>
                     </div>
-                    {g.service?.price != null && (
+                    {g.price != null && (
                       <span className="text-sm font-medium tabular-nums">
-                        {formatCLP(g.service.price)}
+                        {formatCLP(g.price)}
                       </span>
                     )}
                   </li>

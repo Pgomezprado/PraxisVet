@@ -56,8 +56,9 @@ export type TutorGroomingRecord = {
   date: string;
   service_performed: string | null;
   observations: string | null;
+  price: number | null;
   groomer: { first_name: string | null; last_name: string | null } | null;
-  service: { name: string; price: number } | null;
+  service: { name: string } | null;
 };
 
 export async function getTutorPets(
@@ -186,9 +187,9 @@ export async function getPetGroomingRecords(
     .from("grooming_records")
     .select(
       `
-      id, date, service_performed, observations,
+      id, date, service_performed, observations, price,
       organization_members!grooming_records_groomer_id_fkey ( first_name, last_name ),
-      appointments ( services ( name, price ) )
+      appointments ( services ( name ) )
     `
     )
     .eq("pet_id", petId)
@@ -199,12 +200,13 @@ export async function getPetGroomingRecords(
     date: string;
     service_performed: string | null;
     observations: string | null;
+    price: number | null;
     organization_members: {
       first_name: string | null;
       last_name: string | null;
     } | null;
     appointments: {
-      services: { name: string; price: number } | null;
+      services: { name: string } | null;
     } | null;
   };
 
@@ -215,6 +217,7 @@ export async function getPetGroomingRecords(
       date: r.date,
       service_performed: r.service_performed,
       observations: r.observations,
+      price: r.price,
       groomer: r.organization_members,
       service: r.appointments?.services ?? null,
     };

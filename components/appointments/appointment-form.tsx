@@ -535,7 +535,9 @@ export function AppointmentForm({
                 {filteredServices.map((service) => (
                   <option key={service.id} value={service.id}>
                     {service.name}
-                    {service.price != null ? ` - ${formatCLP(service.price)}` : ""}
+                    {watchedType !== "grooming" && service.price != null
+                      ? ` - ${formatCLP(service.price)}`
+                      : ""}
                     {` (${service.duration_minutes} min)`}
                   </option>
                 ))}

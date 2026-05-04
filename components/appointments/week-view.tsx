@@ -15,7 +15,7 @@ import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { StatusBadge } from "@/components/appointments/status-badge";
+import { StatusBadge, isTerminalStatus } from "@/components/appointments/status-badge";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithRelations } from "@/app/[clinic]/appointments/actions";
 
@@ -136,7 +136,12 @@ export function WeekView({ appointments, clinicSlug, selectedDate }: WeekViewPro
                       key={apt.id}
                       href={`/${clinicSlug}/appointments/${apt.id}`}
                     >
-                      <Card className="p-2 transition-colors hover:bg-muted/50">
+                      <Card
+                        className={cn(
+                          "p-2 transition-colors hover:bg-muted/50",
+                          isTerminalStatus(apt.status) && "opacity-60"
+                        )}
+                      >
                         <p className="text-xs font-medium">
                           {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
                         </p>

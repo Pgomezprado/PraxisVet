@@ -470,6 +470,8 @@ export async function checkConflicts(
 ) {
   const supabase = await createClient();
 
+  // Citas 'completed' no se cuentan como conflicto: el slot ya se atendió
+  // y queda libre para reusarse (ver migración 20260504000001).
   let query = supabase
     .from("appointments")
     .select(SELECT_WITH_RELATIONS)
@@ -478,7 +480,7 @@ export async function checkConflicts(
     .eq("date", data.date)
     .lt("start_time", data.end_time)
     .gt("end_time", data.start_time)
-    .not("status", "in", '("cancelled","no_show")');
+    .not("status", "in", '("cancelled","no_show","completed")');
 
   if (data.exclude_id) {
     query = query.neq("id", data.exclude_id);
@@ -609,7 +611,10 @@ export async function getProfessionalDayAppointments(
     .eq("org_id", orgId)
     .eq("assigned_to", professionalId)
     .eq("date", date)
-    .not("status", "in", '("cancelled","no_show")')
+    // Excluimos 'completed' además de canceladas: el formulario muestra
+    // esta lista como "qué slots están tomados"; una cita ya atendida
+    // libera el horario y no debe sumar ruido visual.
+    .not("status", "in", '("cancelled","no_show","completed")')
     .order("start_time", { ascending: true });
 
   if (error) {

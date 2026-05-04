@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, User, PawPrint, Stethoscope, Loader2, Wallet } from "lucide-react";
 import { formatCLP } from "@/lib/utils/format";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatusBadge } from "@/components/appointments/status-badge";
+import { StatusBadge, isTerminalStatus } from "@/components/appointments/status-badge";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -108,8 +109,15 @@ export function AppointmentCard({
     router.refresh();
   }
 
+  const terminal = isTerminalStatus(appointment.status);
+
   return (
-    <Card className="transition-colors hover:bg-muted/50">
+    <Card
+      className={cn(
+        "transition-colors hover:bg-muted/50",
+        terminal && "opacity-60"
+      )}
+    >
       <CardContent className="flex items-start gap-4">
         <Link
           href={`/${clinicSlug}/appointments/${appointment.id}`}

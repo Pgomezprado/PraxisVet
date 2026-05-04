@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CalendarDays, Clock, Stethoscope, Scissors, FilePlus2 } from "lucide-react";
 import { formatTime } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
+import { isTerminalStatus } from "@/components/appointments/status-badge";
 import type { TodayAppointment } from "@/app/[clinic]/dashboard/queries";
 import type { AppointmentStatus } from "@/types/database";
 
@@ -102,9 +104,15 @@ export function DayAgenda({
               const TypeIcon = apt.type === "grooming" ? Scissors : Stethoscope;
               const canOpenRecord =
                 apt.type === "medical" && apt.client?.id && apt.pet?.id;
+              const terminal = isTerminalStatus(apt.status as AppointmentStatus);
               return (
                 <li key={apt.id}>
-                  <div className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/50">
+                  <div
+                    className={cn(
+                      "flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/50",
+                      terminal && "opacity-60"
+                    )}
+                  >
                     <Link
                       href={`/${clinicSlug}/appointments/${apt.id}`}
                       className="flex min-w-0 flex-1 items-center gap-3"

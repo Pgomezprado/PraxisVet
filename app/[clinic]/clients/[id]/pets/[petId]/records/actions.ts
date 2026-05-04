@@ -8,6 +8,7 @@ import {
   type ClinicalRecordParsed,
 } from "@/lib/validations/clinical-records";
 import { validateMemberInOrg } from "@/lib/auth/validate-member";
+import { listMembersWithCapability } from "@/lib/auth/capabilities";
 import type { PhysicalExam } from "@/types";
 
 type ActionResult<T = void> =
@@ -333,20 +334,15 @@ export async function deleteRecord(
 
 export async function getVets(orgId: string) {
   const supabase = await createSupabaseClient();
-
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("id, first_name, last_name, specialty")
-    .eq("org_id", orgId)
-    .eq("active", true)
-    .in("role", ["admin", "vet"])
-    .order("first_name");
-
-  if (error) {
-    return { data: null, error: error.message };
+  try {
+    const data = await listMembersWithCapability(supabase, orgId, "can_vet");
+    return { data, error: null };
+  } catch (e) {
+    return {
+      data: null,
+      error: e instanceof Error ? e.message : "Error al cargar veterinarios",
+    };
   }
-
-  return { data, error: null };
 }
 
 export async function getPetWithClient(petId: string) {

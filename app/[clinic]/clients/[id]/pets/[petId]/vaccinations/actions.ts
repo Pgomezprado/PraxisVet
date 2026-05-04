@@ -8,6 +8,7 @@ import {
 } from "@/lib/validations/vaccinations";
 import type { Vaccination, OrganizationMember } from "@/types";
 import { validateMemberInOrg } from "@/lib/auth/validate-member";
+import { listMembersWithCapability } from "@/lib/auth/capabilities";
 import { formatSupabaseError } from "@/lib/errors/format-supabase-error";
 
 type ActionResult<T = void> =
@@ -357,18 +358,22 @@ export async function getVets(
   orgId: string
 ): Promise<ActionResult<Pick<OrganizationMember, "id" | "first_name" | "last_name">[]>> {
   const { supabase } = await getAuthUser();
-
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("id, first_name, last_name")
-    .eq("org_id", orgId)
-    .eq("active", true)
-    .in("role", ["admin", "vet"])
-    .order("last_name", { ascending: true });
-
-  if (error) {
-    return { success: false, error: formatSupabaseError(error) };
+  try {
+    const data = await listMembersWithCapability(
+      supabase,
+      orgId,
+      "can_vet",
+      "last_name"
+    );
+    return {
+      success: true,
+      data: data.map(({ id, first_name, last_name }) => ({
+        id,
+        first_name,
+        last_name,
+      })),
+    };
+  } catch (e) {
+    return { success: false, error: formatSupabaseError(e as Error) };
   }
-
-  return { success: true, data: data ?? [] };
 }

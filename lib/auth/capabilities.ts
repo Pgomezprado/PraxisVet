@@ -83,6 +83,88 @@ export async function canAssignMemberToAppointment(
 }
 
 /**
+ * Lista miembros activos de la org que pueden ejercer la capability dada,
+ * combinando rol base + member_capabilities. Usado por los formularios de
+ * registro (peluquería, ficha clínica, vacunas, desparasitaciones) para
+ * que un vet con can_groom — o un groomer con can_vet — aparezca en el
+ * dropdown correspondiente.
+ *
+ * Ordena por first_name por defecto; pasar `orderBy: 'last_name'` para
+ * cambiarlo (matchea el orden previo de algunos screens).
+ */
+export async function listMembersWithCapability(
+  supabase: SupabaseClient,
+  orgId: string,
+  capability: Capability,
+  orderBy: "first_name" | "last_name" = "first_name"
+): Promise<
+  Array<{
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    specialty: string | null;
+  }>
+> {
+  const coveringRoles = ROLE_COVERS_CAPABILITY[capability];
+
+  const { data: base, error: baseError } = await supabase
+    .from("organization_members")
+    .select("id, first_name, last_name, specialty")
+    .eq("org_id", orgId)
+    .eq("active", true)
+    .in("role", coveringRoles as string[]);
+
+  if (baseError) throw baseError;
+
+  // Roles fuera del rol base que tengan la capability explícita
+  // (ej: vet con can_groom, groomer con can_vet, recepcionista con can_*).
+  const { data: extra, error: extraError } = await supabase
+    .from("organization_members")
+    .select(
+      `id, first_name, last_name, specialty,
+       member_capabilities!inner (capability)`
+    )
+    .eq("org_id", orgId)
+    .eq("active", true)
+    .eq("member_capabilities.capability", capability)
+    .not("role", "in", `(${coveringRoles.join(",")})`);
+
+  if (extraError) throw extraError;
+
+  const baseIds = new Set((base ?? []).map((m) => m.id as string));
+  const merged = [
+    ...((base ?? []) as Array<{
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      specialty: string | null;
+    }>),
+    ...((extra ?? []) as Array<{
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      specialty: string | null;
+      member_capabilities: unknown;
+    }>)
+      .filter((m) => !baseIds.has(m.id))
+      .map((m) => ({
+        id: m.id,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        specialty: m.specialty,
+      })),
+  ];
+
+  merged.sort((a, b) => {
+    const av = (orderBy === "last_name" ? a.last_name : a.first_name) ?? "";
+    const bv = (orderBy === "last_name" ? b.last_name : b.first_name) ?? "";
+    return av.localeCompare(bv);
+  });
+
+  return merged;
+}
+
+/**
  * Filtra una lista de IDs de miembros, devolviendo solo los que tienen
  * la capability para atender el tipo de cita indicado.
  * Eficiente para listar profesionales en UI de nueva cita.

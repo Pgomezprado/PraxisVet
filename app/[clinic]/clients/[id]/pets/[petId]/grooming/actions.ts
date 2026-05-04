@@ -7,6 +7,7 @@ import {
   type GroomingRecordInput,
 } from "@/lib/validations/grooming-records";
 import { validateMemberInOrg } from "@/lib/auth/validate-member";
+import { listMembersWithCapability } from "@/lib/auth/capabilities";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -254,20 +255,15 @@ export async function deleteGroomingRecord(
 
 export async function getGroomers(orgId: string) {
   const supabase = await createSupabaseClient();
-
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("id, first_name, last_name, specialty")
-    .eq("org_id", orgId)
-    .eq("active", true)
-    .in("role", ["admin", "groomer"])
-    .order("first_name");
-
-  if (error) {
-    return { data: null, error: error.message };
+  try {
+    const data = await listMembersWithCapability(supabase, orgId, "can_groom");
+    return { data, error: null };
+  } catch (e) {
+    return {
+      data: null,
+      error: e instanceof Error ? e.message : "Error al cargar peluqueros",
+    };
   }
-
-  return { data, error: null };
 }
 
 export async function getLinkedGroomingRecord(appointmentId: string) {

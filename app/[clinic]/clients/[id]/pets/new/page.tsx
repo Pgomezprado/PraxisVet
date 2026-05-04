@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getClient } from "../../../actions";
 import { PetForm } from "@/components/clients/pet-form";
 
@@ -6,7 +9,7 @@ export default async function NewPetPage({
 }: {
   params: Promise<{ clinic: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { clinic, id } = await params;
 
   const result = await getClient(id);
 
@@ -20,7 +23,12 @@ export default async function NewPetPage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-4">
+      <div className="mb-4 flex items-center gap-3">
+        <Link href={`/${clinic}/clients/${id}`}>
+          <Button variant="ghost" size="icon-sm" aria-label="Volver al cliente">
+            <ArrowLeft className="size-4" />
+          </Button>
+        </Link>
         <p className="text-sm text-muted-foreground">
           Cliente: {result.data.first_name} {result.data.last_name}
         </p>

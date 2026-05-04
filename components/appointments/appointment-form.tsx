@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select } from "@/components/ui/select";
+import { SearchSelect } from "@/components/ui/search-select";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -46,6 +47,9 @@ type Professional = {
   // para que un vet con can_groom aparezca al elegir cita de peluquería sin
   // esperar otra round-trip al servidor.
   capabilities?: string[];
+  // Días de la semana (0=domingo, 6=sábado) en los que el profesional tiene
+  // horario configurado. Vacío = sin horario configurado todavía.
+  working_days?: number[];
 };
 
 type ServiceOption = {
@@ -152,11 +156,23 @@ export function AppointmentForm({
     const baseRoles = watchedType === "grooming"
       ? new Set(["groomer", "admin"])
       : new Set(["vet", "admin"]);
-    return professionals.filter((p) => {
+    const byType = professionals.filter((p) => {
       if (baseRoles.has(p.role)) return true;
       return (p.capabilities ?? []).includes(requiredCap);
     });
-  }, [professionals, watchedType]);
+
+    if (!watchedDate) return byType;
+    // Sin offset de zona: la fecha viene como "yyyy-MM-dd" del DatePicker.
+    const [y, m, d] = watchedDate.split("-").map(Number);
+    if (!y || !m || !d) return byType;
+    const dow = new Date(y, m - 1, d).getDay();
+    return byType.filter((p) => {
+      // Si el profesional aún no tiene horario configurado, lo dejamos visible
+      // — esconderlo sería ruido para clínicas en onboarding.
+      if (!p.working_days || p.working_days.length === 0) return true;
+      return p.working_days.includes(dow);
+    });
+  }, [professionals, watchedType, watchedDate]);
 
   const filteredServices = useMemo(() => {
     if (watchedType === "grooming") {
@@ -346,8 +362,8 @@ export function AppointmentForm({
   }
 
   function handleClientChange(clientId: string) {
-    setValue("client_id", clientId);
-    setValue("pet_id", "");
+    setValue("client_id", clientId, { shouldValidate: true, shouldDirty: true });
+    setValue("pet_id", "", { shouldValidate: true, shouldDirty: true });
   }
 
   const professionalLabel = watchedType === "grooming" ? "Peluquero" : "Veterinario";
@@ -377,20 +393,23 @@ export function AppointmentForm({
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="client_id">Cliente *</Label>
-              <Select
+              <SearchSelect
                 id="client_id"
-                {...register("client_id")}
-                onChange={(e) => handleClientChange(e.target.value)}
+                value={watch("client_id")}
+                onChange={handleClientChange}
+                placeholder="Buscar cliente por nombre o teléfono..."
+                emptyText="Sin clientes que coincidan"
                 aria-invalid={!!errors.client_id}
-              >
-                <option value="">Seleccionar cliente</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.first_name} {client.last_name}
-                    {client.phone ? ` - ${client.phone}` : ""}
-                  </option>
-                ))}
-              </Select>
+                options={clients.map((client) => {
+                  const fullName = `${client.first_name} ${client.last_name}`.trim();
+                  const label = client.phone ? `${fullName} - ${client.phone}` : fullName;
+                  return {
+                    value: client.id,
+                    label,
+                    searchText: `${fullName} ${client.phone ?? ""}`,
+                  };
+                })}
+              />
               <FieldError message={errors.client_id?.message} />
             </div>
 
@@ -398,7 +417,13 @@ export function AppointmentForm({
               <Label htmlFor="pet_id">Mascota *</Label>
               <Select
                 id="pet_id"
-                {...register("pet_id")}
+                value={watch("pet_id") ?? ""}
+                onChange={(e) =>
+                  setValue("pet_id", e.target.value, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
                 disabled={!selectedClientId}
                 aria-invalid={!!errors.pet_id}
               >
@@ -423,10 +448,20 @@ export function AppointmentForm({
               <Label htmlFor="assigned_to">{professionalLabel} *</Label>
               <Select
                 id="assigned_to"
-                {...register("assigned_to")}
+                value={watch("assigned_to") ?? ""}
+                onChange={(e) =>
+                  setValue("assigned_to", e.target.value, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
                 aria-invalid={!!errors.assigned_to}
               >
-                <option value="">Seleccionar {professionalLabel.toLowerCase()}</option>
+                <option value="">
+                  {filteredProfessionals.length === 0
+                    ? `Sin ${professionalLabel.toLowerCase()}s disponibles ese día`
+                    : `Seleccionar ${professionalLabel.toLowerCase()}`}
+                </option>
                 {filteredProfessionals.map((p) => (
                   <option key={p.id} value={p.id}>
                     {[p.first_name, p.last_name].filter(Boolean).join(" ")}
@@ -493,7 +528,7 @@ export function AppointmentForm({
               <Label htmlFor="service_id">Servicio</Label>
               <Select
                 id="service_id"
-                {...register("service_id")}
+                value={watch("service_id") ?? ""}
                 onChange={(e) => handleServiceChange(e.target.value)}
               >
                 <option value="">Sin servicio</option>
@@ -530,6 +565,11 @@ export function AppointmentForm({
                   id="start_time"
                   value={watch("start_time")}
                   onChange={handleStartTimeChange}
+                  allowedRanges={dayAvailability?.tramos.map((t) => ({
+                    start: t.start_time,
+                    end: t.end_time,
+                  }))}
+                  rangeMode="start"
                   aria-invalid={!!errors.start_time}
                 />
                 <FieldError message={errors.start_time?.message} />
@@ -545,6 +585,12 @@ export function AppointmentForm({
                       shouldDirty: true,
                     })
                   }
+                  allowedRanges={dayAvailability?.tramos.map((t) => ({
+                    start: t.start_time,
+                    end: t.end_time,
+                  }))}
+                  rangeMode="end"
+                  minTime={watchedStartTime || undefined}
                   aria-invalid={!!errors.end_time}
                 />
                 <FieldError message={errors.end_time?.message} />

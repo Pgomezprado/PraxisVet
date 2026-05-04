@@ -12,7 +12,7 @@ import {
   getReproductiveStatusOptions,
 } from "@/lib/validations/clients";
 import { SIZE_OPTIONS } from "@/lib/validations/services";
-import { getBreedSuggestions } from "@/lib/constants/breeds";
+import { mergeBreedSuggestions } from "@/lib/constants/breeds";
 import { useClinic } from "@/lib/context/clinic-context";
 import { createTutorWithPet } from "@/app/[clinic]/clients/actions";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,12 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-xs text-destructive">{message}</p>;
 }
 
-export function NewTutorForm() {
+interface NewTutorFormProps {
+  /** Razas personalizadas de la clínica, agrupadas por especie. */
+  customBreeds?: Record<string, string[]>;
+}
+
+export function NewTutorForm({ customBreeds }: NewTutorFormProps = {}) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +77,7 @@ export function NewTutorForm() {
 
   const watchedSpecies = watch("pet_species");
   const watchedSex = watch("pet_sex");
-  const breedSuggestions = getBreedSuggestions(watchedSpecies);
+  const breedSuggestions = mergeBreedSuggestions(watchedSpecies, customBreeds);
   const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
 
   async function onSubmit(data: NewTutorWithPetInput) {

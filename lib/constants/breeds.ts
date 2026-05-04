@@ -95,3 +95,37 @@ export function getBreedSuggestions(species: string | null | undefined): string[
       return [];
   }
 }
+
+function normalizeBreed(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Combina la lista base con las razas personalizadas de la clínica.
+ * Deduplica por nombre normalizado (sin tildes, lower) y mantiene la primera
+ * ocurrencia. Para "exotico" muestra solo las custom porque la base está vacía.
+ */
+export function mergeBreedSuggestions(
+  species: string | null | undefined,
+  customByspecies: Record<string, string[]> | null | undefined
+): string[] {
+  const base = getBreedSuggestions(species);
+  const custom =
+    species && customByspecies ? customByspecies[species] ?? [] : [];
+
+  if (custom.length === 0) return base;
+
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const name of [...base, ...custom]) {
+    const key = normalizeBreed(name);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(name);
+  }
+  return result;
+}

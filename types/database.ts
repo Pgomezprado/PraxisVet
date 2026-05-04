@@ -160,6 +160,16 @@ export interface ServicePriceTier {
   created_at: string;
 }
 
+export interface CustomBreed {
+  id: string;
+  org_id: string;
+  species: Species;
+  name: string;
+  name_normalized: string;
+  created_at: string;
+  created_by: string | null;
+}
+
 export interface Appointment {
   id: string;
   org_id: string;

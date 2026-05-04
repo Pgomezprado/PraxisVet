@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getClient } from "../../../actions";
+import { getCustomBreedsGrouped } from "@/app/[clinic]/settings/breeds/actions";
 import { PetForm } from "@/components/clients/pet-form";
 
 export default async function NewPetPage({
@@ -21,6 +22,8 @@ export default async function NewPetPage({
     );
   }
 
+  const customBreeds = await getCustomBreedsGrouped(result.data.org_id);
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-4 flex items-center gap-3">
@@ -33,7 +36,7 @@ export default async function NewPetPage({
           Cliente: {result.data.first_name} {result.data.last_name}
         </p>
       </div>
-      <PetForm clientId={id} />
+      <PetForm clientId={id} customBreeds={customBreeds} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   Users,
   Building2,
   ShieldCheck,
+  PawPrint,
 } from "lucide-react";
 import {
   Card,
@@ -18,6 +19,12 @@ const sections = [
     description: "Gestiona el catálogo de servicios que ofrece tu clínica.",
     href: "services",
     icon: Stethoscope,
+  },
+  {
+    title: "Razas",
+    description: "Agrega razas personalizadas que no están en el listado por defecto.",
+    href: "breeds",
+    icon: PawPrint,
   },
   {
     title: "Equipo",

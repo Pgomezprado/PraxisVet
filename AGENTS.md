@@ -87,8 +87,11 @@ Si una decisión de producto contradice `CLINIC_FLOW.md`, primero se discute y s
 | Email Reminders (cron) | ✅ Construido | Recordatorios de trial + cumpleaños de mascotas via Resend + cron routes |
 | Analytics (panel admin) | ✅ Construido | Gráficos de citas, productividad por profesional, top servicios; periodos 1m/3m/año |
 | Portal del Tutor | ✅ Construido | Auth magic link; el dueño ve sus mascotas, historial de citas, vacunas, desparasitaciones, peluquería y exámenes compartidos; puede solicitar cita nueva |
+| Cartola Sanitaria QR (portal tutor) | ✅ Construido | Tabla `pet_health_cards` + RPCs `get_health_card_by_token` / `record_health_card_view`. Ruta pública `/c/[token]` con `X-Robots-Tag` noindex. Vence 30 días, revocable. PR #27 — 03/05/2026 |
+| Carnet Digital Timeline (portal tutor) | ✅ Construido | Ruta `/tutor/[clinic]/pets/[petId]/historia`. Eventos derivados de tablas existentes (sin contenido clínico). Hitos sintéticos. **NO lee `clinical_records`** — invariante arquitectónica. PR #28 — 04/05/2026 |
+| Catálogo de razas configurable | ✅ Construido | Razas por clínica + autocomplete sin tildes (`*_search` + `immutable_unaccent` + `pg_trgm`). PR #37 — 04/05/2026 |
 | Horarios Profesionales | ✅ Construido | Horario semanal recurrente + bloqueos puntuales (vacaciones, licencia) por profesional |
-| WhatsApp Recordatorios | ❌ Descartado | Construido (sprints 21-27 abr) y eliminado el 28 abr por no completar aprobación Meta. Migraciones: 20260421000002-3, 20260427000001, 20260428000001 (drop). |
+| WhatsApp Recordatorios | ⏸️ Pausado | Construido (sprints 21-27 abr) y removido de prod el 28 abr por no completar aprobación Meta. WIP completo preservado en `stash@{0}` de `feat/whatsapp-v1-restore`. Migraciones: 20260421000002-3, 20260427000001, 20260428000001 (drop). **NO retomar sin aprobación Meta de templates prod.** |
 | **Integración SII real** | 🔲 Pendiente | MVP genera PDF; delegación a OpenFactura/Haulmer es post-MVP |
 | **Cierre de caja (cash_register UI)** | 🔲 Pendiente | Tabla `cash_registers` migrada, UI pendiente |
 
@@ -104,7 +107,7 @@ Cada agente tiene un rol, un conjunto de responsabilidades y una lista de lo que
 
 **Rol:** Estratega del producto. Decide qué se construye, para quién y en qué orden.
 
-> **Contexto actual (abril 2026):** El MVP está completo y se lanzaron funcionalidades post-MVP: Portal del Tutor, Analytics, Exámenes, Horarios Profesionales, Pricing de Grooming, Abonos Parciales. La feature de WhatsApp Recordatorios fue descartada (falta aprobación Meta). El foco ahora es (1) validar con la clínica fundadora en piloto, (2) completar los 2 pendientes restantes (UI de cierre de caja, integración SII real), y (3) convertir trials a clientes pagos.
+> **Contexto actual (mayo 2026):** El MVP está completo y se lanzaron funcionalidades post-MVP: Portal del Tutor, Analytics, Exámenes, Horarios Profesionales, Pricing de Grooming, Abonos Parciales, Cartola Sanitaria QR, Carnet Digital Timeline, Catálogo de razas configurable. WhatsApp Recordatorios está **pausado** (WIP en stash, espera aprobación Meta). 2 clínicas fundadoras cerradas (Paws & Hair, Reino Salvaje) del programa de 10 fundadoras a $80k CLP/mes vitalicio (meta antes de 2026-09-30). El foco ahora es: (1) cerrar las 8 fundadoras restantes — modo "pausar código y vender", (2) preparar argumento de venta para COLMEVET 2026-05-29, (3) validar con clínicas en piloto.
 
 **Responsabilidades:**
 - Validar que cada feature propuesta tenga sentido para al menos uno de los 3 segmentos (vet solo / pequeña / mediana) y no rompa ninguno de los flujos E2E.
@@ -499,4 +502,4 @@ Estas reglas no se negocian. Si una propuesta las rompe, se rechaza.
 
 ---
 
-*Versión 2.3 — 29 Abril 2026. Estado del proyecto actualizado: Portal del Tutor ✅, Analytics ✅, Exámenes ✅, Horarios Profesionales ✅, Grooming Pricing ✅, Abonos Parciales ✅. WhatsApp Recordatorios marcado como descartado. Backend: 8 nuevas tablas documentadas (member_weekly_schedules, member_schedule_blocks, service_price_tiers, payments, clinical_record_exams, sent_birthday_log). Columnas nuevas: pets.size, appointments.is_dangerous, invoices.partial_paid+amount_paid, clinical_record_exams.shared_with_tutor_at, organizations.pet_birthday_reminders_enabled. Frontend: 2 nuevas rutas API legítimas (birthday-reminders cron, signed URLs exámenes). UXDesigner: notas de diseño para Portal Tutor, danger flag y partial_paid. CoFounder: contexto actualizado, señal de alarma WhatsApp. QA: 20 nuevos casos de prueba (portal tutor, exámenes, facturación parcial, danger flag, horarios, cumpleaños).*
+*Versión 2.4 — 04 Mayo 2026. Cambios desde 2.3 (29 Abr): añadidas 3 features de portal tutor / razas (Cartola Sanitaria QR PR #27, Carnet Digital Timeline PR #28, Catálogo de razas configurable PR #37). WhatsApp recategorizado de "descartado" a "pausado" (WIP preservado en stash@{0}). Contexto del CoFounder actualizado a estado de mayo 2026 con 2 fundadoras cerradas (Paws & Hair, Reino Salvaje) del programa de 10 fundadoras vitalicio a $80k CLP/mes. Foco actual: pausar código y vender (cerrar 8 fundadoras restantes antes 2026-09-30) + preparar COLMEVET 2026-05-29.*

@@ -13,7 +13,7 @@ import {
   getReproductiveStatusOptions,
 } from "@/lib/validations/clients";
 import { SIZE_OPTIONS } from "@/lib/validations/services";
-import { getBreedSuggestions } from "@/lib/constants/breeds";
+import { mergeBreedSuggestions } from "@/lib/constants/breeds";
 import { useClinic } from "@/lib/context/clinic-context";
 import {
   createPet,
@@ -41,6 +41,8 @@ import type { Pet } from "@/types";
 interface PetFormProps {
   clientId: string;
   pet?: Pet;
+  /** Razas personalizadas de la clínica, agrupadas por especie. */
+  customBreeds?: Record<string, string[]>;
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -48,7 +50,7 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-xs text-destructive">{message}</p>;
 }
 
-export function PetForm({ clientId, pet }: PetFormProps) {
+export function PetForm({ clientId, pet, customBreeds }: PetFormProps) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export function PetForm({ clientId, pet }: PetFormProps) {
   const watchedSpecies = watch("species");
   const watchedSex = watch("sex");
   const watchedPhotoUrl = watch("photo_url");
-  const breedSuggestions = getBreedSuggestions(watchedSpecies);
+  const breedSuggestions = mergeBreedSuggestions(watchedSpecies, customBreeds);
   const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
 
   async function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NewTutorForm } from "@/components/clients/new-tutor-form";
+import { createClient } from "@/lib/supabase/server";
+import { getCustomBreedsGrouped } from "@/app/[clinic]/settings/breeds/actions";
 
 export default async function NewClientPage({
   params,
@@ -9,6 +11,15 @@ export default async function NewClientPage({
   params: Promise<{ clinic: string }>;
 }) {
   const { clinic } = await params;
+
+  const supabase = await createClient();
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("slug", clinic)
+    .single();
+
+  const customBreeds = org ? await getCustomBreedsGrouped(org.id) : {};
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -28,7 +39,7 @@ export default async function NewClientPage({
         </div>
       </div>
 
-      <NewTutorForm />
+      <NewTutorForm customBreeds={customBreeds} />
     </div>
   );
 }

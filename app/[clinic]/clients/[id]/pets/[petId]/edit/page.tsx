@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PetForm } from "@/components/clients/pet-form";
 import { getClient } from "../../../../actions";
+import { getCustomBreedsGrouped } from "@/app/[clinic]/settings/breeds/actions";
 import type { Pet } from "@/types";
 
 export default async function EditPetPage({
@@ -24,6 +25,8 @@ export default async function EditPetPage({
     );
   }
 
+  const customBreeds = await getCustomBreedsGrouped((pet as Pet).org_id);
+
   return (
     <div className="mx-auto max-w-2xl">
       {clientResult.success && (
@@ -33,7 +36,7 @@ export default async function EditPetPage({
           </p>
         </div>
       )}
-      <PetForm clientId={id} pet={pet as Pet} />
+      <PetForm clientId={id} pet={pet as Pet} customBreeds={customBreeds} />
     </div>
   );
 }

@@ -27,9 +27,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/appointments/status-badge";
 import { StatusActions } from "@/components/appointments/status-actions";
+import { DepositCard } from "@/components/appointments/deposit-card";
 import { getAppointment } from "../actions";
 import { getLinkedRecord } from "@/app/[clinic]/clients/[id]/pets/[petId]/records/actions";
 import { getLinkedGroomingRecord } from "@/app/[clinic]/clients/[id]/pets/[petId]/grooming/actions";
+import {
+  getCurrentMember,
+  canManageAppointmentDeposit,
+} from "@/lib/auth/current-member";
 
 function formatTime(time: string): string {
   return time.slice(0, 5);
@@ -49,10 +54,21 @@ export default async function AppointmentDetailPage({
   }
 
   const isGrooming = appointment.type === "grooming";
-  const [linkedRecord, linkedGroomingRecord] = await Promise.all([
+  const [linkedRecord, linkedGroomingRecord, currentMember] = await Promise.all([
     isGrooming ? Promise.resolve(null) : getLinkedRecord(appointment.id),
     isGrooming ? getLinkedGroomingRecord(appointment.id) : Promise.resolve(null),
+    getCurrentMember(clinic),
   ]);
+  // El abono solo aplica a peluquería (las consultas médicas se cobran al
+  // terminar, sin reserva con depósito) y solo mientras la cita siga viva
+  // — una vez cancelada o no_show no tiene sentido mostrarla.
+  const showDeposit =
+    isGrooming &&
+    appointment.status !== "cancelled" &&
+    appointment.status !== "no_show";
+  const canManageDeposit = currentMember
+    ? canManageAppointmentDeposit(currentMember.role)
+    : false;
   const professionalName =
     [appointment.professional.first_name, appointment.professional.last_name]
       .filter(Boolean)
@@ -123,6 +139,15 @@ export default async function AppointmentDetailPage({
             : undefined
         }
       />
+
+      {showDeposit && (
+        <DepositCard
+          appointmentId={appointment.id}
+          depositAmount={appointment.deposit_amount}
+          depositPaidAt={appointment.deposit_paid_at}
+          canManage={canManageDeposit}
+        />
+      )}
 
       {/* Pista para peluquería confirmada: aclara dónde se registra el precio
           (la admin de Paws & Hair preguntó por esto el primer día de trial). */}

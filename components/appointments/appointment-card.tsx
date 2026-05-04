@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Clock, User, PawPrint, Stethoscope, Loader2 } from "lucide-react";
+import { AlertTriangle, User, PawPrint, Stethoscope, Loader2, Wallet } from "lucide-react";
+import { formatCLP } from "@/lib/utils/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/appointments/status-badge";
 import {
@@ -139,6 +140,15 @@ export function AppointmentCard({
               <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-200">
                 <AlertTriangle className="size-3" />
                 Peligroso
+              </span>
+            )}
+            {appointment.deposit_amount != null && appointment.deposit_amount > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                title="Abono cobrado para confirmar la hora"
+              >
+                <Wallet className="size-3" />
+                Abono {formatCLP(appointment.deposit_amount)}
               </span>
             )}
           </div>

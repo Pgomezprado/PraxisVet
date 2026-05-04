@@ -17,6 +17,7 @@ import {
   capabilityForAppointmentType,
 } from "@/lib/auth/capabilities";
 import { checkMemberAvailability } from "@/lib/auth/check-availability";
+import { canManageAppointmentDeposit } from "@/lib/auth/current-member";
 
 export type AppointmentWithRelations = {
   id: string;
@@ -34,6 +35,9 @@ export type AppointmentWithRelations = {
   notes: string | null;
   is_dangerous: boolean;
   reminder_sent: boolean;
+  deposit_amount: number | null;
+  deposit_paid_at: string | null;
+  deposit_collected_by: string | null;
   created_at: string;
   client: { id: string; first_name: string; last_name: string; phone: string | null };
   pet: { id: string; name: string; species: string | null; breed: string | null };
@@ -745,4 +749,110 @@ export async function getServices(orgId: string) {
   }
 
   return { data, error: null };
+}
+
+// Abono al confirmar cita de peluquería: monto LIBRE que define recepción
+// al reservar la hora. Se descuenta del total cuando se cobra el servicio
+// (ver app/[clinic]/billing/new/page.tsx — pre-carga este monto como payment
+// inicial al crear la factura ligada a la cita).
+export async function recordAppointmentDeposit(
+  appointmentId: string,
+  amountClp: number
+) {
+  if (!Number.isFinite(amountClp) || !Number.isInteger(amountClp) || amountClp <= 0) {
+    return { error: "El monto del abono debe ser un entero mayor a 0." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const { data: appt, error: fetchError } = await supabase
+    .from("appointments")
+    .select("id, org_id, type")
+    .eq("id", appointmentId)
+    .maybeSingle();
+  if (fetchError) return { error: fetchError.message };
+  if (!appt) return { error: "Cita no encontrada." };
+  if (appt.type !== "grooming") {
+    return { error: "Solo las citas de peluquería pueden registrar abono." };
+  }
+
+  const { data: member } = await supabase
+    .from("organization_members")
+    .select("id, role")
+    .eq("user_id", user.id)
+    .eq("org_id", appt.org_id)
+    .eq("active", true)
+    .maybeSingle();
+  if (!member) return { error: "No perteneces a esta clínica." };
+  if (!canManageAppointmentDeposit(member.role as MemberRole)) {
+    return { error: "Solo recepción o admin pueden registrar abonos." };
+  }
+
+  // Mutación con .select() para detectar 0 filas (RLS silenciosa).
+  const { data: updated, error: updateError } = await supabase
+    .from("appointments")
+    .update({
+      deposit_amount: amountClp,
+      deposit_paid_at: new Date().toISOString(),
+      deposit_collected_by: member.id,
+    })
+    .eq("id", appointmentId)
+    .select("id");
+  if (updateError) return { error: updateError.message };
+  if (!updated || updated.length === 0) {
+    return { error: "No se pudo registrar el abono. Verifica permisos." };
+  }
+
+  revalidatePath(`/[clinic]/appointments`, "page");
+  revalidatePath(`/[clinic]/appointments/${appointmentId}`, "page");
+  return { error: null };
+}
+
+export async function clearAppointmentDeposit(appointmentId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const { data: appt } = await supabase
+    .from("appointments")
+    .select("id, org_id")
+    .eq("id", appointmentId)
+    .maybeSingle();
+  if (!appt) return { error: "Cita no encontrada." };
+
+  const { data: member } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("org_id", appt.org_id)
+    .eq("active", true)
+    .maybeSingle();
+  if (!member) return { error: "No perteneces a esta clínica." };
+  if (!canManageAppointmentDeposit(member.role as MemberRole)) {
+    return { error: "Solo recepción o admin pueden anular abonos." };
+  }
+
+  const { data: updated, error } = await supabase
+    .from("appointments")
+    .update({
+      deposit_amount: null,
+      deposit_paid_at: null,
+      deposit_collected_by: null,
+    })
+    .eq("id", appointmentId)
+    .select("id");
+  if (error) return { error: error.message };
+  if (!updated || updated.length === 0) {
+    return { error: "No se pudo anular el abono. Verifica permisos." };
+  }
+
+  revalidatePath(`/[clinic]/appointments`, "page");
+  revalidatePath(`/[clinic]/appointments/${appointmentId}`, "page");
+  return { error: null };
 }

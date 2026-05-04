@@ -89,3 +89,12 @@ export function canViewExams(role: MemberRole): boolean {
 export function canInterpretExam(role: MemberRole): boolean {
   return role === "admin" || role === "vet";
 }
+
+/**
+ * Quién puede registrar/editar el abono de una cita de peluquería.
+ * El abono es un cobro que hace mostrador al confirmar la hora — por eso
+ * recepción y admin sí pueden, pero el groomer y el vet no (no manejan caja).
+ */
+export function canManageAppointmentDeposit(role: MemberRole): boolean {
+  return role === "admin" || role === "receptionist";
+}

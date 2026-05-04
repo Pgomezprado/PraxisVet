@@ -47,6 +47,9 @@ interface InvoiceFormProps {
     price: number;
     service_name: string;
   };
+  /** Abono ya cobrado en la cita ligada. Se descontará automáticamente
+   *  del total al crear la factura (insert en payments + status=partial_paid). */
+  appointmentDeposit?: number | null;
 }
 
 export function InvoiceForm({
@@ -55,6 +58,7 @@ export function InvoiceForm({
   defaultAppointmentId,
   defaultItems,
   priceTierInfo,
+  appointmentDeposit,
 }: InvoiceFormProps) {
   const router = useRouter();
   const { organization, clinicSlug } = useClinic();
@@ -68,8 +72,8 @@ export function InvoiceForm({
     watch,
     setValue,
     formState: { errors },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } = useForm<InvoiceInput>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(invoiceSchema) as any,
     defaultValues: {
       client_id: defaultClientId ?? "",
@@ -116,11 +120,29 @@ export function InvoiceForm({
     router.push(`/${clinicSlug}/billing/${result.data.id}`);
   }
 
+  const hasDeposit =
+    appointmentDeposit != null && appointmentDeposit > 0;
+  // Mostrar el saldo neto solo cuando hay abono — para que recepción vea
+  // de inmediato cuánto debe cobrar al emitir, sin tener que restar.
+  const netDue = hasDeposit ? Math.max(0, total - appointmentDeposit) : total;
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {error && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
           {error}
+        </div>
+      )}
+
+      {hasDeposit && (
+        <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+          <p className="font-medium">
+            Abono cobrado en la cita: {formatCLP(appointmentDeposit)}
+          </p>
+          <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300">
+            Se registrará automáticamente como pago al crear la factura. Ingresa
+            el total bruto del servicio — el saldo pendiente se calcula solo.
+          </p>
         </div>
       )}
 
@@ -354,6 +376,34 @@ export function InvoiceForm({
                 </TableCell>
                 <TableCell />
               </TableRow>
+              {hasDeposit && (
+                <>
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-right text-sm text-emerald-700 dark:text-emerald-300"
+                    >
+                      Abono ya cobrado
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-emerald-700 dark:text-emerald-300">
+                      − {formatCLP(appointmentDeposit)}
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-right text-base font-bold text-foreground"
+                    >
+                      Saldo a cobrar
+                    </TableCell>
+                    <TableCell className="text-right text-base font-bold text-foreground">
+                      {formatCLP(netDue)}
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
+                </>
+              )}
             </TableFooter>
           </Table>
         </CardContent>

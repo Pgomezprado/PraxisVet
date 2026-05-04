@@ -46,6 +46,7 @@ export default async function NewInvoicePage({
   let priceTierInfo:
     | { label: string; price: number; service_name: string }
     | undefined;
+  let appointmentDeposit: number | null = null;
 
   if (appointmentId) {
     const appointmentResult = await getAppointment(appointmentId);
@@ -53,6 +54,7 @@ export default async function NewInvoicePage({
       const appt = appointmentResult.data;
       defaultClientId = appt.client_id;
       defaultAppointmentId = appt.id;
+      appointmentDeposit = appt.deposit_amount;
 
       if (appt.service) {
         let unitPrice = Number(appt.service.price ?? 0);
@@ -111,6 +113,7 @@ export default async function NewInvoicePage({
         defaultAppointmentId={defaultAppointmentId}
         defaultItems={defaultItems.length > 0 ? defaultItems : undefined}
         priceTierInfo={priceTierInfo}
+        appointmentDeposit={appointmentDeposit}
       />
     </div>
   );

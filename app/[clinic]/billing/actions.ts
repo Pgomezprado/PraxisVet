@@ -321,6 +321,70 @@ export async function createInvoice(
 
     if (itemsError) return { success: false, error: itemsError.message };
 
+    // Si la factura está ligada a una cita de peluquería con abono cobrado,
+    // pre-cargamos ese abono como pago parcial automáticamente. Así el
+    // recepcionista no tiene que sumar/restar a mano: el saldo pendiente
+    // (total - abono) queda calculado por el trigger de payments y la factura
+    // arranca en `partial_paid` (o `paid` si el abono cubre el total).
+    if (items.appointment_id) {
+      const { data: appt } = await supabase
+        .from("appointments")
+        .select("deposit_amount, type")
+        .eq("id", items.appointment_id)
+        .maybeSingle();
+
+      const depositAmount = appt?.deposit_amount;
+      if (
+        appt?.type === "grooming" &&
+        depositAmount != null &&
+        depositAmount > 0
+      ) {
+        const reference = `deposit:${items.appointment_id}`;
+
+        // Idempotencia: si por algún motivo ya existe el payment del abono
+        // (reintentos, doble-submit), no lo dupliquemos.
+        const { data: existing } = await supabase
+          .from("payments")
+          .select("id")
+          .eq("invoice_id", invoice.id)
+          .eq("reference", reference)
+          .maybeSingle();
+
+        if (!existing) {
+          // Cap defensivo: si el total facturado fue menor al abono (tarifa
+          // ajustada hacia abajo), no registramos un pago mayor al total.
+          // El excedente queda como nota manual — la devolución de abonos
+          // todavía no está modelada (se resuelve fuera del sistema).
+          const cappedAmount = Math.min(depositAmount, total);
+
+          await supabase.from("payments").insert({
+            org_id: orgId,
+            invoice_id: invoice.id,
+            amount: cappedAmount,
+            method: "cash",
+            reference,
+            notes: "Abono cobrado al confirmar la cita",
+          });
+
+          // El trigger recalc_invoice_amount_paid actualizó amount_paid pero
+          // NO el status (la factura sigue en draft, ese estado es explícito).
+          // Pasamos manualmente a sent / partial_paid / paid para que la
+          // factura ya nazca emitida con el abono visible.
+          const nextStatus =
+            cappedAmount + 0.009 >= total ? "paid" : "partial_paid";
+
+          await supabase
+            .from("invoices")
+            .update({
+              status: nextStatus,
+              paid_at:
+                nextStatus === "paid" ? new Date().toISOString() : null,
+            })
+            .eq("id", invoice.id);
+        }
+      }
+    }
+
     revalidatePath("/[clinic]/billing", "page");
     return { success: true, data: { id: invoice.id } };
   } catch {

@@ -175,6 +175,9 @@ export interface Appointment {
   reason: string | null;
   notes: string | null;
   reminder_sent: boolean;
+  deposit_amount: number | null;
+  deposit_paid_at: string | null;
+  deposit_collected_by: string | null;
   created_at: string;
 }
 

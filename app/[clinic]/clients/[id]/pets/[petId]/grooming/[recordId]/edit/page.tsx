@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GroomingRecordForm } from "@/components/grooming/grooming-record-form";
-import { getGroomers, getGroomingRecord } from "../../actions";
+import {
+  getGroomers,
+  getGroomingRecord,
+  getGroomingServiceNames,
+} from "../../actions";
 import { getCurrentMember, canViewGrooming } from "@/lib/auth/current-member";
 
 export default async function EditGroomingRecordPage({
@@ -36,6 +40,7 @@ export default async function EditGroomingRecordPage({
 
   const groomersResult = await getGroomers(member.org_id);
   const groomers = groomersResult.data ?? [];
+  const serviceOptions = await getGroomingServiceNames(member.org_id);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -62,6 +67,7 @@ export default async function EditGroomingRecordPage({
         petName={record.pet.name}
         clientId={id}
         groomers={groomers}
+        serviceOptions={serviceOptions}
         record={{
           id: record.id,
           groomer_id: record.groomer_id,

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GroomingRecordForm } from "@/components/grooming/grooming-record-form";
-import { getGroomers } from "../actions";
+import { getGroomers, getGroomingServiceNames } from "../actions";
 import { getPetWithClient } from "../../records/actions";
 import { getAppointment } from "@/app/[clinic]/appointments/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -70,6 +70,7 @@ export default async function NewGroomingRecordPage({
 
   const groomersResult = await getGroomers(org.id);
   const groomers = groomersResult.data ?? [];
+  const serviceOptions = await getGroomingServiceNames(org.id);
 
   let defaultGroomerId: string | undefined;
   let defaultAppointmentId: string | undefined;
@@ -140,6 +141,7 @@ export default async function NewGroomingRecordPage({
         petName={petResult.data.name}
         clientId={id}
         groomers={groomers}
+        serviceOptions={serviceOptions}
         defaultAppointmentId={defaultAppointmentId}
         defaultGroomerId={defaultGroomerId}
         successRedirect={

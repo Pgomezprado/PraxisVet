@@ -691,9 +691,31 @@ export async function getProfessionals(
     capsByMember.set(id, list);
   }
 
+  // Cargamos los días de la semana en los que cada miembro atiende — así el
+  // formulario puede ocultar profesionales que no trabajan el día elegido sin
+  // round-trips por cada selección de fecha.
+  const { data: schedules, error: schedulesError } = await supabase
+    .from("member_weekly_schedules")
+    .select("member_id, day_of_week")
+    .in("member_id", merged.map((m) => m.id));
+
+  if (schedulesError) {
+    return { data: null, error: schedulesError.message };
+  }
+
+  const workingDaysByMember = new Map<string, number[]>();
+  for (const row of schedules ?? []) {
+    const id = row.member_id as string;
+    const dow = row.day_of_week as number;
+    const list = workingDaysByMember.get(id) ?? [];
+    if (!list.includes(dow)) list.push(dow);
+    workingDaysByMember.set(id, list);
+  }
+
   const mergedWithCaps = merged.map((m) => ({
     ...m,
     capabilities: capsByMember.get(m.id) ?? [],
+    working_days: workingDaysByMember.get(m.id) ?? [],
   }));
 
   if (!appointmentType) {

@@ -26,6 +26,20 @@ interface TimePickerProps {
   stepMinutes?: number;
   minHour?: number;
   maxHour?: number;
+  /**
+   * Limita los slots a estos rangos del día. Cada rango usa "HH:MM" o "HH:MM:SS".
+   * Si se pasa, los slots fuera de los rangos no se muestran.
+   */
+  allowedRanges?: { start: string; end: string }[];
+  /**
+   * Define si el picker es de inicio o fin de un intervalo. Afecta cómo se
+   * tratan los bordes del rango: "start" excluye el límite superior (no podés
+   * empezar a la hora de cierre); "end" excluye el inferior (no podés terminar
+   * al instante de apertura).
+   */
+  rangeMode?: "start" | "end";
+  /** Si se pasa, sólo se muestran slots estrictamente mayores a este valor. */
+  minTime?: string;
   "aria-invalid"?: boolean;
 }
 
@@ -42,6 +56,27 @@ function generateSlots(step: number, minHour: number, maxHour: number) {
   return slots;
 }
 
+function trimSeconds(t: string): string {
+  return t.length >= 5 ? t.slice(0, 5) : t;
+}
+
+function isSlotInRanges(
+  slot: string,
+  ranges: { start: string; end: string }[],
+  mode: "start" | "end"
+): boolean {
+  for (const r of ranges) {
+    const start = trimSeconds(r.start);
+    const end = trimSeconds(r.end);
+    if (mode === "start") {
+      if (slot >= start && slot < end) return true;
+    } else {
+      if (slot > start && slot <= end) return true;
+    }
+  }
+  return false;
+}
+
 export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
   function TimePicker(
     {
@@ -56,6 +91,9 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
       stepMinutes = 15,
       minHour = 7,
       maxHour = 22,
+      allowedRanges,
+      rangeMode = "start",
+      minTime,
       "aria-invalid": ariaInvalid,
     },
     ref
@@ -70,10 +108,24 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
       setMounted(true);
     }, []);
 
-    const slots = useMemo(
-      () => generateSlots(stepMinutes, minHour, maxHour),
-      [stepMinutes, minHour, maxHour]
-    );
+    const slots = useMemo(() => {
+      const ranges = allowedRanges?.filter(
+        (r) => r.start && r.end && trimSeconds(r.start) < trimSeconds(r.end)
+      );
+      const hasRanges = ranges && ranges.length > 0;
+      const effectiveMinHour = hasRanges
+        ? Math.min(...ranges.map((r) => parseInt(trimSeconds(r.start).slice(0, 2), 10)))
+        : minHour;
+      const effectiveMaxHour = hasRanges
+        ? Math.max(...ranges.map((r) => parseInt(trimSeconds(r.end).slice(0, 2), 10)))
+        : maxHour;
+      const all = generateSlots(stepMinutes, effectiveMinHour, effectiveMaxHour);
+      return all.filter((slot) => {
+        if (hasRanges && !isSlotInRanges(slot, ranges, rangeMode)) return false;
+        if (minTime && slot <= trimSeconds(minTime)) return false;
+        return true;
+      });
+    }, [stepMinutes, minHour, maxHour, allowedRanges, rangeMode, minTime]);
 
     const displayLabel = value && /^\d{2}:\d{2}$/.test(value) ? value : placeholder;
     const hasValue = !!value && /^\d{2}:\d{2}$/.test(value);
@@ -170,27 +222,33 @@ export const TimePicker = forwardRef<HTMLButtonElement, TimePickerProps>(
         className="z-50 rounded-md border border-border bg-popover p-1 shadow-lg"
       >
         <div className="max-h-[260px] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-1 p-1">
-            {slots.map((slot) => {
-              const isSelected = slot === value;
-              return (
-                <button
-                  key={slot}
-                  type="button"
-                  data-slot-value={slot}
-                  onClick={() => handleSelect(slot)}
-                  className={cn(
-                    "rounded px-2 py-1.5 text-sm text-center transition-colors",
-                    isSelected
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted text-foreground"
-                  )}
-                >
-                  {slot}
-                </button>
-              );
-            })}
-          </div>
+          {slots.length === 0 ? (
+            <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+              Sin horarios disponibles
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-1 p-1">
+              {slots.map((slot) => {
+                const isSelected = slot === value;
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    data-slot-value={slot}
+                    onClick={() => handleSelect(slot)}
+                    className={cn(
+                      "rounded px-2 py-1.5 text-sm text-center transition-colors",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    {slot}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );

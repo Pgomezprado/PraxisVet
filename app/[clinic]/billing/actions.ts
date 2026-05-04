@@ -13,7 +13,7 @@ import {
   type PaymentInput,
 } from "@/lib/validations/billing";
 import type { InvoiceStatus } from "@/types";
-import { escapePostgrestSearch } from "@/lib/utils/search";
+import { escapePostgrestSearch, normalizeSearchTerm } from "@/lib/utils/search";
 
 type ActionResult<T = void> =
   | { success: true; data: T }
@@ -162,12 +162,13 @@ export async function getInvoices(
     if (search) {
       const safe = escapePostgrestSearch(search);
       if (safe) {
+        const safeNorm = normalizeSearchTerm(safe);
         const { data: matchingClients } = await supabase
           .from("clients")
           .select("id")
           .eq("org_id", orgId)
           .or(
-            `first_name.ilike.%${safe}%,last_name.ilike.%${safe}%`
+            `first_name_search.ilike.%${safeNorm}%,last_name_search.ilike.%${safeNorm}%`
           );
 
         const clientIds = (matchingClients ?? []).map((c) => c.id);

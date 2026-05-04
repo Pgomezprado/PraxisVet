@@ -266,6 +266,25 @@ export async function getGroomers(orgId: string) {
   }
 }
 
+export async function getGroomingServiceNames(orgId: string): Promise<string[]> {
+  const supabase = await createSupabaseClient();
+  const { data } = await supabase
+    .from("services")
+    .select("name")
+    .eq("org_id", orgId)
+    .eq("category", "grooming")
+    .eq("active", true)
+    .order("name", { ascending: true });
+
+  return Array.from(
+    new Set(
+      (data ?? [])
+        .map((s) => (s.name ?? "").trim())
+        .filter((n): n is string => n.length > 0)
+    )
+  );
+}
+
 export async function getLinkedGroomingRecord(appointmentId: string) {
   const supabase = await createSupabaseClient();
 

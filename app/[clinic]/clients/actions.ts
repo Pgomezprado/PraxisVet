@@ -12,7 +12,7 @@ import {
   type NewTutorWithPetInput,
 } from "@/lib/validations/clients";
 import type { Client, Pet } from "@/types";
-import { escapePostgrestSearch } from "@/lib/utils/search";
+import { escapePostgrestSearch, normalizeSearchTerm } from "@/lib/utils/search";
 import {
   invitePortalAccess,
   revokePortalAccess,
@@ -94,11 +94,12 @@ export async function getClients(
   if (search) {
     const safe = escapePostgrestSearch(search);
     if (safe) {
+      const safeNorm = normalizeSearchTerm(safe);
       const { data: matchingPets } = await supabase
         .from("pets")
         .select("client_id")
         .eq("org_id", orgId)
-        .ilike("name", `%${safe}%`);
+        .ilike("name_search", `%${safeNorm}%`);
 
       const petClientIds = Array.from(
         new Set(
@@ -106,7 +107,7 @@ export async function getClients(
         )
       ).slice(0, 500);
 
-      const baseOr = `first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`;
+      const baseOr = `first_name_search.ilike.%${safeNorm}%,last_name_search.ilike.%${safeNorm}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`;
       const orExpr =
         petClientIds.length > 0
           ? `${baseOr},id.in.(${petClientIds.join(",")})`
@@ -496,7 +497,7 @@ export async function checkPetNameExists(
     .eq("org_id", orgId)
     .eq("client_id", clientId)
     .eq("active", true)
-    .ilike("name", trimmed)
+    .ilike("name_search", normalizeSearchTerm(trimmed))
     .limit(1);
 
   if (excludePetId) {

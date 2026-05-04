@@ -14,6 +14,7 @@ import {
   updateGroomingRecord,
 } from "@/app/[clinic]/clients/[id]/pets/[petId]/grooming/actions";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,22 +37,12 @@ interface Groomer {
   specialty: string | null;
 }
 
-const SERVICE_SUGGESTIONS = [
-  "Baño",
-  "Baño + corte",
-  "Corte higiénico",
-  "Corte completo",
-  "Corte de uñas",
-  "Limpieza de oídos",
-  "Desenredado",
-  "Baño medicado",
-];
-
 interface GroomingRecordFormProps {
   petId: string;
   petName: string;
   clientId: string;
   groomers: Groomer[];
+  serviceOptions: string[];
   record?: {
     id: string;
     groomer_id: string | null;
@@ -77,6 +68,7 @@ export function GroomingRecordForm({
   petName,
   clientId,
   groomers,
+  serviceOptions,
   record,
   defaultAppointmentId,
   defaultGroomerId,
@@ -108,7 +100,6 @@ export function GroomingRecordForm({
     },
   });
 
-  const servicePerformed = watch("service_performed");
   const priceValue = watch("price");
 
   async function onSubmit(data: GroomingRecordInput) {
@@ -195,34 +186,28 @@ export function GroomingRecordForm({
 
           <div>
             <Label htmlFor="service_performed">Servicio realizado *</Label>
-            <Input
+            <Combobox
               id="service_performed"
-              placeholder="Ej: Baño + corte"
-              list="service-suggestions"
-              {...register("service_performed")}
+              value={watch("service_performed") ?? ""}
+              onChange={(v) =>
+                setValue("service_performed", v, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }
+              options={serviceOptions}
+              placeholder={
+                serviceOptions.length > 0
+                  ? "Busca o escribe el servicio"
+                  : "Ej: Baño + corte"
+              }
               aria-invalid={!!errors.service_performed}
             />
-            <datalist id="service-suggestions">
-              {SERVICE_SUGGESTIONS.map((s) => (
-                <option key={s} value={s} />
-              ))}
-            </datalist>
-            {!servicePerformed && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {SERVICE_SUGGESTIONS.slice(0, 5).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() =>
-                      setValue("service_performed", s, { shouldValidate: true })
-                    }
-                    className="rounded-full border border-border bg-secondary/50 px-2.5 py-0.5 text-xs text-secondary-foreground transition-colors hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
+            {serviceOptions.length === 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Tip: agrega los servicios de peluquería en Configuración → Servicios para que aparezcan acá al escribir.
+              </p>
+            ) : null}
             <FieldError message={errors.service_performed?.message} />
           </div>
 

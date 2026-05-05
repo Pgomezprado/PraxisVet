@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { CalendarDays, PawPrint, Stethoscope } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -9,10 +8,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatSpecies } from "@/lib/validations/clients";
 import { RequestAppointmentButton } from "./_components/request-appointment-button";
 import { VaccineReminderBanner } from "./_components/vaccine-reminder-banner";
 import type { VaccineAlert } from "./_components/vaccine-reminder-banner";
+import { PetHeroSingle } from "./_components/pet-hero-single";
+import { PetHeroGrid } from "./_components/pet-hero-grid";
 import {
   getTutorPets,
   getTutorUpcomingAppointments,
@@ -105,28 +105,16 @@ export default async function TutorHomePage({
     });
   }
 
-  const hello = firstName ? `${greeting()}, ${firstName}` : greeting();
-  const subtitle =
-    pets.length === 0
-      ? "Pronto verás aquí la información de tus mascotas."
-      : pets.length === 1
-        ? `¿Cómo está ${pets[0].name}?`
-        : "Tus engreídos del día";
+  const alertPetIds = new Set(alerts.map((a) => a.petId));
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {hello}
-          </h1>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
-        </div>
-        {pets.length > 0 && (
-          <RequestAppointmentButton clinicSlug={clinic} pets={pets} />
-        )}
-      </div>
+      {/* Saludo compacto en una línea — no domina la pantalla */}
+      <p className="text-base font-medium text-muted-foreground">
+        {firstName ? `${greeting()}, ${firstName}` : greeting()}
+      </p>
 
+      {/* Banner de vacunas — siempre antes del hero cuando aplica */}
       {alerts.length > 0 && tutorId && (
         <VaccineReminderBanner
           clinicSlug={clinic}
@@ -135,6 +123,20 @@ export default async function TutorHomePage({
         />
       )}
 
+      {/* Hero — el elemento más prominente */}
+      {pets.length === 0 ? (
+        <EmptyPetsState />
+      ) : pets.length === 1 ? (
+        <PetHeroSingle clinicSlug={clinic} pet={pets[0]} />
+      ) : (
+        <PetHeroGrid
+          clinicSlug={clinic}
+          pets={pets}
+          alertPetIds={alertPetIds}
+        />
+      )}
+
+      {/* Próximas citas */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -148,18 +150,16 @@ export default async function TutorHomePage({
         </CardHeader>
         <CardContent>
           {upcoming.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center">
+            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-8 text-center sm:flex-row sm:gap-4">
               <p className="text-sm text-muted-foreground">
-                No tienes horas reservadas.
+                Aún no tienes horas reservadas.
               </p>
               {pets.length > 0 && (
-                <div className="mt-3">
-                  <RequestAppointmentButton
-                    clinicSlug={clinic}
-                    pets={pets}
-                    variant="outline"
-                  />
-                </div>
+                <RequestAppointmentButton
+                  clinicSlug={clinic}
+                  pets={pets}
+                  variant="outline"
+                />
               )}
             </div>
           ) : (
@@ -169,7 +169,7 @@ export default async function TutorHomePage({
                   key={appt.id}
                   className="flex flex-wrap items-start justify-between gap-3 py-3"
                 >
-                  <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex min-w-0 items-start gap-3">
                     <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
                       {appt.type === "grooming" ? (
                         <PawPrint className="size-4 text-primary" />
@@ -200,58 +200,22 @@ export default async function TutorHomePage({
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PawPrint className="size-4" />
-            {pets.length === 1 ? "Mi mascota" : "Mis mascotas"}
-            <Badge variant="secondary">{pets.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {pets.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Aún no hay mascotas registradas. La clínica las irá agregando a
-              tu ficha.
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {pets.map((pet) => (
-                <Link
-                  key={pet.id}
-                  href={`/tutor/${clinic}/pets/${pet.id}`}
-                  className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:border-primary/50 hover:bg-muted/30"
-                >
-                  {pet.photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={pet.photo_url}
-                      alt={pet.name}
-                      className="size-12 shrink-0 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <PawPrint className="size-5 text-primary" />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{pet.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {[
-                        formatSpecies(pet.species),
-                        pet.breed,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || "Sin datos"}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+function EmptyPetsState() {
+  return (
+    <div className="rounded-2xl border-2 border-dashed bg-card/50 p-8 text-center">
+      <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-primary/10">
+        <PawPrint className="size-7 text-primary" />
+      </div>
+      <p className="text-base font-semibold">
+        Pronto verás aquí a tus engreídos
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        La clínica registrará a tus mascotas en tu próxima visita.
+      </p>
     </div>
   );
 }

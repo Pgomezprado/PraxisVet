@@ -34,6 +34,7 @@ import {
 } from "../../queries";
 import { listHealthCards } from "../../actions";
 import { HealthCardButton } from "../../_components/health-card-button";
+import { TutorPetPhoto } from "../../_components/tutor-pet-photo";
 
 // Marca como "vigente" / "por_vencer" / "vencida" un item con next_due_date.
 function classifyDue(nextDueDate: string | null, warningDays = 30) {
@@ -135,17 +136,12 @@ export default async function TutorPetDetailPage({
           <ArrowLeft className="size-4" />
         </Button>
         <div className="flex items-center gap-4">
-          {pet.photo_url ? (
-            <img
-              src={pet.photo_url}
-              alt={pet.name}
-              className="size-14 shrink-0 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <PawPrint className="size-6 text-primary" />
-            </div>
-          )}
+          <TutorPetPhoto
+            clinicSlug={clinic}
+            petId={pet.id}
+            petName={pet.name}
+            initialPhotoUrl={pet.photo_url}
+          />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
               {pet.name}

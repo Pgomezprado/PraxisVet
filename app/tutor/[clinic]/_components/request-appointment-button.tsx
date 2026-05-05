@@ -25,12 +25,14 @@ type Props = {
   clinicSlug: string;
   pets: TutorPet[];
   variant?: "default" | "outline";
+  size?: "sm" | "default" | "lg";
 };
 
 export function RequestAppointmentButton({
   clinicSlug,
   pets,
   variant = "default",
+  size = "sm",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,10 +61,10 @@ export function RequestAppointmentButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant={variant} size="sm">
+          <Button variant={variant} size={size}>
             <Plus className="size-4" data-icon="inline-start" />
             {pets.length === 1
-              ? `Reservar para ${pets[0].name}`
+              ? `Reservar una hora para ${pets[0].name}`
               : "Reservar una hora"}
           </Button>
         }

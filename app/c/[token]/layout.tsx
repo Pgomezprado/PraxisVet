@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import "./tutor-theme.css";
+import "../../tutor/tutor-theme.css";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
-  title: "Portal del tutor · PraxisVet",
 };
 
-export default function TutorRootLayout({
+export default function PublicHealthCardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div data-theme="tutor-warm" className="min-h-screen bg-background text-foreground">
+    <div
+      data-theme="tutor-warm"
+      className="min-h-screen bg-background text-foreground"
+    >
       {children}
     </div>
   );

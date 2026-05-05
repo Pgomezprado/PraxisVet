@@ -134,27 +134,27 @@ export function TutorPetPhoto({
             aria-label={
               photoUrl ? `Cambiar foto de ${petName}` : `Subir foto de ${petName}`
             }
-            className="group relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-transparent transition hover:ring-primary/40 disabled:opacity-60"
+            className="group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-2 ring-primary/20 transition hover:ring-primary/40 disabled:opacity-60 sm:size-28"
           >
             {photoUrl ? (
               <Image
                 src={photoUrl}
                 alt={petName}
                 fill
-                sizes="56px"
+                sizes="(min-width: 640px) 112px, 96px"
                 className="object-cover"
               />
             ) : (
-              <PawPrint className="size-6 text-primary" />
+              <PawPrint className="size-10 text-primary" />
             )}
 
             {busy ? (
               <span className="absolute inset-0 flex items-center justify-center bg-background/70">
-                <Loader2 className="size-4 animate-spin text-primary" />
+                <Loader2 className="size-5 animate-spin text-primary" />
               </span>
             ) : (
-              <span className="absolute inset-x-0 bottom-0 flex h-2/5 items-end justify-center bg-linear-to-t from-black/60 to-transparent pb-1 opacity-0 transition group-hover:opacity-100">
-                <Camera className="size-3 text-white" />
+              <span className="absolute inset-x-0 bottom-0 flex h-1/3 items-end justify-center bg-linear-to-t from-black/60 to-transparent pb-1.5 opacity-0 transition group-hover:opacity-100">
+                <Camera className="size-4 text-white" />
               </span>
             )}
           </button>

@@ -1,0 +1,94 @@
+/* =============================================================
+   Tema cálido del Portal del Tutor (light durazno/crema/menta).
+   Se aplica únicamente bajo el atributo [data-theme="tutor-warm"]
+   para no contaminar el resto de la app (backoffice sigue dark).
+
+   Override de tokens del sistema definidos en app/globals.css.
+   Compatible con `.dark *` porque [data-theme="tutor-warm"]
+   resetea explícitamente todos los tokens y la `color-scheme`.
+   ============================================================= */
+
+[data-theme="tutor-warm"] {
+  color-scheme: light;
+
+  /* Paleta cálida — derivada del verde forestal pero suavizada
+     hacia crema/durazno para sentirse del tutor y su mascota. */
+  --background: oklch(0.98 0.015 75);
+  --foreground: oklch(0.25 0.02 160);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.02 160);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.02 160);
+
+  --primary: oklch(0.62 0.13 155);
+  --primary-foreground: oklch(0.99 0.005 155);
+
+  --secondary: oklch(0.95 0.025 75);
+  --secondary-foreground: oklch(0.32 0.05 160);
+
+  --muted: oklch(0.95 0.02 75);
+  --muted-foreground: oklch(0.45 0.02 155);
+
+  --accent: oklch(0.85 0.08 60);
+  --accent-foreground: oklch(0.32 0.06 60);
+
+  --destructive: oklch(0.6 0.18 25);
+
+  --border: oklch(0.9 0.015 75);
+  --input: oklch(0.9 0.015 75);
+  --ring: oklch(0.62 0.13 155);
+
+  --chart-1: oklch(0.62 0.13 155);
+  --chart-2: oklch(0.85 0.08 60);
+  --chart-3: oklch(0.55 0.12 155);
+  --chart-4: oklch(0.78 0.10 60);
+  --chart-5: oklch(0.45 0.10 155);
+
+  --radius: 0.625rem;
+
+  /* Sidebar tokens — el portal tutor no tiene sidebar real,
+     pero shadcn los lee. Mantenemos light/cálido por consistencia. */
+  --sidebar: oklch(0.98 0.015 75);
+  --sidebar-foreground: oklch(0.25 0.02 160);
+  --sidebar-primary: oklch(0.62 0.13 155);
+  --sidebar-primary-foreground: oklch(0.99 0.005 155);
+  --sidebar-accent: oklch(0.95 0.02 75);
+  --sidebar-accent-foreground: oklch(0.32 0.05 160);
+  --sidebar-border: oklch(0.9 0.015 75);
+  --sidebar-ring: oklch(0.62 0.13 155);
+
+  /* Apaga el glow ambiental dark del body. */
+  background-image: none !important;
+}
+
+/* El root layout fija .dark en <html>. Cuando el portal monta su
+   contenedor con data-theme="tutor-warm", queremos que el body
+   pinte cálido aunque <html class="dark"> siga ahí. */
+html.dark [data-theme="tutor-warm"] {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Toaster (sonner) está fuera del árbol del portal pero el portal
+   muestra toasts. Forzamos que al menos los toasts disparados
+   desde rutas /tutor o /c se vean cálidos via la clase utilitaria. */
+[data-theme="tutor-warm"] [data-sonner-toaster] {
+  --normal-bg: oklch(1 0 0);
+  --normal-text: oklch(0.25 0.02 160);
+  --normal-border: oklch(0.9 0.015 75);
+}
+
+/* Halos cálidos sutiles en el background — durazno arriba, menta abajo.
+   Son decorativos, sin distraer del contenido. */
+[data-theme="tutor-warm"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 0% 0%, oklch(0.85 0.08 60 / 0.18), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, oklch(0.62 0.13 155 / 0.10), transparent 60%);
+}

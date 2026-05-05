@@ -17,6 +17,7 @@ import {
 import { formatSpecies } from "@/lib/validations/clients";
 import { Separator } from "@/components/ui/separator";
 import { PrintCardButton } from "./_components/print-card-button";
+import { TutorAnalyticsBeacon } from "../../tutor/[clinic]/_components/tutor-analytics-beacon";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -296,32 +297,36 @@ export default async function PublicHealthCardPage({
 
   return (
     <main className="health-card mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
-      {/* Header clínica */}
+      <TutorAnalyticsBeacon
+        event="tutor_healthcard_public_viewed"
+        clinicSlug={organization.slug}
+        petId={pet.id}
+      />
+      {/* Header: carnet del paciente, emitido por la clínica */}
       <header className="health-card__header mb-6 flex flex-col items-center gap-3 text-center">
         {organization.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={organization.logo_url}
             alt={organization.name}
-            className="h-16 w-auto max-w-55 object-contain"
+            className="h-12 w-auto max-w-55 object-contain"
           />
         ) : (
-          <div className="flex size-14 items-center justify-center rounded-xl bg-primary/10 text-2xl font-bold text-primary">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-xl font-bold text-primary">
             {organization.name[0]?.toUpperCase()}
           </div>
         )}
         <div>
           <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-            Cartola sanitaria emitida por
+            Carnet sanitario digital
           </p>
-          <h1 className="mt-0.5 text-xl font-semibold tracking-tight">
-            {organization.name}
+          <h1 className="mt-0.5 text-2xl font-bold tracking-tight sm:text-3xl">
+            Carnet de {pet.name}
           </h1>
-          {organization.address ? (
-            <p className="text-xs text-muted-foreground">
-              {organization.address}
-            </p>
-          ) : null}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Emitido por {organization.name}
+            {organization.address ? <> · {organization.address}</> : null}
+          </p>
         </div>
       </header>
 

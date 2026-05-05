@@ -34,6 +34,7 @@ import {
 } from "../../queries";
 import { listHealthCards } from "../../actions";
 import { HealthCardButton } from "../../_components/health-card-button";
+import { TutorAnalyticsBeacon } from "../../_components/tutor-analytics-beacon";
 import { TutorPetPhoto } from "../../_components/tutor-pet-photo";
 
 // Marca como "vigente" / "por_vencer" / "vencida" un item con next_due_date.
@@ -124,9 +125,25 @@ export default async function TutorPetDetailPage({
 
   const age = pet.birthdate ? calculateAge(pet.birthdate) : null;
 
+  // Subtítulo cálido: "Canino de 2 años" si hay especie + edad,
+  // si no, lo que esté disponible.
+  const speciesLabel = formatSpecies(pet.species);
+  const warmSubtitle = (() => {
+    if (speciesLabel && age) return `${speciesLabel} de ${age}`;
+    if (speciesLabel) return speciesLabel;
+    if (age) return age;
+    return "Tu engreído";
+  })();
+
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
+      <TutorAnalyticsBeacon
+        event="tutor_pet_viewed"
+        clinicSlug={clinic}
+        petId={pet.id}
+      />
+
+      <div>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -135,27 +152,29 @@ export default async function TutorPetDetailPage({
         >
           <ArrowLeft className="size-4" />
         </Button>
-        <div className="flex items-center gap-4">
-          <TutorPetPhoto
-            clinicSlug={clinic}
-            petId={pet.id}
-            petName={pet.name}
-            initialPhotoUrl={pet.photo_url}
-          />
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {pet.name}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {[formatSpecies(pet.species), pet.breed, age]
-                .filter(Boolean)
-                .join(" · ") || "Sin datos"}
-            </p>
-          </div>
-        </div>
       </div>
 
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card ring-1 ring-primary/20">
+      {/* Hero del paciente: foto circular interactiva a la izquierda + nombre al lado.
+          El tutor puede tocar la foto para subirla, ajustarla (zoom + drag) y guardarla. */}
+      <section className="flex items-center gap-5">
+        <TutorPetPhoto
+          clinicSlug={clinic}
+          petId={pet.id}
+          petName={pet.name}
+          initialPhotoUrl={pet.photo_url}
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            {pet.name}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {warmSubtitle}
+            {pet.breed ? <> · {pet.breed}</> : null}
+          </p>
+        </div>
+      </section>
+
+      <Card className="border-primary/30 bg-linear-to-br from-primary/10 via-card to-card ring-1 ring-primary/20">
         <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3 min-w-0">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">

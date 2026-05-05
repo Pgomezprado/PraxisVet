@@ -53,3 +53,32 @@ export function getGreeting(): string {
   if (hour < 19) return "Buenas tardes";
   return "Buenas noches";
 }
+
+/**
+ * Edad de mascota en lenguaje natural es-CL.
+ * Ejemplos: "8 meses", "1 año", "1 año y 3 meses", "4 años".
+ * Devuelve null si no hay birthdate.
+ */
+export function formatPetAge(birthdate: string | null | undefined): string | null {
+  if (!birthdate) return null;
+  const birth = new Date(birthdate + "T12:00:00");
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months -= 1;
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  if (years <= 0) {
+    const totalMonths = Math.max(0, years * 12 + months);
+    if (totalMonths === 0) return "recién nacido/a";
+    if (totalMonths === 1) return "1 mes";
+    return `${totalMonths} meses`;
+  }
+  const y = years === 1 ? "1 año" : `${years} años`;
+  if (months === 0) return y;
+  const m = months === 1 ? "1 mes" : `${months} meses`;
+  return `${y} y ${m}`;
+}

@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { trackTutorEvent } from "@/lib/analytics/tutor-events";
 import { requestAppointment } from "../actions";
 import type { TutorPet } from "../queries";
 
@@ -24,12 +25,14 @@ type Props = {
   clinicSlug: string;
   pets: TutorPet[];
   variant?: "default" | "outline";
+  size?: "sm" | "default" | "lg";
 };
 
 export function RequestAppointmentButton({
   clinicSlug,
   pets,
   variant = "default",
+  size = "sm",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +47,12 @@ export function RequestAppointmentButton({
         setError(res.error);
         return;
       }
+      const petId = formData.get("petId")?.toString() ?? null;
+      trackTutorEvent("tutor_appointment_requested", {
+        clinic_slug: clinicSlug,
+        pet_id: petId,
+        source: "dashboard_button",
+      });
       setOpen(false);
     });
   }
@@ -52,17 +61,23 @@ export function RequestAppointmentButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant={variant} size="sm">
+          <Button variant={variant} size={size}>
             <Plus className="size-4" data-icon="inline-start" />
-            Solicitar cita
+            {pets.length === 1
+              ? `Reservar una hora para ${pets[0].name}`
+              : "Reservar una hora"}
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Solicitar una cita</DialogTitle>
+          <DialogTitle>
+            {pets.length === 1
+              ? `Reservar para ${pets[0].name}`
+              : "Reservar una hora"}
+          </DialogTitle>
           <DialogDescription>
-            Enviaremos tu solicitud a la clínica. Te confirmarán el horario
+            Enviamos tu solicitud a la clínica. Te confirmarán el horario
             definitivo lo antes posible.
           </DialogDescription>
         </DialogHeader>

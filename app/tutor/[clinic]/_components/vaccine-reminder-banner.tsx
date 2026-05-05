@@ -107,8 +107,8 @@ export function VaccineReminderBanner({
         {visible.map((a) => {
           const isOverdue = a.status === "vencida";
           const tone = isOverdue
-            ? "border-[oklch(0.85_0.08_60)]/60 bg-[oklch(0.96_0.05_60)]"
-            : "border-amber-200/80 bg-amber-50/80";
+            ? "border-2 border-[oklch(0.78_0.12_45)]/70 bg-[oklch(0.94_0.08_55)] shadow-sm"
+            : "border-2 border-amber-300/80 bg-amber-100/80 shadow-sm";
           const Icon = isOverdue ? AlertTriangle : Hourglass;
           const iconTone = isOverdue
             ? "text-[oklch(0.55_0.15_45)]"

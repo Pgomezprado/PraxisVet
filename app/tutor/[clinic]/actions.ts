@@ -130,6 +130,49 @@ export async function requestAppointment(
 }
 
 // ============================================================
+// Foto de la mascota (tutor)
+// ============================================================
+
+const updatePhotoSchema = z.object({
+  petId: z.string().uuid("Mascota inválida"),
+  photoUrl: z.string().url().nullable(),
+});
+
+/**
+ * El tutor actualiza la foto de su mascota. La validación de ownership
+ * vive en la RPC `tutor_set_pet_photo` (SECURITY DEFINER + is_tutor_of_pet).
+ * Pasar `photoUrl: null` quita la foto.
+ */
+export async function updatePetPhoto(
+  clinicSlug: string,
+  input: { petId: string; photoUrl: string | null }
+): Promise<ActionResult> {
+  const parsed = updatePhotoSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { error } = await supabase.rpc("tutor_set_pet_photo", {
+    p_pet_id: parsed.data.petId,
+    p_photo_url: parsed.data.photoUrl,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/tutor/${clinicSlug}/pets/${parsed.data.petId}`);
+  revalidatePath(`/tutor/${clinicSlug}`);
+  return { success: true };
+}
+
+// ============================================================
 // Cartola Sanitaria QR
 // ============================================================
 

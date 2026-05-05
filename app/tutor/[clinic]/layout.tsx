@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/billing/logout-button";
+import { TutorAnalyticsBeacon } from "./_components/tutor-analytics-beacon";
 
 export const dynamic = "force-dynamic";
 
@@ -56,15 +57,41 @@ export default async function TutorClinicLayout({
     ? `${client.first_name?.[0] ?? ""}${client.last_name?.[0] ?? ""}`.toUpperCase()
     : "T";
 
+  // Para el tagline necesitamos saber cuántas mascotas tiene el tutor.
+  // Una sola query liviana — solo nombres.
+  const { data: petsRows } = await supabase
+    .from("pets")
+    .select("name")
+    .eq("active", true)
+    .order("name", { ascending: true });
+
+  const pets = petsRows ?? [];
+  const firstPet = pets[0]?.name ?? null;
+
+  const tagline =
+    pets.length === 0
+      ? "Bienvenido a tu portal"
+      : pets.length === 1 && firstPet
+        ? `Aquí está todo lo de ${firstPet}`
+        : "Aquí está todo lo de tus mascotas";
+
+  const tutorFirstName = client?.first_name?.split(" ")[0] ?? "Tutor";
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur">
+    <div className="min-h-screen">
+      <TutorAnalyticsBeacon
+        event="tutor_portal_opened"
+        clinicSlug={clinic}
+        tutorId={user.id}
+      />
+      <header className="border-b border-border/60 bg-card/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3">
           <Link
             href={`/tutor/${clinic}`}
             className="flex items-center gap-3 min-w-0"
           >
             {org.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={org.logo_url}
                 alt={org.name}
@@ -77,24 +104,26 @@ export default async function TutorClinicLayout({
             )}
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold leading-tight">
-                {org.name}
+                Hola, {tutorFirstName}
               </p>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Portal del tutor
+              <p className="truncate text-[11px] tracking-wide text-muted-foreground">
+                {tagline}
               </p>
             </div>
           </Link>
 
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-xs text-muted-foreground">Conectado como</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {org.name}
+              </p>
               <p className="text-sm font-medium">
                 {client
                   ? `${client.first_name} ${client.last_name}`
                   : "Tutor"}
               </p>
             </div>
-            <div className="flex size-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
+            <div className="flex size-9 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
               {initials}
             </div>
             <LogoutButton />

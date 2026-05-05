@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { trackTutorEvent } from "@/lib/analytics/tutor-events";
 import { requestAppointment } from "../actions";
 import type { TutorPet } from "../queries";
 
@@ -44,6 +45,12 @@ export function RequestAppointmentButton({
         setError(res.error);
         return;
       }
+      const petId = formData.get("petId")?.toString() ?? null;
+      trackTutorEvent("tutor_appointment_requested", {
+        clinic_slug: clinicSlug,
+        pet_id: petId,
+        source: "dashboard_button",
+      });
       setOpen(false);
     });
   }
@@ -54,15 +61,21 @@ export function RequestAppointmentButton({
         render={
           <Button variant={variant} size="sm">
             <Plus className="size-4" data-icon="inline-start" />
-            Solicitar cita
+            {pets.length === 1
+              ? `Reservar para ${pets[0].name}`
+              : "Reservar una hora"}
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Solicitar una cita</DialogTitle>
+          <DialogTitle>
+            {pets.length === 1
+              ? `Reservar para ${pets[0].name}`
+              : "Reservar una hora"}
+          </DialogTitle>
           <DialogDescription>
-            Enviaremos tu solicitud a la clínica. Te confirmarán el horario
+            Enviamos tu solicitud a la clínica. Te confirmarán el horario
             definitivo lo antes posible.
           </DialogDescription>
         </DialogHeader>

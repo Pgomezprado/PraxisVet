@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { HealthCardSheet } from "./health-card-sheet";
 import { HealthCardListSheet } from "./health-card-list-sheet";
+import { trackTutorEvent } from "@/lib/analytics/tutor-events";
 import type { HealthCardSummary } from "../actions";
 
 type Props = {
@@ -39,6 +40,10 @@ export function HealthCardButton(props: Props) {
     startTransition(() => {
       setCards((prev) => [card, ...prev]);
     });
+    trackTutorEvent("tutor_healthcard_generated", {
+      clinic_slug: props.clinicSlug,
+      pet_id: props.petId,
+    });
   }
 
   function handleRevoked(cardId: string) {
@@ -55,7 +60,7 @@ export function HealthCardButton(props: Props) {
 
   return (
     <>
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card">
+      <Card className="border-primary/30 bg-linear-to-br from-primary/5 via-card to-card">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">

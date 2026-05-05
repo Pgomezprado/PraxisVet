@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatSpecies } from "@/lib/validations/clients";
+import { TutorAnalyticsBeacon } from "../../../_components/tutor-analytics-beacon";
 import { HistoriaTimeline } from "./_components/HistoriaTimeline";
 import {
   formatTenureSince,
@@ -230,6 +231,11 @@ export default async function HistoriaPage({
 
   return (
     <div className="space-y-6">
+      <TutorAnalyticsBeacon
+        event="tutor_history_viewed"
+        clinicSlug={clinic}
+        petId={pet.id}
+      />
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -251,7 +257,7 @@ export default async function HistoriaPage({
       </div>
 
       {/* Hero */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card">
+      <Card className="border-primary/20 bg-linear-to-br from-primary/5 via-card to-card">
         <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left">
           {pet.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element

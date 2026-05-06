@@ -34,7 +34,7 @@ type ClientWithPets = {
   first_name: string;
   last_name: string;
   phone: string | null;
-  pets: { id: string; name: string; species: string | null; breed: string | null; active: boolean }[];
+  pets: { id: string; name: string; species: string | null; breed: string | null; active: boolean; is_dangerous?: boolean }[];
 };
 
 type Professional = {
@@ -418,12 +418,19 @@ export function AppointmentForm({
               <Select
                 id="pet_id"
                 value={watch("pet_id") ?? ""}
-                onChange={(e) =>
-                  setValue("pet_id", e.target.value, {
+                onChange={(e) => {
+                  const newPetId = e.target.value;
+                  setValue("pet_id", newPetId, {
                     shouldValidate: true,
                     shouldDirty: true,
-                  })
-                }
+                  });
+                  const selectedPet = availablePets.find(
+                    (p) => p.id === newPetId
+                  );
+                  if (selectedPet?.is_dangerous) {
+                    setValue("is_dangerous", true, { shouldDirty: true });
+                  }
+                }}
                 disabled={!selectedClientId}
                 aria-invalid={!!errors.pet_id}
               >

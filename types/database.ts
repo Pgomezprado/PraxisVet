@@ -11,6 +11,7 @@ export type Sex = "male" | "female";
 export type ReproductiveStatus = "intact" | "sterilized";
 export type ServiceCategory = "consultation" | "surgery" | "grooming" | "vaccine" | "lab" | "imaging" | "other";
 export type AppointmentType = "medical" | "grooming";
+export type DepositMethod = "cash" | "payment_link" | "transfer";
 export type AppointmentStatus =
   | "pending"
   | "confirmed"
@@ -130,6 +131,7 @@ export interface Pet {
   notes: string | null;
   size: PetSize | null;
   weight: number | null;
+  is_dangerous: boolean;
   active: boolean;
   created_at: string;
 }
@@ -188,6 +190,8 @@ export interface Appointment {
   deposit_amount: number | null;
   deposit_paid_at: string | null;
   deposit_collected_by: string | null;
+  deposit_method: DepositMethod | null;
+  deposit_reference: string | null;
   created_at: string;
 }
 

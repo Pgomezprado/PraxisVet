@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GroomingRecordForm } from "@/components/grooming/grooming-record-form";
-import { getGroomers, getGroomingServiceNames } from "../actions";
+import { LastGroomingSummary } from "@/components/grooming/last-grooming-summary";
+import { getGroomers, getGroomingRecords, getGroomingServiceNames } from "../actions";
 import { getPetWithClient } from "../../records/actions";
 import { getAppointment } from "@/app/[clinic]/appointments/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -68,9 +69,16 @@ export default async function NewGroomingRecordPage({
     );
   }
 
-  const groomersResult = await getGroomers(org.id);
+  const [groomersResult, serviceOptions, previousRecordsResult] =
+    await Promise.all([
+      getGroomers(org.id),
+      getGroomingServiceNames(org.id),
+      getGroomingRecords(petId),
+    ]);
   const groomers = groomersResult.data ?? [];
-  const serviceOptions = await getGroomingServiceNames(org.id);
+  const previousRecords = previousRecordsResult.success
+    ? previousRecordsResult.data
+    : [];
 
   let defaultGroomerId: string | undefined;
   let defaultAppointmentId: string | undefined;
@@ -134,6 +142,26 @@ export default async function NewGroomingRecordPage({
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
           Estás registrando una sesión histórica para mantener el historial de la mascota. Una vez guardada, solo el peluquero o admin podrá verla y editarla.
         </div>
+      )}
+
+      {petResult.data.is_dangerous && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-600" />
+          <div className="space-y-0.5">
+            <p className="font-medium">Animal peligroso o agresivo</p>
+            <p className="text-xs text-red-800/90 dark:text-red-300/80">
+              Esta mascota está marcada por la clínica. Considera bozal,
+              sedación previa o apoyo de otra persona antes de empezar.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!isHistoricalOnly && (
+        <LastGroomingSummary
+          petName={petResult.data.name}
+          records={previousRecords}
+        />
       )}
 
       <GroomingRecordForm

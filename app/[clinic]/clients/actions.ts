@@ -398,6 +398,7 @@ export async function createPet(
       photo_url: parsed.data.photo_url ?? null,
       size: parsed.data.size || null,
       weight: parsed.data.weight ?? null,
+      is_dangerous: parsed.data.is_dangerous ?? false,
     })
     .select()
     .single();
@@ -459,6 +460,7 @@ export async function updatePet(
       photo_url: parsed.data.photo_url ?? null,
       size: parsed.data.size || null,
       weight: parsed.data.weight ?? null,
+      is_dangerous: parsed.data.is_dangerous ?? false,
     })
     .eq("id", petId)
     .eq("org_id", orgId)

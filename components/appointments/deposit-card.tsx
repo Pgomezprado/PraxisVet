@@ -4,7 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Wallet, Plus, Pencil, Loader2 } from "lucide-react";
+import {
+  Wallet,
+  Plus,
+  Pencil,
+  Loader2,
+  Banknote,
+  Link2,
+  Building2,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,18 +31,44 @@ import {
   recordAppointmentDeposit,
   clearAppointmentDeposit,
 } from "@/app/[clinic]/appointments/actions";
+import {
+  DEPOSIT_METHOD_LABELS,
+  type DepositMethodValue,
+} from "@/lib/validations/appointments";
 
 interface DepositCardProps {
   appointmentId: string;
   depositAmount: number | null;
   depositPaidAt: string | null;
+  depositMethod: DepositMethodValue | null;
+  depositReference: string | null;
   canManage: boolean;
 }
+
+const METHOD_ICONS: Record<DepositMethodValue, typeof Banknote> = {
+  cash: Banknote,
+  payment_link: Link2,
+  transfer: Building2,
+};
+
+const REFERENCE_LABELS: Record<DepositMethodValue, string> = {
+  cash: "N° de boleta o comprobante (opcional)",
+  payment_link: "Link enviado o ID de pago",
+  transfer: "N° de transferencia",
+};
+
+const REFERENCE_PLACEHOLDERS: Record<DepositMethodValue, string> = {
+  cash: "Ej: comprobante 1234",
+  payment_link: "Ej: https://mpago.la/... o ID",
+  transfer: "Ej: 8 últimos dígitos del comprobante",
+};
 
 export function DepositCard({
   appointmentId,
   depositAmount,
   depositPaidAt,
+  depositMethod,
+  depositReference,
   canManage,
 }: DepositCardProps) {
   const router = useRouter();
@@ -42,6 +76,10 @@ export function DepositCard({
   const [amount, setAmount] = useState<string>(
     depositAmount != null ? String(depositAmount) : ""
   );
+  const [method, setMethod] = useState<DepositMethodValue>(
+    depositMethod ?? "cash"
+  );
+  const [reference, setReference] = useState<string>(depositReference ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -54,8 +92,19 @@ export function DepositCard({
       setError("Ingresa un monto válido en pesos (entero, mayor a 0).");
       return;
     }
+    const trimmedRef = reference.trim();
+    if (method !== "cash" && trimmedRef.length === 0) {
+      setError(
+        "Para link de pago o transferencia, anota el n° o link de referencia."
+      );
+      return;
+    }
     startTransition(async () => {
-      const result = await recordAppointmentDeposit(appointmentId, parsed);
+      const result = await recordAppointmentDeposit(appointmentId, {
+        amount: parsed,
+        method,
+        reference: trimmedRef,
+      });
       if (result.error) {
         setError(result.error);
         return;
@@ -74,6 +123,8 @@ export function DepositCard({
         return;
       }
       setAmount("");
+      setMethod("cash");
+      setReference("");
       setOpen(false);
       router.refresh();
     });
@@ -83,28 +134,52 @@ export function DepositCard({
     ? format(new Date(depositPaidAt), "d 'de' MMMM, yyyy", { locale: es })
     : null;
 
+  const MethodIcon = depositMethod ? METHOD_ICONS[depositMethod] : null;
+  const methodLabel = depositMethod
+    ? DEPOSIT_METHOD_LABELS[depositMethod]
+    : null;
+
   return (
     <Card>
-      <CardContent className="flex items-center justify-between gap-3 py-4">
-        <div className="flex items-center gap-3">
-          <Wallet className="size-4 text-primary" />
-          <div>
+      <CardContent className="flex items-start justify-between gap-3 py-4">
+        <div className="flex items-start gap-3">
+          <Wallet className="mt-0.5 size-4 text-primary" />
+          <div className="space-y-1">
             <p className="text-sm font-medium">
               {hasDeposit ? "Abono cobrado" : "Abono al confirmar"}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {hasDeposit ? (
-                <>
+            {hasDeposit ? (
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p>
                   <span className="font-medium text-foreground">
                     {formatCLP(depositAmount)}
                   </span>
                   {dateLabel && <> · cobrado el {dateLabel}</>}
-                  <> · se descuenta del total al cobrar el servicio.</>
-                </>
-              ) : (
-                "Cobra un abono para confirmar la hora. Se descontará del total cuando emitas la boleta."
-              )}
-            </p>
+                </p>
+                {methodLabel && (
+                  <p className="flex items-center gap-1.5">
+                    {MethodIcon && (
+                      <MethodIcon className="size-3.5 text-muted-foreground" />
+                    )}
+                    <span>{methodLabel}</span>
+                    {depositReference && (
+                      <>
+                        <span>·</span>
+                        <span className="font-medium text-foreground">
+                          {depositReference}
+                        </span>
+                      </>
+                    )}
+                  </p>
+                )}
+                <p>Se descuenta del total al cobrar el servicio.</p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Cobra un abono para confirmar la hora. Se descontará del total
+                cuando emitas la boleta.
+              </p>
+            )}
           </div>
         </div>
 
@@ -167,6 +242,56 @@ export function DepositCard({
                   <p className="text-xs text-muted-foreground">
                     Pesos chilenos, sin decimales.
                   </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>¿Cómo lo pagó?</Label>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {(
+                      Object.entries(DEPOSIT_METHOD_LABELS) as [
+                        DepositMethodValue,
+                        string,
+                      ][]
+                    ).map(([value, label]) => {
+                      const Icon = METHOD_ICONS[value];
+                      const selected = method === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setMethod(value)}
+                          className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                            selected
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-border bg-background hover:border-primary/50"
+                          }`}
+                          aria-pressed={selected}
+                        >
+                          <Icon className="size-4 shrink-0 text-primary" />
+                          <span>{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-reference">
+                    {REFERENCE_LABELS[method]}
+                  </Label>
+                  <Input
+                    id="deposit-reference"
+                    type="text"
+                    placeholder={REFERENCE_PLACEHOLDERS[method]}
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    maxLength={120}
+                  />
+                  {method !== "cash" && (
+                    <p className="text-xs text-muted-foreground">
+                      Útil para conciliar después con tu banco o pasarela.
+                    </p>
+                  )}
                 </div>
               </div>
 

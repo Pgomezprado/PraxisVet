@@ -352,7 +352,7 @@ export async function getPetWithClient(petId: string) {
     .from("pets")
     .select(
       `
-      id, name, species, breed, sex, birthdate, notes, client_id,
+      id, name, species, breed, sex, birthdate, notes, client_id, is_dangerous,
       client:clients!client_id (id, first_name, last_name)
     `
     )
@@ -372,6 +372,7 @@ export async function getPetWithClient(petId: string) {
     birthdate: string | null;
     notes: string | null;
     client_id: string;
+    is_dangerous: boolean;
     client: { id: string; first_name: string; last_name: string };
   }, error: null };
 }

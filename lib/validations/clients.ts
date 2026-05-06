@@ -154,6 +154,7 @@ export const petSchema = z.object({
     .max(999, "Peso fuera de rango")
     .nullable()
     .optional(),
+  is_dangerous: z.boolean().optional(),
 });
 
 export type PetInput = z.infer<typeof petSchema>;

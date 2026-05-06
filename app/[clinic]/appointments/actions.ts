@@ -2,8 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { appointmentSchema, updateStatusSchema } from "@/lib/validations/appointments";
-import type { AppointmentInput } from "@/lib/validations/appointments";
+import {
+  appointmentSchema,
+  depositSchema,
+  updateStatusSchema,
+} from "@/lib/validations/appointments";
+import type {
+  AppointmentInput,
+  DepositInput,
+} from "@/lib/validations/appointments";
 import type {
   AppointmentStatus,
   AppointmentType,
@@ -38,6 +45,8 @@ export type AppointmentWithRelations = {
   deposit_amount: number | null;
   deposit_paid_at: string | null;
   deposit_collected_by: string | null;
+  deposit_method: "cash" | "payment_link" | "transfer" | null;
+  deposit_reference: string | null;
   created_at: string;
   client: { id: string; first_name: string; last_name: string; phone: string | null };
   pet: { id: string; name: string; species: string | null; breed: string | null };
@@ -743,7 +752,7 @@ export async function getClientsWithPets(orgId: string) {
     .select(
       `
       id, first_name, last_name, phone,
-      pets (id, name, species, breed, active)
+      pets (id, name, species, breed, active, is_dangerous)
     `
     )
     .eq("org_id", orgId)
@@ -784,10 +793,12 @@ export async function getServices(orgId: string) {
 // inicial al crear la factura ligada a la cita).
 export async function recordAppointmentDeposit(
   appointmentId: string,
-  amountClp: number
+  input: DepositInput
 ) {
-  if (!Number.isFinite(amountClp) || !Number.isInteger(amountClp) || amountClp <= 0) {
-    return { error: "El monto del abono debe ser un entero mayor a 0." };
+  const parsed = depositSchema.safeParse(input);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message ?? "Datos inválidos.";
+    return { error: firstIssue };
   }
 
   const supabase = await createClient();
@@ -819,13 +830,17 @@ export async function recordAppointmentDeposit(
     return { error: "Solo recepción o admin pueden registrar abonos." };
   }
 
+  const reference = parsed.data.reference?.trim();
+
   // Mutación con .select() para detectar 0 filas (RLS silenciosa).
   const { data: updated, error: updateError } = await supabase
     .from("appointments")
     .update({
-      deposit_amount: amountClp,
+      deposit_amount: parsed.data.amount,
       deposit_paid_at: new Date().toISOString(),
       deposit_collected_by: member.id,
+      deposit_method: parsed.data.method,
+      deposit_reference: reference && reference.length > 0 ? reference : null,
     })
     .eq("id", appointmentId)
     .select("id");
@@ -871,6 +886,8 @@ export async function clearAppointmentDeposit(appointmentId: string) {
       deposit_amount: null,
       deposit_paid_at: null,
       deposit_collected_by: null,
+      deposit_method: null,
+      deposit_reference: null,
     })
     .eq("id", appointmentId)
     .select("id");

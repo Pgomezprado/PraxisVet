@@ -42,3 +42,40 @@ export const updateStatusSchema = z.object({
 });
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
+
+export const DEPOSIT_METHODS = ["cash", "payment_link", "transfer"] as const;
+export type DepositMethodValue = (typeof DEPOSIT_METHODS)[number];
+
+export const DEPOSIT_METHOD_LABELS: Record<DepositMethodValue, string> = {
+  cash: "Presencial (efectivo)",
+  payment_link: "Link de pago",
+  transfer: "Transferencia",
+};
+
+export const depositSchema = z
+  .object({
+    amount: z
+      .number()
+      .int("El monto debe ser entero (CLP)")
+      .positive("El monto debe ser mayor a 0"),
+    method: z.enum(DEPOSIT_METHODS, {
+      error: "Selecciona el medio de pago",
+    }),
+    reference: z
+      .string()
+      .trim()
+      .max(120, "Referencia demasiado larga")
+      .optional()
+      .or(z.literal("")),
+  })
+  .refine(
+    (data) =>
+      data.method === "cash" || (data.reference && data.reference.length > 0),
+    {
+      message:
+        "Para link de pago o transferencia debes anotar un n° de referencia",
+      path: ["reference"],
+    }
+  );
+
+export type DepositInput = z.infer<typeof depositSchema>;

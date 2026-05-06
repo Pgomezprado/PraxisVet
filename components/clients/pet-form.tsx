@@ -35,7 +35,8 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { PetPhotoUpload } from "@/components/ui/pet-photo-upload";
-import { Loader2, PawPrint } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { AlertTriangle, Loader2, PawPrint } from "lucide-react";
 import type { Pet } from "@/types";
 
 interface PetFormProps {
@@ -84,12 +85,14 @@ export function PetForm({ clientId, pet, customBreeds }: PetFormProps) {
       photo_url: pet?.photo_url ?? null,
       size: pet?.size ?? "",
       weight: pet?.weight ?? null,
+      is_dangerous: pet?.is_dangerous ?? false,
     },
   });
 
   const watchedSpecies = watch("species");
   const watchedSex = watch("sex");
   const watchedPhotoUrl = watch("photo_url");
+  const watchedDangerous = watch("is_dangerous") ?? false;
   const breedSuggestions = mergeBreedSuggestions(watchedSpecies, customBreeds);
   const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
 
@@ -338,6 +341,30 @@ export function PetForm({ clientId, pet, customBreeds }: PetFormProps) {
               placeholder="Alergias, temperamento, observaciones…"
               rows={2}
               {...register("notes")}
+            />
+          </div>
+
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-red-300 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/30">
+            <div className="space-y-1">
+              <Label
+                htmlFor="is_dangerous"
+                className="flex items-center gap-2 text-red-900 dark:text-red-200"
+              >
+                <AlertTriangle className="size-4 text-red-600" />
+                Animal peligroso o agresivo
+              </Label>
+              <p className="text-xs text-red-800/80 dark:text-red-300/80">
+                Marca esta opción si el paciente requiere manejo especial
+                (bozal, sedación, apoyo). Se mostrará una alerta destacada en
+                cada cita y en su ficha.
+              </p>
+            </div>
+            <Switch
+              id="is_dangerous"
+              checked={watchedDangerous}
+              onCheckedChange={(value) =>
+                setValue("is_dangerous", value, { shouldDirty: true })
+              }
             />
           </div>
         </CardContent>

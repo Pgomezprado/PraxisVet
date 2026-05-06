@@ -145,6 +145,8 @@ export default async function AppointmentDetailPage({
           appointmentId={appointment.id}
           depositAmount={appointment.deposit_amount}
           depositPaidAt={appointment.deposit_paid_at}
+          depositMethod={appointment.deposit_method}
+          depositReference={appointment.deposit_reference}
           canManage={canManageDeposit}
         />
       )}

@@ -153,7 +153,7 @@ export function VaccineReminderBanner({
         {more > 0 && (
           <p className="px-1 text-xs text-muted-foreground">
             +{more} {more === 1 ? "recordatorio" : "recordatorios"} más.
-            Mira el detalle entrando a la ficha de cada engreído.
+            Mira el detalle entrando a la ficha de cada regalón.
           </p>
         )}
       </div>

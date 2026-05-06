@@ -6,7 +6,7 @@
 
 const NEUTRAL_PHRASES = [
   "Tu eterno acompañante",
-  "Tu engreído/a del día",
+  "Tu regalón/a del día",
   "Tu fiel sombra",
   "Tu compañero/a inseparable",
   "Tu mejor escucha",
@@ -15,7 +15,7 @@ const NEUTRAL_PHRASES = [
 
 const MALE_PHRASES = [
   "Tu eterno acompañante",
-  "Tu engreído del día",
+  "Tu regalón del día",
   "Tu fiel compañero",
   "Tu mejor amigo de cuatro patas",
   "Tu sombra favorita",
@@ -23,7 +23,7 @@ const MALE_PHRASES = [
 
 const FEMALE_PHRASES = [
   "Tu eterna acompañante",
-  "Tu engreída del día",
+  "Tu regalona del día",
   "Tu fiel compañera",
   "Tu mejor amiga de cuatro patas",
   "Tu sombra favorita",

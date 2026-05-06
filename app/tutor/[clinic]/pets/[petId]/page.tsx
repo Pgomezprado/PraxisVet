@@ -132,7 +132,7 @@ export default async function TutorPetDetailPage({
     if (speciesLabel && age) return `${speciesLabel} de ${age}`;
     if (speciesLabel) return speciesLabel;
     if (age) return age;
-    return "Tu engreído";
+    return "Tu regalón";
   })();
 
   return (

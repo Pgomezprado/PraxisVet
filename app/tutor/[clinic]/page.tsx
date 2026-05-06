@@ -211,7 +211,7 @@ function EmptyPetsState() {
         <PawPrint className="size-7 text-primary" />
       </div>
       <p className="text-base font-semibold">
-        Pronto verás aquí a tus engreídos
+        Pronto verás aquí a tus regalones
       </p>
       <p className="mt-1 text-sm text-muted-foreground">
         La clínica registrará a tus mascotas en tu próxima visita.

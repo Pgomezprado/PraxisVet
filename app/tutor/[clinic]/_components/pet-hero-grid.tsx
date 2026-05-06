@@ -21,7 +21,7 @@ export function PetHeroGrid({
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 className="text-lg font-semibold tracking-tight">
-          Tus engreídos del día
+          Tus regalones del día
         </h2>
         <p className="text-xs text-muted-foreground">
           Toca cualquiera para ver su historia.

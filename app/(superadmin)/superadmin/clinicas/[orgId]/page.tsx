@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Info,
+  Star,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,13 @@ import {
   PlatformAdminAccessDenied,
 } from "@/lib/superadmin/guards";
 import { logSuperadminAction } from "@/lib/superadmin/audit";
+import { FounderToggle } from "../../_components/FounderToggle";
+import { AddClinicNoteForm } from "../../_components/AddClinicNoteForm";
+import { PinNoteButton } from "../../_components/PinNoteButton";
+import {
+  Activity30dSparklines,
+  type ActivityPoint,
+} from "../../_components/Activity30dSparklines";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +124,15 @@ type Trial = {
   founder_since: string | null;
 };
 
+type ClinicNote = {
+  id: string;
+  body: string;
+  created_at: string;
+  author_email: string | null;
+  author_name: string | null;
+  is_pinned: boolean;
+};
+
 type OrgPulse = {
   trial: Trial;
   blind_spots: BlindSpot[];
@@ -163,13 +180,49 @@ function RoleBadge({ role }: { role: MemberRole }) {
 
 function PlanBadge({ plan }: { plan: string }) {
   const variants: Record<string, string> = {
+    basico: "border-border/60 bg-muted/40 text-muted-foreground",
     free: "border-border/60 bg-muted/40 text-muted-foreground",
     pro: "border-primary/40 bg-primary/10 text-primary",
     enterprise: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
   };
   return (
-    <Badge variant="outline" className={variants[plan] ?? variants.free}>
+    <Badge variant="outline" className={variants[plan] ?? variants.basico}>
       {plan}
+    </Badge>
+  );
+}
+
+function SubscriptionBadge({ status }: { status: string | null }) {
+  if (!status) return <span className="text-muted-foreground">—</span>;
+  const map: Record<string, { label: string; cls: string }> = {
+    trial: {
+      label: "En prueba",
+      cls: "border-sky-500/40 bg-sky-500/10 text-sky-400",
+    },
+    active: {
+      label: "Activo",
+      cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
+    },
+    past_due: {
+      label: "Pago pendiente",
+      cls: "border-amber-500/40 bg-amber-500/10 text-amber-400",
+    },
+    expired: {
+      label: "Expirado",
+      cls: "border-red-500/40 bg-red-500/10 text-red-400",
+    },
+    cancelled: {
+      label: "Cancelado",
+      cls: "border-border/60 bg-muted/40 text-muted-foreground",
+    },
+  };
+  const item = map[status] ?? {
+    label: status,
+    cls: "border-border/60 bg-muted/40 text-muted-foreground",
+  };
+  return (
+    <Badge variant="outline" className={item.cls}>
+      {item.label}
     </Badge>
   );
 }
@@ -270,7 +323,7 @@ function TrialBadge({ trial }: { trial: Trial }) {
         variant="outline"
         className="border-violet-500/40 bg-violet-500/10 text-violet-400"
       >
-        Fundadora · desde {trial.founder_since}
+        <Star className="mr-1 h-3 w-3" /> Fundadora · desde {trial.founder_since}
       </Badge>
     );
   }
@@ -287,11 +340,7 @@ function TrialBadge({ trial }: { trial: Trial }) {
       </Badge>
     );
   }
-  return (
-    <Badge variant="outline" className="border-border/60 bg-muted/40">
-      {status}
-    </Badge>
-  );
+  return <SubscriptionBadge status={status} />;
 }
 
 function StatCard({
@@ -338,10 +387,10 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
   } catch (err) {
     if (err instanceof PlatformAdminAccessDenied) {
       if (err.reason === "no_user") {
-        redirect(`/auth/login?redirect=/superadmin/${orgId}`);
+        redirect(`/auth/login?redirect=/superadmin/clinicas/${orgId}`);
       }
       if (err.reason === "aal_insufficient" || err.reason === "aal_unknown") {
-        redirect(`/auth/mfa?redirect=/superadmin/${orgId}`);
+        redirect(`/auth/mfa?redirect=/superadmin/clinicas/${orgId}`);
       }
       redirect("/");
     }
@@ -350,11 +399,17 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
 
   // ---- Fetch ----
   const supabase = await createClient();
-  const [{ data, error }, { data: pulseData, error: pulseError }] =
-    await Promise.all([
-      supabase.rpc("superadmin_org_detail", { p_org_id: orgId }),
-      supabase.rpc("superadmin_org_pulse", { p_org_id: orgId }),
-    ]);
+  const [
+    { data, error },
+    { data: pulseData, error: pulseError },
+    { data: notesData, error: notesError },
+    { data: activityData, error: activityError },
+  ] = await Promise.all([
+    supabase.rpc("superadmin_org_detail", { p_org_id: orgId }),
+    supabase.rpc("superadmin_org_pulse", { p_org_id: orgId }),
+    supabase.rpc("superadmin_list_clinic_notes", { p_org_id: orgId }),
+    supabase.rpc("superadmin_clinic_activity_30d", { p_org_id: orgId }),
+  ]);
 
   if (error) {
     if (error.code === "P0002" || /org_not_found/.test(error.message ?? "")) {
@@ -363,10 +418,10 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
     return (
       <section className="space-y-4">
         <Link
-          href="/superadmin"
+          href="/superadmin/clinicas"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Volver
+          <ArrowLeft className="h-4 w-4" /> Volver a Clínicas
         </Link>
         <p className="text-sm text-red-400">
           Error cargando detalle: {error.message}
@@ -377,6 +432,10 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
 
   const detail = data as OrgDetail;
   const pulse = (pulseError ? null : (pulseData as OrgPulse | null)) ?? null;
+  const notes = (notesError ? [] : ((notesData ?? []) as ClinicNote[])) as ClinicNote[];
+  const activity30d = (
+    activityError ? [] : ((activityData ?? []) as ActivityPoint[])
+  ) as ActivityPoint[];
 
   // ---- Audit log ----
   await logSuperadminAction({
@@ -388,23 +447,26 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
   });
 
   const { identity, members, activity, adoption } = detail;
+  const isFounder = !!pulse?.trial.founder_since;
+  const trialEnds = pulse?.trial.trial_ends_at ?? null;
+  const subStatus = pulse?.trial.subscription_status ?? null;
 
   return (
     <section className="space-y-6">
       {/* Breadcrumb + volver */}
       <div className="flex items-center justify-between">
         <nav className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Link href="/superadmin" className="hover:text-foreground">
-            Superadmin
+          <Link href="/superadmin/clinicas" className="hover:text-foreground">
+            Clínicas
           </Link>
           <ChevronRight className="h-4 w-4" />
           <span className="text-foreground">{identity.name}</span>
         </nav>
         <Link
-          href="/superadmin"
+          href="/superadmin/clinicas"
           className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Volver
+          <ArrowLeft className="h-4 w-4" /> Volver a Clínicas
         </Link>
       </div>
 
@@ -412,13 +474,15 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <CardTitle className="text-2xl">{identity.name}</CardTitle>
-              <CardDescription>
-                praxisvet.cl/{identity.slug}
-              </CardDescription>
+              <CardDescription>praxisvet.cl/{identity.slug}</CardDescription>
+              <FounderToggle orgId={identity.id} isFounder={isFounder} />
             </div>
-            <PlanBadge plan={identity.plan} />
+            <div className="flex flex-col items-end gap-2">
+              <PlanBadge plan={identity.plan} />
+              <SubscriptionBadge status={subStatus} />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -433,10 +497,18 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
               </dd>
             </div>
             <div>
+              <dt className="text-xs text-muted-foreground">Trial vence</dt>
+              <dd>
+                {subStatus === "trial" && trialEnds
+                  ? absoluto(trialEnds)
+                  : "—"}
+              </dd>
+            </div>
+            <div>
               <dt className="text-xs text-muted-foreground">Teléfono</dt>
               <dd>{identity.phone || "—"}</dd>
             </div>
-            <div>
+            <div className="sm:col-span-3">
               <dt className="text-xs text-muted-foreground">Dirección</dt>
               <dd>{identity.address || "—"}</dd>
             </div>
@@ -490,15 +562,21 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
               <dl className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
                 <div>
                   <dt className="text-muted-foreground">Clientes totales</dt>
-                  <dd className="font-mono text-sm">{pulse.totals.clients_total}</dd>
+                  <dd className="font-mono text-sm">
+                    {pulse.totals.clients_total}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Docs emitidos 7d</dt>
-                  <dd className="font-mono text-sm">{pulse.totals.invoices_7d}</dd>
+                  <dd className="font-mono text-sm">
+                    {pulse.totals.invoices_7d}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Docs emitidos 30d</dt>
-                  <dd className="font-mono text-sm">{pulse.totals.invoices_30d}</dd>
+                  <dd className="font-mono text-sm">
+                    {pulse.totals.invoices_30d}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Días con actividad</dt>
@@ -544,9 +622,9 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
               </TableHeader>
               <TableBody>
                 {members.map((m) => {
-                  const fullName = [m.first_name, m.last_name]
-                    .filter(Boolean)
-                    .join(" ") || "—";
+                  const fullName =
+                    [m.first_name, m.last_name].filter(Boolean).join(" ") ||
+                    "—";
                   return (
                     <TableRow key={m.user_id ?? `${m.email}-${m.role}`}>
                       <TableCell className="font-medium">{fullName}</TableCell>
@@ -620,6 +698,19 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
+      {/* Bloque C.2 — Actividad últimos 30 días */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Actividad últimos 30 días</CardTitle>
+          <CardDescription>
+            Volumen diario por tipo de servicio
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Activity30dSparklines series={activity30d} />
+        </CardContent>
+      </Card>
+
       {/* Bloque D — Adopción por rol */}
       <Card>
         <CardHeader>
@@ -659,6 +750,96 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Bloque E — Notas comerciales */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notas comerciales</CardTitle>
+          <CardDescription>
+            Bitácora interna del equipo PraxisVet · las notas son inmutables
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <AddClinicNoteForm orgId={identity.id} />
+
+          {notes.length === 0 ? (
+            <div className="rounded-md border border-dashed border-border/60 bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
+              Aún no hay notas. La primera quedará registrada con tu correo y
+              la fecha.
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {notes.map((note) => (
+                <ClinicNoteItem
+                  key={note.id}
+                  note={note}
+                  orgId={identity.id}
+                />
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </section>
+  );
+}
+
+function ClinicNoteItem({
+  note,
+  orgId,
+}: {
+  note: ClinicNote;
+  orgId: string;
+}) {
+  const email = note.author_email ?? "Sistema";
+  const displayName = note.author_name?.trim() || null;
+  const headerLabel = displayName ?? email;
+  const initialsBase = displayName ?? email;
+  const initials =
+    initialsBase
+      .split(/[\s@._-]/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "?";
+
+  const containerCls = note.is_pinned
+    ? "flex items-start gap-3 rounded-md border border-primary/40 bg-primary/5 p-3"
+    : "flex items-start gap-3 rounded-md border border-border/60 bg-card/40 p-3";
+
+  return (
+    <li className={containerCls}>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/60 text-xs font-medium text-muted-foreground">
+        {initials}
+      </div>
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-sm font-medium">{headerLabel}</div>
+            {displayName && note.author_email && (
+              <div className="text-xs text-muted-foreground">
+                {note.author_email}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className="text-xs text-muted-foreground"
+              title={absoluto(note.created_at)}
+            >
+              {relativo(note.created_at)}
+            </span>
+            <PinNoteButton
+              noteId={note.id}
+              orgId={orgId}
+              isPinned={note.is_pinned}
+            />
+          </div>
+        </div>
+        <p className="whitespace-pre-wrap text-sm text-foreground/90">
+          {note.body}
+        </p>
+      </div>
+    </li>
   );
 }

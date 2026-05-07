@@ -14,7 +14,14 @@ import "server-only";
 import { headers } from "next/headers";
 import { createPlatformAdminClient } from "@/lib/supabase/platform-admin.server";
 
-export type SuperadminAction = "view_overview" | "view_org_detail";
+export type SuperadminAction =
+  | "view_overview"
+  | "view_org_detail"
+  | "view_summary"
+  | "view_clinics_list"
+  | "view_tutor_hub"
+  | "view_tutor_hub_detail"
+  | "view_funnel";
 
 type LogParams = {
   /** Acción lógica del panel. Se mapea a event_type = `panel.${action}`. */

@@ -32,6 +32,7 @@ import {
   PlatformAdminAccessDenied,
 } from "@/lib/superadmin/guards";
 import { logSuperadminAction } from "@/lib/superadmin/audit";
+import { DeleteOrgCard } from "./_components/delete-org-card";
 
 export const dynamic = "force-dynamic";
 
@@ -659,6 +660,15 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Zona peligrosa — eliminar clínica (solo owners) */}
+      {ctx.role === "owner" && (
+        <DeleteOrgCard
+          orgId={identity.id}
+          orgName={identity.name}
+          orgSlug={identity.slug}
+        />
+      )}
     </section>
   );
 }

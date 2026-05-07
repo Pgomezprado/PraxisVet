@@ -5,6 +5,7 @@ import { addDays } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema, type OnboardingInput } from "@/lib/validations/onboarding";
 import { TRIAL_DURATION_DAYS } from "@/lib/billing/constants";
+import { sendNewClinicNotificationEmail } from "@/lib/email/new-clinic-notification";
 
 export async function createOrganization(input: OnboardingInput) {
   const parsed = onboardingSchema.safeParse(input);
@@ -68,6 +69,23 @@ export async function createOrganization(input: OnboardingInput) {
   if (memberError) {
     console.error("Error creating member:", memberError);
     return { success: false as const, error: `Error al registrar al administrador: ${memberError.message}` };
+  }
+
+  try {
+    await sendNewClinicNotificationEmail({
+      clinicName: parsed.data.clinicName,
+      slug: parsed.data.slug,
+      plan: "pro",
+      adminName: `${parsed.data.firstName} ${parsed.data.lastName}`.trim(),
+      adminEmail: user.email ?? "—",
+      adminPhone: user.phone ?? null,
+      clinicPhone: parsed.data.phone || null,
+      clinicAddress: parsed.data.address || null,
+      createdAt: trialStartedAt,
+      orgId: org.id,
+    });
+  } catch (notifyError) {
+    console.error("[onboarding] notify owner failed:", notifyError);
   }
 
   redirect(`/${org.slug}/dashboard`);

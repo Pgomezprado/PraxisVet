@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
+import { differenceInCalendarDays, format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Star } from "lucide-react";
 import {
@@ -90,6 +90,41 @@ function PlanBadge({ plan }: { plan: string }) {
     <Badge variant="outline" className={variants[plan] ?? variants.basico}>
       {plan}
     </Badge>
+  );
+}
+
+function TrialEndsCell({
+  trialEndsAt,
+  status,
+}: {
+  trialEndsAt: string | null;
+  status: SubscriptionStatus;
+}) {
+  if (!trialEndsAt || status !== "trial") {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  const ends = new Date(trialEndsAt);
+  const days = differenceInCalendarDays(ends, new Date());
+  const fecha = format(ends, "dd-MM-yyyy");
+  let tone = "text-muted-foreground";
+  let etiqueta: string;
+  if (days < 0) {
+    tone = "text-red-400";
+    etiqueta = `Venció hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}`;
+  } else if (days === 0) {
+    tone = "text-red-400";
+    etiqueta = "Vence hoy";
+  } else if (days <= 7) {
+    tone = "text-amber-400";
+    etiqueta = `En ${days} ${days === 1 ? "día" : "días"}`;
+  } else {
+    etiqueta = `En ${days} días`;
+  }
+  return (
+    <div className="flex flex-col text-sm">
+      <span className="font-mono">{fecha}</span>
+      <span className={`text-xs ${tone}`}>{etiqueta}</span>
+    </div>
   );
 }
 
@@ -238,6 +273,7 @@ export default async function SuperadminClinicsPage({
                 <TableHead>Clínica</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Trial vence</TableHead>
                 <TableHead>Creación</TableHead>
                 <TableHead>Último login</TableHead>
                 <TableHead className="text-center">Usuarios 7d</TableHead>
@@ -282,6 +318,14 @@ export default async function SuperadminClinicsPage({
                     <TableCell>
                       <Link href={href} className="block">
                         <SubscriptionBadge status={r.subscription_status} />
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link href={href} className="block">
+                        <TrialEndsCell
+                          trialEndsAt={r.trial_ends_at}
+                          status={r.subscription_status}
+                        />
                       </Link>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">

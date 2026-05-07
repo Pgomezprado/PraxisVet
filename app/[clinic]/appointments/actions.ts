@@ -25,6 +25,7 @@ import {
 } from "@/lib/auth/capabilities";
 import { checkMemberAvailability } from "@/lib/auth/check-availability";
 import { canManageAppointmentDeposit } from "@/lib/auth/current-member";
+import { sendAppointmentConfirmation } from "@/lib/notifications/whatsapp";
 
 export type AppointmentWithRelations = {
   id: string;
@@ -393,6 +394,15 @@ export async function updateAppointmentStatus(appointmentId: string, status: App
 
   if (error) {
     return { data: null, error: error.message };
+  }
+
+  // Fire-and-forget: si la cita pasa a 'confirmed' y la org tiene WhatsApp
+  // habilitado + cliente opted-in + template configurado, mandar confirmación.
+  // Cualquier fallo queda en notification_logs sin romper la confirmación de UI.
+  if (parsed.data.status === "confirmed") {
+    void sendAppointmentConfirmation(appointmentId).catch((err) => {
+      console.error(`[appointments] sendAppointmentConfirmation failed`, err);
+    });
   }
 
   revalidatePath(`/[clinic]/appointments`, "page");

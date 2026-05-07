@@ -5,6 +5,7 @@ import {
   Building2,
   ShieldCheck,
   PawPrint,
+  MessageCircle,
 } from "lucide-react";
 import {
   Card,
@@ -43,6 +44,12 @@ const sections = [
     description: "Gestiona accesos, expiraciones y auditoría del portal.",
     href: "portal",
     icon: ShieldCheck,
+  },
+  {
+    title: "WhatsApp",
+    description: "Activa confirmaciones de cita y recordatorios automáticos.",
+    href: "whatsapp",
+    icon: MessageCircle,
   },
 ];
 

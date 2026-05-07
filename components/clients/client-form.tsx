@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { clientSchema, type ClientInput } from "@/lib/validations/clients";
 import { useClinic } from "@/lib/context/clinic-context";
@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -37,6 +38,7 @@ export function ClientForm({ client }: ClientFormProps) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<ClientInput>({
     resolver: zodResolver(clientSchema),
@@ -47,8 +49,12 @@ export function ClientForm({ client }: ClientFormProps) {
       email: client?.email ?? "",
       phone: client?.phone ?? "",
       address: client?.address ?? "",
+      whatsapp_opt_in: client?.whatsapp_opt_in ?? false,
     },
   });
+
+  const phoneValue = useWatch({ control, name: "phone" });
+  const phoneFilled = !!phoneValue && phoneValue.replace(/[^0-9]/g, "").length >= 9;
 
   async function onSubmit(data: ClientInput) {
     setLoading(true);
@@ -166,6 +172,30 @@ export function ClientForm({ client }: ClientFormProps) {
               {...register("address")}
             />
           </div>
+
+          <Controller
+            control={control}
+            name="whatsapp_opt_in"
+            render={({ field }) => (
+              <div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+                <div className="space-y-1">
+                  <Label className="text-base">
+                    Acepta recibir WhatsApp
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {phoneFilled
+                      ? "El tutor autoriza recibir confirmaciones de cita y recordatorios al teléfono ingresado."
+                      : "Ingresa primero el teléfono del tutor para activar esta opción."}
+                  </p>
+                </div>
+                <Switch
+                  checked={!!field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={!phoneFilled || loading}
+                />
+              </div>
+            )}
+          />
 
           <div className="flex gap-3">
             <Button type="submit" disabled={loading}>

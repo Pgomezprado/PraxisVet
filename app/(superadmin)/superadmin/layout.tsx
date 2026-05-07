@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SuperadminTabs } from "./_components/SuperadminTabs";
 
 export const metadata = {
   title: "Superadmin · PraxisVet",
@@ -25,6 +26,7 @@ export default function SuperadminLayout({ children }: { children: ReactNode }) 
           </Link>
         </div>
       </header>
+      <SuperadminTabs />
       <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
     </div>
   );

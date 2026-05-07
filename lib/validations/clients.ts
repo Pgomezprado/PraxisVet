@@ -73,6 +73,7 @@ export const clientSchema = z.object({
   phone: optionalPhoneField,
   address: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
+  whatsapp_opt_in: z.boolean().optional(),
 });
 
 export type ClientInput = z.infer<typeof clientSchema>;

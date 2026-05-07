@@ -195,6 +195,8 @@ export async function createClient(
 
   const { supabase } = await getAuthUser();
 
+  const optIn = parsed.data.whatsapp_opt_in === true;
+
   const { data, error } = await supabase
     .from("clients")
     .insert({
@@ -206,6 +208,9 @@ export async function createClient(
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
+      whatsapp_opt_in: optIn,
+      whatsapp_opt_in_at: optIn ? new Date().toISOString() : null,
+      whatsapp_opt_in_source: optIn ? "clinic_form" : null,
     })
     .select()
     .single();
@@ -235,6 +240,8 @@ export async function createTutorWithPet(
 
   const { supabase } = await getAuthUser();
 
+  const optIn = parsed.data.whatsapp_opt_in === true;
+
   const { data: client, error: clientError } = await supabase
     .from("clients")
     .insert({
@@ -246,6 +253,9 @@ export async function createTutorWithPet(
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
       notes: parsed.data.notes || null,
+      whatsapp_opt_in: optIn,
+      whatsapp_opt_in_at: optIn ? new Date().toISOString() : null,
+      whatsapp_opt_in_source: optIn ? "clinic_form" : null,
     })
     .select("id")
     .single();
@@ -304,6 +314,17 @@ export async function updateClient(
 
   const { supabase } = await getAuthUser();
 
+  // Lee el estado previo del opt-in para no sobreescribir el timestamp si el
+  // tutor ya había consentido antes (preservar evidencia histórica Ley 19.628).
+  const { data: prev } = await supabase
+    .from("clients")
+    .select("whatsapp_opt_in, whatsapp_opt_in_at, whatsapp_opt_in_source")
+    .eq("id", clientId)
+    .maybeSingle();
+
+  const optIn = parsed.data.whatsapp_opt_in === true;
+  const wasOptedIn = prev?.whatsapp_opt_in === true;
+
   const updatePayload: Record<string, unknown> = {
     first_name: parsed.data.first_name,
     last_name: parsed.data.last_name,
@@ -312,7 +333,15 @@ export async function updateClient(
     phone: parsed.data.phone || null,
     address: parsed.data.address || null,
     notes: parsed.data.notes || null,
+    whatsapp_opt_in: optIn,
   };
+
+  if (optIn && !wasOptedIn) {
+    // Nuevo consentimiento o reactivación → registrar timestamp + fuente.
+    updatePayload.whatsapp_opt_in_at = new Date().toISOString();
+    updatePayload.whatsapp_opt_in_source = "clinic_form";
+  }
+  // Si optIn === false: mantenemos at/source como evidencia histórica.
 
   const { data, error } = await supabase
     .from("clients")

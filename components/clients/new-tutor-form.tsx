@@ -22,6 +22,7 @@ import { Select } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -72,11 +73,14 @@ export function NewTutorForm({ customBreeds }: NewTutorFormProps = {}) {
       pet_reproductive_status: "",
       pet_size: "",
       pet_notes: "",
+      whatsapp_opt_in: false,
     },
   });
 
   const watchedSpecies = watch("pet_species");
   const watchedSex = watch("pet_sex");
+  const watchedPhone = watch("phone");
+  const phoneFilled = !!watchedPhone && watchedPhone.replace(/[^0-9]/g, "").length >= 9;
   const breedSuggestions = mergeBreedSuggestions(watchedSpecies, customBreeds);
   const reproductiveOptions = getReproductiveStatusOptions(watchedSex);
 
@@ -186,6 +190,30 @@ export function NewTutorForm({ customBreeds }: NewTutorFormProps = {}) {
               {...register("address")}
             />
           </div>
+
+          <Controller
+            control={control}
+            name="whatsapp_opt_in"
+            render={({ field }) => (
+              <div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+                <div className="space-y-1">
+                  <Label className="text-base">
+                    Acepta recibir WhatsApp
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {phoneFilled
+                      ? "El tutor autoriza recibir confirmaciones de cita y recordatorios."
+                      : "Ingresa primero el teléfono para activar esta opción."}
+                  </p>
+                </div>
+                <Switch
+                  checked={!!field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={!phoneFilled || loading}
+                />
+              </div>
+            )}
+          />
 
         </CardContent>
       </Card>

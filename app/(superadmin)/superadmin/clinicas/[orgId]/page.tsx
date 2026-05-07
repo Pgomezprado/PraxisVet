@@ -121,6 +121,7 @@ type Trial = {
   subscription_status: string | null;
   trial_ends_at: string | null;
   days_to_trial_end: number | null;
+  is_founder: boolean;
   founder_since: string | null;
 };
 
@@ -313,7 +314,7 @@ function DailySparkline({ series }: { series: DailyPoint[] }) {
 }
 
 function TrialBadge({ trial }: { trial: Trial }) {
-  const isFounder = !!trial.founder_since;
+  const isFounder = !!trial.is_founder;
   const days = trial.days_to_trial_end;
   const status = trial.subscription_status ?? "—";
 
@@ -323,7 +324,8 @@ function TrialBadge({ trial }: { trial: Trial }) {
         variant="outline"
         className="border-violet-500/40 bg-violet-500/10 text-violet-400"
       >
-        <Star className="mr-1 h-3 w-3" /> Fundadora · desde {trial.founder_since}
+        <Star className="mr-1 h-3 w-3" />
+        Fundadora{trial.founder_since ? ` · desde ${trial.founder_since}` : ""}
       </Badge>
     );
   }
@@ -447,7 +449,7 @@ export default async function SuperadminOrgDetailPage({ params }: PageProps) {
   });
 
   const { identity, members, activity, adoption } = detail;
-  const isFounder = !!pulse?.trial.founder_since;
+  const isFounder = !!pulse?.trial.is_founder;
   const trialEnds = pulse?.trial.trial_ends_at ?? null;
   const subStatus = pulse?.trial.subscription_status ?? null;
 

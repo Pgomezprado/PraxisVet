@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader, Pin } from "lucide-react";
 
 import { togglePinNoteAction } from "../actions";
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function PinNoteButton({ noteId, orgId, isPinned }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +23,9 @@ export function PinNoteButton({ noteId, orgId, isPinned }: Props) {
       const result = await togglePinNoteAction(noteId, orgId);
       if (!result.ok) {
         setError(result.error);
+        return;
       }
+      router.refresh();
     });
   }
 

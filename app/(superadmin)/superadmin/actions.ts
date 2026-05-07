@@ -61,9 +61,7 @@ export async function setFounderAction(
     return { ok: false, error: error.message };
   }
 
-  revalidatePath(`/superadmin/clinicas/${parsed.data.orgId}`);
-  revalidatePath("/superadmin/clinicas");
-  revalidatePath("/superadmin");
+  revalidatePath("/superadmin", "layout");
 
   return { ok: true };
 }
@@ -100,7 +98,7 @@ export async function addClinicNoteAction(
     return { ok: false, error: error.message };
   }
 
-  revalidatePath(`/superadmin/clinicas/${parsed.data.orgId}`);
+  revalidatePath("/superadmin", "layout");
   return { ok: true };
 }
 
@@ -135,8 +133,6 @@ export async function togglePinNoteAction(
     return { ok: false, error: error.message };
   }
 
-  if (parsed.data.orgId) {
-    revalidatePath(`/superadmin/clinicas/${parsed.data.orgId}`);
-  }
+  revalidatePath("/superadmin", "layout");
   return { ok: true };
 }

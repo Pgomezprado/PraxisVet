@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader, Star, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function FounderToggle({ orgId, isFounder }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +31,9 @@ export function FounderToggle({ orgId, isFounder }: Props) {
       const result = await setFounderAction(orgId, next);
       if (!result.ok) {
         setError(result.error);
+        return;
       }
+      router.refresh();
     });
   }
 

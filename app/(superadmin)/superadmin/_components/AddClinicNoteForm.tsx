@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function AddClinicNoteForm({ orgId }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [value, setValue] = useState("");
@@ -34,6 +36,7 @@ export function AddClinicNoteForm({ orgId }: Props) {
       }
       setValue("");
       ref.current?.focus();
+      router.refresh();
     });
   }
 

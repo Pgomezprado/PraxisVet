@@ -164,15 +164,26 @@ export function LoginForm() {
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <Link
-              href="/auth/register"
-              className="font-medium text-primary hover:underline"
-            >
-              Crear cuenta
-            </Link>
-          </p>
+          <div className="space-y-1.5 text-center text-sm text-muted-foreground">
+            <p>
+              ¿Tienes una clínica?{" "}
+              <Link
+                href="/auth/register"
+                className="font-medium text-primary hover:underline"
+              >
+                Regístrala aquí
+              </Link>
+            </p>
+            <p className="text-xs">
+              ¿Eres dueño/a de mascota?{" "}
+              <Link
+                href="/auth/registro-tutor"
+                className="font-medium text-primary hover:underline"
+              >
+                Crea tu cuenta de tutor
+              </Link>
+            </p>
+          </div>
         </form>
       </CardContent>
     </Card>

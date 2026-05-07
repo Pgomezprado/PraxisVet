@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/billing/logout-button";
 import { TutorAnalyticsBeacon } from "./_components/tutor-analytics-beacon";
+import { BackToHubLink } from "./_components/back-to-hub-link";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +87,11 @@ export default async function TutorClinicLayout({
         tutorId={user.id}
       />
       <header className="border-b border-border/60 bg-card/70 backdrop-blur">
+        <Suspense>
+          <div className="mx-auto flex max-w-4xl items-center px-4 pt-2 empty:hidden">
+            <BackToHubLink />
+          </div>
+        </Suspense>
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3">
           <Link
             href={`/tutor/${clinic}`}

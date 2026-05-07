@@ -55,6 +55,7 @@ export default async function ClinicLayout({
         logo_url,
         settings,
         active,
+        is_personal,
         created_at,
         trial_started_at,
         trial_ends_at,
@@ -87,6 +88,16 @@ export default async function ClinicLayout({
     }
 
     redirect("/onboarding");
+  }
+
+  // Las orgs "personales" del hub del tutor (modo sin clínica) nunca se
+  // exponen en el backoffice. Si el user llega acá con una org personal,
+  // lo devolvemos al hub.
+  const orgRow = membership.organizations as unknown as Organization & {
+    is_personal?: boolean | null;
+  };
+  if (orgRow.is_personal) {
+    redirect("/mascotas");
   }
 
   const org = membership.organizations as unknown as Organization;

@@ -17,7 +17,51 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export function RegisterForm() {
+type RegisterMode = "clinic" | "tutor";
+
+const COPY: Record<
+  RegisterMode,
+  {
+    title: string;
+    description: string;
+    cta: string;
+    successTitle: string;
+    successDescription: string;
+    nextPath: string;
+    crossLinkLabel: string;
+    crossLinkText: string;
+    crossLinkHref: string;
+  }
+> = {
+  clinic: {
+    title: "Crear cuenta de clínica",
+    description: "Regístrate para empezar a gestionar tu clínica veterinaria.",
+    cta: "Crear cuenta de clínica",
+    successTitle: "Revisa tu email",
+    successDescription:
+      "Te enviamos un enlace para activar tu cuenta y empezar a configurar tu clínica.",
+    nextPath: "/onboarding",
+    crossLinkLabel: "¿Eres dueño/a de mascota?",
+    crossLinkText: "Crea tu cuenta de tutor",
+    crossLinkHref: "/auth/registro-tutor",
+  },
+  tutor: {
+    title: "Crear cuenta de tutor",
+    description:
+      "Regístrate para empezar a guardar todo lo de tu mascota en un solo lugar.",
+    cta: "Crear mi cuenta",
+    successTitle: "Revisa tu email",
+    successDescription:
+      "Te enviamos un enlace para activar tu cuenta. Apenas confirmes, podrás registrar a tu regalón.",
+    nextPath: "/mascotas",
+    crossLinkLabel: "¿Tienes una clínica veterinaria?",
+    crossLinkText: "Regístrala aquí",
+    crossLinkHref: "/auth/register",
+  },
+};
+
+export function RegisterForm({ mode = "clinic" }: { mode?: RegisterMode } = {}) {
+  const copy = COPY[mode];
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,7 +83,7 @@ export function RegisterForm() {
       email: data.email,
       password: data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(copy.nextPath)}`,
       },
     });
 
@@ -68,11 +112,8 @@ export function RegisterForm() {
     return (
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Revisa tu email</CardTitle>
-          <CardDescription>
-            Te enviamos un enlace de confirmación. Revisa tu bandeja de entrada
-            para activar tu cuenta.
-          </CardDescription>
+          <CardTitle className="text-2xl">{copy.successTitle}</CardTitle>
+          <CardDescription>{copy.successDescription}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -81,10 +122,8 @@ export function RegisterForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Crear cuenta</CardTitle>
-        <CardDescription>
-          Regístrate para empezar a gestionar tu clínica
-        </CardDescription>
+        <CardTitle className="text-2xl">{copy.title}</CardTitle>
+        <CardDescription>{copy.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -138,7 +177,7 @@ export function RegisterForm() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creando cuenta..." : "Crear cuenta"}
+            {loading ? "Creando cuenta..." : copy.cta}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
@@ -148,6 +187,15 @@ export function RegisterForm() {
               className="font-medium text-primary hover:underline"
             >
               Iniciar sesión
+            </Link>
+          </p>
+          <p className="text-center text-xs text-muted-foreground">
+            {copy.crossLinkLabel}{" "}
+            <Link
+              href={copy.crossLinkHref}
+              className="font-medium text-primary hover:underline"
+            >
+              {copy.crossLinkText}
             </Link>
           </p>
         </form>
